@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig({
-  base: process.env.NODE_ENV === 'production' ? '/WebDev/' : '/',
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? '/WebDev/' : '/',
   plugins: [react()],
   server: {
     port: 5170,
@@ -12,4 +12,5 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
   },
-});
+}));
+

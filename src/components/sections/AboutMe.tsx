@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { User, ArrowRight, Instagram, Mail, Code2, Cpu } from 'lucide-react';
 import { PERSONAL_INFO } from '../../config/personal';
 import { Button } from '../ui/Button';
+import { InView } from '../motion-primitives/in-view';
+import { Tilt } from '../motion-primitives/tilt';
 
 export const AboutMe: React.FC = () => {
   const [imageSrc, setImageSrc] = useState<string>(PERSONAL_INFO.profilePhotoPlaceholder);
@@ -12,9 +14,19 @@ export const AboutMe: React.FC = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
-          {/* Left Column: Visual Portrait & Identity Card */}
-          <div className="lg:col-span-5 flex flex-col items-center">
-            <div className="relative w-full max-w-sm rounded-3xl p-1 bg-gradient-to-b from-neon-cyan/40 via-neon-violet/30 to-transparent shadow-2xl shadow-neon-cyan/5 group">
+          {/* Left Column: Visual Portrait & Identity Card with Tilt */}
+          <InView
+            variants={{
+              hidden: { opacity: 0, x: -30 },
+              visible: { opacity: 1, x: 0 }
+            }}
+            transition={{ duration: 0.6 }}
+            className="lg:col-span-5 flex flex-col items-center"
+          >
+            <Tilt
+              rotationFactor={8}
+              className="relative w-full max-w-sm rounded-3xl p-1 bg-gradient-to-b from-neon-cyan/40 via-neon-violet/30 to-transparent shadow-2xl shadow-neon-cyan/5 group"
+            >
               
               <div className="rounded-[22px] bg-dark-900 overflow-hidden border border-white/10 p-4">
                 <img
@@ -34,12 +46,12 @@ export const AboutMe: React.FC = () => {
                 </div>
               </div>
 
-              {/* Status Floating Pill */}
-              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-dark-850 border border-neon-cyan/30 text-xs font-mono text-neon-cyan shadow-lg whitespace-nowrap flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>{PERSONAL_INFO.availabilityStatus}</span>
-              </div>
-            </div>
+                {/* Status Floating Pill */}
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-dark-850 border border-neon-cyan/30 text-xs font-mono text-neon-cyan shadow-lg whitespace-nowrap flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>{PERSONAL_INFO.availabilityStatus}</span>
+                </div>
+            </Tilt>
 
             {/* Direct Connect Pills */}
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3 w-full">
@@ -61,10 +73,17 @@ export const AboutMe: React.FC = () => {
                 <span>Email Me</span>
               </a>
             </div>
-          </div>
+          </InView>
 
           {/* Right Column: Narrative strictly adhering to Master Prompt */}
-          <div className="lg:col-span-7 space-y-6">
+          <InView
+            variants={{
+              hidden: { opacity: 0, x: 30 },
+              visible: { opacity: 1, x: 0 }
+            }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="lg:col-span-7 space-y-6"
+          >
             
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-dark-850 border border-white/10 text-xs font-mono text-neon-cyan">
               <User className="w-3.5 h-3.5" />
@@ -119,7 +138,7 @@ export const AboutMe: React.FC = () => {
               </div>
             </div>
 
-          </div>
+          </InView>
 
         </div>
 

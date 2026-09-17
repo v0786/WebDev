@@ -16,6 +16,7 @@ import {
   generateWhatsAppUrl 
 } from '../../utils/mailto';
 import { Toast } from '../ui/Toast';
+import { InView } from '../motion-primitives/in-view';
 
 export const EnquiryForm: React.FC = () => {
   const [formData, setFormData] = useState<MasterEnquiryFormData>({
@@ -126,8 +127,15 @@ export const EnquiryForm: React.FC = () => {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Section Header */}
-        <div className="text-center space-y-4 mb-14">
+        {/* Section Header with InView Scroll Reveal */}
+        <InView
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ duration: 0.5 }}
+          className="text-center space-y-4 mb-14"
+        >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-dark-850 border border-white/10 text-xs font-mono text-neon-cyan">
             <Sparkles className="w-3.5 h-3.5" />
             <span>START A PROJECT</span>
@@ -140,7 +148,7 @@ export const EnquiryForm: React.FC = () => {
           <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
             Tell me what you are planning. This form organizes your requirements into a structured brief addressed directly to <strong className="text-slate-200">{PERSONAL_INFO.email}</strong>.
           </p>
-        </div>
+        </InView>
 
         {/* Confirmation Banner */}
         {submitted && (
@@ -171,10 +179,17 @@ export const EnquiryForm: React.FC = () => {
         )}
 
         {/* Enquiry Form */}
-        <form 
-          onSubmit={handleEmailSubmit}
-          className="p-6 sm:p-10 rounded-3xl bg-dark-900/90 backdrop-blur-xl border border-white/10 shadow-2xl space-y-7"
+        <InView
+          variants={{
+            hidden: { opacity: 0, y: 30 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ duration: 0.6, delay: 0.1 }}
         >
+          <form 
+            onSubmit={handleEmailSubmit}
+            className="p-6 sm:p-10 rounded-3xl bg-dark-900/90 backdrop-blur-xl border border-white/10 shadow-2xl space-y-7"
+          >
           
           <div className="p-4 rounded-2xl bg-dark-850/80 border border-white/5 flex items-start gap-3 text-xs text-slate-300">
             <HelpCircle className="w-4 h-4 text-neon-cyan shrink-0 mt-0.5" />
@@ -443,6 +458,7 @@ export const EnquiryForm: React.FC = () => {
           </div>
 
         </form>
+        </InView>
 
       </div>
 

@@ -13,6 +13,8 @@ import {
   Check
 } from 'lucide-react';
 import { SERVICES_DATA, ServiceItem } from '../../config/services';
+import { InView } from '../motion-primitives/in-view';
+import { Spotlight } from '../motion-primitives/spotlight';
 
 const iconMap: Record<string, React.ReactNode> = {
   Building2: <Building2 className="w-6 h-6 text-neon-cyan" />,
@@ -30,8 +32,15 @@ export const Services: React.FC = () => {
     <section id="services" className="py-24 relative bg-dark-950/70 border-t border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        {/* Section Header with InView Scroll Reveal */}
+        <InView
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-3xl mx-auto mb-16 space-y-4"
+        >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-dark-850 border border-white/10 text-xs font-mono text-neon-cyan">
             <span>TAILORED WEB SOLUTIONS</span>
           </div>
@@ -43,15 +52,24 @@ export const Services: React.FC = () => {
           <p className="text-slate-400 text-sm sm:text-base">
             Modern, business-oriented website development combining AI-powered workflows, flexible no-code builders, and handcrafted frontend code.
           </p>
-        </div>
+        </InView>
 
-        {/* 8 Services Grid */}
+        {/* 8 Services Grid with InView & Spotlight */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {SERVICES_DATA.map((service: ServiceItem) => (
-            <div
+          {SERVICES_DATA.map((service: ServiceItem, index: number) => (
+            <InView
               key={service.id}
-              className="rounded-3xl bg-dark-900/80 backdrop-blur-md border border-white/10 p-6 flex flex-col justify-between transition-all duration-300 hover:border-neon-cyan/40 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-neon-cyan/5 group"
+              variants={{
+                hidden: { opacity: 0, y: 25 },
+                visible: { opacity: 1, y: 0 }
+              }}
+              transition={{ duration: 0.4, delay: index * 0.05 }}
+              className="h-full"
             >
+              <div
+                className="h-full rounded-3xl bg-dark-900/80 backdrop-blur-md border border-white/10 p-6 flex flex-col justify-between transition-all duration-300 hover:border-neon-cyan/40 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-neon-cyan/5 group relative overflow-hidden"
+              >
+                <Spotlight className="from-neon-cyan/15 via-neon-cyan/5 to-transparent" size={200} />
               <div>
                 {/* Top Row: Icon + Status Tag */}
                 <div className="flex items-center justify-between mb-5">
@@ -108,6 +126,7 @@ export const Services: React.FC = () => {
                 </a>
               </div>
             </div>
+          </InView>
           ))}
         </div>
 

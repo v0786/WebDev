@@ -3,6 +3,9 @@ import { Layers, Eye, ArrowUpRight, AlertCircle, Sparkles, Check } from 'lucide-
 import { DEMO_PROJECTS, PortfolioProject } from '../../config/portfolio';
 import { CaseStudyModal } from './CaseStudyModal';
 import { Button } from '../ui/Button';
+import { InView } from '../motion-primitives/in-view';
+import { Tilt } from '../motion-primitives/tilt';
+import { Spotlight } from '../motion-primitives/spotlight';
 
 export const Portfolio: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<PortfolioProject | null>(null);
@@ -15,8 +18,15 @@ export const Portfolio: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-14 space-y-4">
+        {/* Section Header with InView Scroll Reveal */}
+        <InView
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-3xl mx-auto mb-14 space-y-4"
+        >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-dark-850 border border-white/10 text-xs font-mono text-neon-electric">
             <Layers className="w-3.5 h-3.5" />
             <span>DEMONSTRATION PORTFOLIO</span>
@@ -35,15 +45,24 @@ export const Portfolio: React.FC = () => {
             <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
             <span>All projects are fictional concept brands built for visual and architectural demonstration. Client case studies will be published upon completion.</span>
           </div>
-        </div>
+        </InView>
 
-        {/* 3 Showcase Projects Grid */}
+        {/* 3 Showcase Projects Grid with InView, Tilt & Spotlight */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {DEMO_PROJECTS.map((project) => (
-            <div
+          {DEMO_PROJECTS.map((project, index) => (
+            <InView
               key={project.id}
-              className="rounded-3xl bg-dark-900/85 backdrop-blur-md border border-white/10 overflow-hidden flex flex-col justify-between transition-all duration-300 hover:border-neon-cyan/50 hover:shadow-2xl hover:shadow-neon-cyan/10 hover:-translate-y-1.5 group"
+              variants={{
+                hidden: { opacity: 0, y: 30 },
+                visible: { opacity: 1, y: 0 }
+              }}
+              transition={{ duration: 0.5, delay: index * 0.12 }}
             >
+              <Tilt
+                rotationFactor={7}
+                className="h-full rounded-3xl bg-dark-900/85 backdrop-blur-md border border-white/10 overflow-hidden flex flex-col justify-between transition-all duration-300 hover:border-neon-cyan/50 hover:shadow-2xl hover:shadow-neon-cyan/10 group relative"
+              >
+                <Spotlight className="from-neon-cyan/25 via-neon-cyan/5 to-transparent" size={260} />
               <div>
                 {/* Visual Header / Mockup Gradient Banner */}
                 <div className={`h-52 rounded-t-3xl bg-gradient-to-br ${project.previewCardStyle} p-6 flex flex-col justify-between relative overflow-hidden`}>
@@ -114,7 +133,8 @@ export const Portfolio: React.FC = () => {
                 </button>
               </div>
 
-            </div>
+              </Tilt>
+            </InView>
           ))}
         </div>
 

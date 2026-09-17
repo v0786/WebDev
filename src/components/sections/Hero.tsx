@@ -3,6 +3,8 @@ import { ArrowRight, Sparkles, CheckCircle2, ShieldCheck, Zap } from 'lucide-rea
 import { PERSONAL_INFO } from '../../config/personal';
 import { Button } from '../ui/Button';
 import { HeroScene3D } from '../3d/HeroScene3D';
+import { TextEffect } from '../motion-primitives/text-effect';
+import { InView } from '../motion-primitives/in-view';
 
 export const Hero: React.FC = () => {
   return (
@@ -31,28 +33,59 @@ export const Hero: React.FC = () => {
           <div className="lg:col-span-7 text-center lg:text-left space-y-6">
             
             {/* Top Brand Label */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-dark-850/90 border border-white/10 text-xs font-mono text-slate-300 backdrop-blur-md shadow-inner">
-              <Sparkles className="w-3.5 h-3.5 text-neon-cyan animate-pulse" />
-              <span className="font-semibold text-white tracking-wider">
-                {PERSONAL_INFO.brandName.toUpperCase()}
-              </span>
-            </div>
+            <InView
+              variants={{
+                hidden: { opacity: 0, y: -10 },
+                visible: { opacity: 1, y: 0 }
+              }}
+              transition={{ duration: 0.4 }}
+            >
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-dark-850/90 border border-white/10 text-xs font-mono text-slate-300 backdrop-blur-md shadow-inner">
+                <Sparkles className="w-3.5 h-3.5 text-neon-cyan animate-pulse" />
+                <span className="font-semibold text-white tracking-wider">
+                  {PERSONAL_INFO.brandName.toUpperCase()}
+                </span>
+              </div>
+            </InView>
 
-            {/* Main Headings strictly adhering to Master Prompt */}
+            {/* Main Headings with Motion Primitives TextEffect */}
             <div className="space-y-3">
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15] break-words">
+              <TextEffect
+                as="h1"
+                per="word"
+                preset="fade-in-blur"
+                speedReveal={1.5}
+                speedSegment={1.5}
+                className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15] break-words"
+              >
                 {PERSONAL_INFO.heroHeadline}
-              </h1>
+              </TextEffect>
 
-              <h2 className="text-lg sm:text-2xl lg:text-3xl font-semibold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-slate-200 to-slate-400 leading-snug">
-                {PERSONAL_INFO.heroSupportingHeadline}
-              </h2>
+              <InView
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+                transition={{ duration: 0.5, delay: 0.15 }}
+              >
+                <h2 className="text-lg sm:text-2xl lg:text-3xl font-semibold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-slate-200 to-slate-400 leading-snug">
+                  {PERSONAL_INFO.heroSupportingHeadline}
+                </h2>
+              </InView>
             </div>
 
             {/* Supporting Paragraph */}
-            <p className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed">
-              {PERSONAL_INFO.heroSupportingParagraph}
-            </p>
+            <InView
+              variants={{
+                hidden: { opacity: 0, y: 10 },
+                visible: { opacity: 1, y: 0 }
+              }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+            >
+              <p className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed">
+                {PERSONAL_INFO.heroSupportingParagraph}
+              </p>
+            </InView>
 
             {/* Primary & Secondary CTAs */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3.5 pt-2">

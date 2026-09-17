@@ -3,6 +3,7 @@ import { Mail, Instagram, ArrowUpRight, Sparkles, MessageCircle } from 'lucide-r
 import { PERSONAL_INFO } from '../../config/personal';
 import { Button } from '../ui/Button';
 import { Toast } from '../ui/Toast';
+import { InView } from '../motion-primitives/in-view';
 
 export const ContactSection: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string>('');
@@ -25,7 +26,14 @@ export const ContactSection: React.FC = () => {
       {/* Background soft ambient glow */}
       <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-b from-neon-cyan/15 via-neon-violet/10 to-transparent rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-8">
+      <InView
+        variants={{
+          hidden: { opacity: 0, y: 30 },
+          visible: { opacity: 1, y: 0 }
+        }}
+        transition={{ duration: 0.6 }}
+        className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-8"
+      >
         
         {/* Availability Badge */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-dark-850 border border-white/10 text-xs font-mono text-neon-cyan">
@@ -121,7 +129,7 @@ export const ContactSection: React.FC = () => {
           </div>
         </div>
 
-      </div>
+      </InView>
 
       <Toast
         message={toastMessage}
