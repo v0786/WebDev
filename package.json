@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:3000": "vite --port 3000",
+    "dev:5173": "vite --port 5173",
+    "dev:8080": "vite --port 8080",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "predeploy": "npm run build && node scripts/prepare-deploy.js",

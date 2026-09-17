@@ -5,7 +5,12 @@ export default defineConfig(({ command }) => ({
   base: command === 'build' ? '/WebDev/' : '/',
   plugins: [react()],
   server: {
-    port: 5170,
+    port: Number(process.env.PORT) || 3000,
+    strictPort: false,
+    open: false,
+  },
+  preview: {
+    port: 4173,
     open: false,
   },
   build: {
@@ -13,4 +18,3 @@ export default defineConfig(({ command }) => ({
     sourcemap: true,
   },
 }));
-

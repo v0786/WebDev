@@ -21,110 +21,114 @@ export interface PortfolioProject {
   accentGradient: string;
   previewCardStyle: string;
   highlights: string[];
+  demoRoute: string;
   caseStudy: ProjectCaseStudy;
 }
 
 export const DEMO_PROJECTS: PortfolioProject[] = [
   {
-    id: "project-a-business",
+    id: "project-restaurant",
     projectCode: "Project A",
-    title: "Modern Business Website",
-    brandName: "Vanguard Strategy Group",
-    category: "Business Website",
-    headline: "International Management Consultancy & Advisory Platform",
-    shortDescription: "A sophisticated multi-section business website designed to establish authority, present complex advisory practices clearly, and drive corporate consultation inquiries.",
+    title: "Luxury Restaurant Website",
+    brandName: "L’Aura Haute Cuisine",
+    category: "Hospitality & Dining",
+    headline: "Michelin-Standard Gastronomic Showcase & Digital Reservation Suite",
+    shortDescription: "A premium restaurant concept engineered with editorial serif typography, interactive seasonal menu highlights, sommelier cellar curation, atmospheric gallery, and real-time reservation booking interaction.",
     isConcept: true,
     statusBadge: "Concept Project — Demonstration Only",
-    accentGradient: "from-blue-600 to-cyan-500",
-    previewCardStyle: "from-[#0A1128] via-[#101F42] to-[#1C3166]",
+    accentGradient: "from-amber-500 to-yellow-600",
+    previewCardStyle: "from-[#17120F] via-[#241B16] to-[#382B21]",
+    demoRoute: "#/restaurant",
     highlights: [
-      "Complete structured homepage layout",
-      "Dedicated advisory services directory",
-      "Executive team and methodology section",
-      "Corporate consultation booking interface"
+      "Hero section with Motion Primitives TextEffect & ambient lighting",
+      "Interactive 5-category seasonal menu highlights & dietary badges",
+      "Atmospheric photography showcase with 3D perspective Tilt & Spotlight",
+      "Interactive table reservation modal with instant voucher generation"
     ],
     caseStudy: {
-      designGoals: "Create a commanding, trustworthy digital presence suitable for an international corporate consulting firm, emphasizing clarity, intellectual rigour, and transparent service offerings.",
+      designGoals: "Create a timeless, evocative digital presence for a luxury culinary establishment, balancing intimacy with smooth reservation conversion.",
       designDecisions: [
-        "Adopted deep navy and charcoal hues with crisp white typography for high institutional authority.",
-        "Structured modular practice area cards to prevent visual fatigue on dense technical content.",
-        "Engineered an intuitive consultation inquiry flow to reduce friction for prospective corporate clients."
+        "Adopted deep obsidian and warm mahogany tones with champagne gold accents for an intimate evening ambiance.",
+        "Engineered interactive category tabs to allow guests to explore tasting menus and wine pairings effortlessly.",
+        "Built a seamless reservation flow with visual validation and dietary accommodation fields."
       ],
       toolsAndMethods: [
-        "AI-assisted structure prototyping for rapid content modeling",
-        "React & Tailwind CSS for modern responsive performance",
-        "Semantic HTML5 architecture for structured search indexing"
+        "Motion Primitives (InView, Tilt, Spotlight, TextEffect) for tasteful animations",
+        "React 18 & Tailwind CSS for modern responsive fluid layouts",
+        "Accessible ARIA attributes and reduced-motion graceful degradation"
       ],
-      demonstrationOverview: "Demonstrates end-to-end multi-page layout architecture, corporate typography hierarchy, and business consultation lead capture workflows.",
+      demonstrationOverview: "Demonstrates hospitality storytelling, luxury editorial typography, interactive menus, and complete reservation booking UX.",
       clientNotice: "This is an original concept project created for visual and architectural demonstration. It was not commissioned by an active client."
     }
   },
   {
-    id: "project-b-saas",
+    id: "project-saas",
     projectCode: "Project B",
-    title: "SaaS Landing Page",
-    brandName: "PulseFlow AI",
-    category: "Landing Page",
-    headline: "Conversion-Focused Landing Page for a Next-Gen Team Telemetry Tool",
-    shortDescription: "A high-conversion landing page for a fictional software product, engineered with an impactful hero section, dynamic feature highlights, pricing matrices, FAQ, and conversion CTAs.",
+    title: "SaaS Product Landing Page",
+    brandName: "ApexFlow AI",
+    category: "Software & SaaS Landing",
+    headline: "Real-Time Telemetry & eBPF Observability Platform for Engineering Teams",
+    shortDescription: "A high-conversion landing page for a cloud observability product, featuring dynamic live trace telemetry preview, 3 core architecture pillars, monthly/annual pricing matrix, and interactive trial signup.",
     isConcept: true,
     statusBadge: "Concept Project — Demonstration Only",
-    accentGradient: "from-violet-600 to-indigo-500",
-    previewCardStyle: "from-[#130924] via-[#21113E] to-[#361D66]",
+    accentGradient: "from-cyan-500 to-indigo-600",
+    previewCardStyle: "from-[#080E1C] via-[#0E1B38] to-[#182E5C]",
+    demoRoute: "#/saas",
     highlights: [
-      "Hero section with dynamic visual software preview",
-      "Interactive 3-pillar feature breakdown",
-      "Interactive monthly/annual pricing matrix layout",
-      "Comprehensive FAQ accordion and final conversion callout"
+      "Live simulated telemetry waterfall & AI root-cause investigation tabs",
+      "3-pillar capability cards with 3D Tilt and interactive Spotlight glow",
+      "Monthly vs Annual pricing matrix with instant 20% discount calculation",
+      "Interactive FAQ accordion and zero-friction trial activation modal"
     ],
     caseStudy: {
-      designGoals: "Demonstrate conversion rate optimization (CRO) principles by guiding the visitor through a deliberate storytelling journey from problem identification to product trial.",
+      designGoals: "Demonstrate conversion rate optimization (CRO) principles by guiding engineering decision-makers from problem identification to interactive product validation.",
       designDecisions: [
-        "Positioned primary CTA above the fold with subtle glow reinforcement.",
-        "Utilized modern glassmorphic preview cards to showcase software dashboards cleanly.",
-        "Structured a responsive FAQ accordion to address client pre-sale objections proactively."
+        "Positioned an interactive live sandbox dashboard above the fold to demonstrate product capability immediately.",
+        "Adopted deep navy/slate hues with high-contrast cyan and violet accents for high technical authority.",
+        "Structured an accessible FAQ accordion to address compliance and overhead objections directly."
       ],
       toolsAndMethods: [
-        "AI-accelerated layout iteration and copywriting frameworks",
-        "CSS micro-animations and smooth scroll triggers",
-        "Accessible interactive UI components"
+        "React state management for simulated real-time telemetry streaming",
+        "Motion Primitives for hardware-accelerated micro-interactions",
+        "OpenTelemetry-aligned semantic data models"
       ],
-      demonstrationOverview: "Demonstrates high-converting SaaS landing page design, conversion copywriting structure, and interactive components.",
+      demonstrationOverview: "Demonstrates technical SaaS copywriting, conversion-focused layout architecture, and interactive product preview sandboxes.",
       clientNotice: "This is an original concept project created for visual and architectural demonstration. No real sales, traffic, or client figures are claimed."
     }
   },
   {
-    id: "project-c-ecommerce",
+    id: "project-agency",
     projectCode: "Project C",
-    title: "E-commerce Concept",
-    brandName: "Solis Horology",
-    category: "E-commerce Storefront",
-    headline: "Minimalist Online Storefront for Bespoke Mechanical Timepieces",
-    shortDescription: "A premium e-commerce storefront concept showcasing high-end product cards, detailed specification modals, dynamic cart drawer preview, and multi-currency navigation.",
+    title: "Creative Agency Website",
+    brandName: "Studio Vektor",
+    category: "Digital Studio & Agency",
+    headline: "Avant-Garde Digital Architecture & Interactive Case Studies",
+    shortDescription: "A visually distinctive agency concept showcasing selected client works with filterable categories, interactive case study drawers, 4-discipline capabilities, methodology timeline, and project brief builder.",
     isConcept: true,
     statusBadge: "Concept Project — Demonstration Only",
-    accentGradient: "from-amber-500 to-orange-600",
-    previewCardStyle: "from-[#1F1404] via-[#332207] to-[#54380C]",
+    accentGradient: "from-lime-400 to-emerald-500",
+    previewCardStyle: "from-[#0A0D05] via-[#141A08] to-[#1F290B]",
+    demoRoute: "#/agency",
     highlights: [
-      "Editorial product grid with tactile hover states",
-      "Product detail preview layout with specifications",
-      "Interactive slide-over cart drawer mockup",
-      "Dynamic currency display indicator (USD / EUR / GBP)"
+      "Large-scale typography with TextEffect word-reveal choreography",
+      "Selected works gallery with interactive case study inspection drawers",
+      "4-discipline service breakdown and 4-phase agile project timeline",
+      "Integrated project brief builder modal with budget & timeline selection"
     ],
     caseStudy: {
-      designGoals: "Showcase the ability to design high-end luxury e-commerce experiences that evoke craftsmanship through generous whitespace, restrained palettes, and smooth shopping interactions.",
+      designGoals: "Showcase the ability to design unforgettable digital experiences for international luxury brands, tech pioneers, and design-led enterprises.",
       designDecisions: [
-        "Kept product photography front-and-center with minimal distracting chrome.",
-        "Designed a seamless cart summary drawer to preview the complete purchase journey without page jumps.",
-        "Included international currency indicators for global shoppers."
+        "Employed high-contrast monochrome with electric lime accents and architectural grid typography.",
+        "Designed slide-over case study preview drawers to let visitors inspect challenge, approach, and tech stack without page jumps.",
+        "Created an intuitive brief submission flow for prospective international enterprise clients."
       ],
       toolsAndMethods: [
-        "React state management for real-time cart interaction simulation",
-        "Tailwind CSS responsive grid system for fluid product sizing",
-        "Optimized vector iconography for crisp display across Retina screens"
+        "Motion Primitives for fluid layout transitions and mouse-follow lighting",
+        "Modular TypeScript component architecture",
+        "Zero-layout-shift responsive styling down to 320px mobile viewports"
       ],
-      demonstrationOverview: "Demonstrates luxury e-commerce aesthetics, product catalog layouts, interactive cart drawer UX, and international shopping patterns.",
-      clientNotice: "This is an original concept project created for visual and architectural demonstration. Not an active transactional retail store."
+      demonstrationOverview: "Demonstrates avant-garde creative direction, agency portfolio structuring, interactive case study modals, and project brief UX.",
+      clientNotice: "This is an original concept project created for visual and architectural demonstration. Client names and case studies are fictional concept demonstrations."
     }
   }
 ];
