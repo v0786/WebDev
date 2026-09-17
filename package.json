@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "predeploy": "npm run build",
+    "predeploy": "npm run build && node scripts/prepare-deploy.js",
     "deploy": "gh-pages -d dist --dotfiles --nojekyll"
   },
   "dependencies": {
