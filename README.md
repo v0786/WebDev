@@ -13,8 +13,10 @@
 - **Target Market**: International businesses, startups, creators, and professionals (USA, UK, Canada, Australia, Europe, etc.).
 - **Primary Goal**: Generate qualified website development enquiries and convert them into paying projects.
 - **Verified Email**: `sonkusare.doc@gmail.com`
+- **Direct WhatsApp**: [`+91 8652140271`](https://wa.me/918652140271)
 - **Verified Instagram**: [instagram.com/sonkusare_vaibhav](https://www.instagram.com/sonkusare_vaibhav/)
-- **WhatsApp**: Configurable international number in `src/config/personal.ts` (Never fabricated).
+- **GitHub Repository**: [github.com/v0786/WebDev](https://github.com/v0786/WebDev)
+- **Live GitHub Pages URL**: [v0786.github.io/WebDev](https://v0786.github.io/WebDev/)
 - **Default Currency**: USD (with multi-currency invoicing options).
 
 ---
