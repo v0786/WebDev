@@ -129,25 +129,25 @@ const GALLERY_IMAGES = [
     title: 'Culinary Precision',
     category: 'Plating Architecture',
     subtitle: 'Every plate is an orchestrated harmony of flavor, texture, and visual balance.',
-    color: 'from-amber-900/60 via-stone-900 to-black',
+    image: '/demos/restaurant/plating.jpg',
   },
   {
     title: 'The Wine Sanctuary',
     category: 'Cellar Archive',
     subtitle: 'Over 1,200 temperature-regulated vintages from renowned terroirs across France and Italy.',
-    color: 'from-rose-950/60 via-stone-900 to-black',
+    image: '/demos/restaurant/wine-cellar.jpg',
   },
   {
     title: 'Grand Dining Salon',
     category: 'Atmosphere',
     subtitle: 'Acoustically softened architecture with warm amber chandeliers and custom linen appointments.',
-    color: 'from-stone-900 via-amber-950/40 to-black',
+    image: '/demos/restaurant/dining-salon.jpg',
   },
   {
     title: 'Chef’s Counter Experience',
     category: 'Private Seating',
     subtitle: 'An intimate 8-seat culinary theater observing our brigade execute 10 bespoke courses.',
-    color: 'from-yellow-950/50 via-stone-900 to-black',
+    image: '/demos/restaurant/chef-counter.jpg',
   },
 ];
 
@@ -288,9 +288,18 @@ export const RestaurantDemo: React.FC = () => {
 
       {/* Hero Section */}
       <header id="hero" className="relative pt-20 pb-28 md:pt-28 md:pb-36 overflow-hidden border-b border-stone-800/60">
-        {/* Soft atmospheric ambient glow */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/10 rounded-full blur-[140px] pointer-events-none" />
-        <div className="absolute top-10 right-10 w-80 h-80 bg-rose-600/5 rounded-full blur-[100px] pointer-events-none" />
+        {/* Real hero background image with rich dark overlay */}
+        <img
+          src="/demos/restaurant/hero-bg.jpg"
+          alt="L'Aura fine dining restaurant interior"
+          className="absolute inset-0 w-full h-full object-cover object-center select-none pointer-events-none"
+          aria-hidden="true"
+        />
+        {/* Layered dark overlays for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0C0A09]/80 via-[#0C0A09]/60 to-[#0C0A09] pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0C0A09]/40 via-transparent to-[#0C0A09]/40 pointer-events-none" />
+        {/* Subtle amber atmospheric glow on top of image */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/8 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           
@@ -445,43 +454,51 @@ export const RestaurantDemo: React.FC = () => {
               transition={{ duration: 0.6 }}
               className="lg:col-span-5"
             >
-              <Tilt rotationFactor={7} className="rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-[#241B16] via-[#14100E] to-[#0A0807] border border-[#D4AF37]/25 shadow-2xl relative overflow-hidden space-y-6">
-                <Spotlight className="from-amber-400/20 via-transparent to-transparent" size={240} />
+              <Tilt rotationFactor={5} className="rounded-3xl border border-[#D4AF37]/25 shadow-2xl relative overflow-hidden">
+                {/* Chef plating image as visual panel background */}
+                <img
+                  src="/demos/restaurant/plating.jpg"
+                  alt="Chef's artisan plating at L'Aura"
+                  className="w-full h-56 object-cover object-center"
+                />
+                <div className="p-6 sm:p-8 bg-gradient-to-br from-[#241B16] via-[#14100E] to-[#0A0807] space-y-6 relative">
+                  <Spotlight className="from-amber-400/20 via-transparent to-transparent" size={240} />
 
-                <div className="space-y-4">
-                  <div className="inline-block px-3 py-1 rounded-full bg-amber-400/10 text-amber-300 text-[10px] font-mono tracking-widest uppercase border border-amber-400/20">
-                    Artisanal Standards
+                  <div className="space-y-4">
+                    <div className="inline-block px-3 py-1 rounded-full bg-amber-400/10 text-amber-300 text-[10px] font-mono tracking-widest uppercase border border-amber-400/20">
+                      Artisanal Standards
+                    </div>
+                    <h3 className="text-2xl font-serif font-bold text-white">
+                      The Ten-Course Gastronomic Suite
+                    </h3>
+                    <p className="text-xs text-stone-300 leading-relaxed">
+                      Designed as a progression of five movements: Ocean Depths, Forest Foraging, Pasture Heritage, Cleansing Elements, and Sweet Alchemy.
+                    </p>
                   </div>
-                  <h3 className="text-2xl font-serif font-bold text-white">
-                    The Ten-Course Gastronomic Suite
-                  </h3>
-                  <p className="text-xs text-stone-300 leading-relaxed">
-                    Designed as a progression of five movements: Ocean Depths, Forest Foraging, Pasture Heritage, Cleansing Elements, and Sweet Alchemy.
-                  </p>
+
+                  <div className="space-y-3 pt-4 border-t border-white/10 text-xs">
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-stone-300">Tasting Experience</span>
+                      <span className="font-mono text-amber-300 font-bold">€185 per guest</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-stone-300">Prestigious Wine Pairing</span>
+                      <span className="font-mono text-amber-300 font-bold">+ €115 per guest</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-stone-300">Non-Alcoholic Botanical Flight</span>
+                      <span className="font-mono text-amber-300 font-bold">+ €65 per guest</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setReservationModalOpen(true)}
+                    className="w-full py-3 rounded-xl bg-[#D4AF37] hover:bg-[#DFBF58] text-stone-950 font-bold text-xs tracking-wider uppercase transition-all flex items-center justify-center gap-2"
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Reserve Tasting Journey</span>
+                  </button>
                 </div>
-
-                <div className="space-y-3 pt-4 border-t border-white/10 text-xs">
-                  <div className="flex items-center justify-between py-1">
-                    <span className="text-stone-300">Tasting Experience</span>
-                    <span className="font-mono text-amber-300 font-bold">€185 per guest</span>
-                  </div>
-                  <div className="flex items-center justify-between py-1">
-                    <span className="text-stone-300">Prestigious Wine Pairing</span>
-                    <span className="font-mono text-amber-300 font-bold">+ €115 per guest</span>
-                  </div>
-                  <div className="flex items-center justify-between py-1">
-                    <span className="text-stone-300">Non-Alcoholic Botanical Flight</span>
-                    <span className="font-mono text-amber-300 font-bold">+ €65 per guest</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setReservationModalOpen(true)}
-                  className="w-full py-3 rounded-xl bg-[#D4AF37] hover:bg-[#DFBF58] text-stone-950 font-bold text-xs tracking-wider uppercase transition-all flex items-center justify-center gap-2"
-                >
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>Reserve Tasting Journey</span>
-                </button>
               </Tilt>
             </InView>
 
@@ -643,26 +660,31 @@ export const RestaurantDemo: React.FC = () => {
               >
                 <Tilt
                   rotationFactor={4}
-                  className="rounded-3xl overflow-hidden bg-gradient-to-br border border-white/10 hover:border-[#D4AF37]/50 transition-all p-8 h-80 flex flex-col justify-between relative group"
-                  style={{ backgroundImage: `linear-gradient(to bottom right, #1F1714, #120D0B)` }}
+                  className="rounded-3xl overflow-hidden border border-white/10 hover:border-[#D4AF37]/60 transition-all h-80 flex flex-col justify-between relative group cursor-default"
                 >
-                  <Spotlight className="from-amber-400/20 via-transparent to-transparent" size={260} />
-                  
-                  {/* Subtle geometric pattern overlay */}
-                  <div className="absolute inset-0 bg-grid-pattern opacity-10 group-hover:opacity-20 transition-opacity" />
+                  {/* Real photo background */}
+                  <img
+                    src={img.image}
+                    alt={img.title}
+                    className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                    aria-hidden="true"
+                  />
+                  {/* Dark gradient overlay for text */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
+                  <Spotlight className="from-amber-400/15 via-transparent to-transparent" size={260} />
 
-                  <div className="relative z-10 flex items-center justify-between">
-                    <span className="px-3 py-1 rounded-full text-[10px] font-mono tracking-widest uppercase bg-black/60 text-amber-300 border border-amber-300/30">
+                  <div className="relative z-10 flex items-center justify-between p-6">
+                    <span className="px-3 py-1 rounded-full text-[10px] font-mono tracking-widest uppercase bg-black/70 text-amber-300 border border-amber-300/40 backdrop-blur-sm">
                       {img.category}
                     </span>
-                    <span className="text-xs font-mono text-stone-400">0{idx + 1}</span>
+                    <span className="text-xs font-mono text-white/60 bg-black/50 px-2 py-1 rounded-md backdrop-blur-sm">0{idx + 1}</span>
                   </div>
 
-                  <div className="relative z-10 space-y-2">
-                    <h3 className="text-2xl font-serif font-bold text-white group-hover:text-amber-300 transition-colors">
+                  <div className="relative z-10 space-y-2 p-6">
+                    <h3 className="text-2xl font-serif font-bold text-white group-hover:text-amber-300 transition-colors drop-shadow-lg">
                       {img.title}
                     </h3>
-                    <p className="text-xs text-stone-300 max-w-md leading-relaxed">
+                    <p className="text-xs text-stone-200 max-w-md leading-relaxed drop-shadow">
                       {img.subtitle}
                     </p>
                   </div>
