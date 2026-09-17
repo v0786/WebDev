@@ -37,8 +37,8 @@ export const PERSONAL_INFO: PersonalConfig = {
   brandName: "Vaibhav Sonkusare — Creative Web Studio",
   fullName: "Vaibhav Sonkusare",
   heroHeadline: "Ideas Into Digital Experiences.",
-  heroSupportingHeadline: "Modern websites, built with creativity and AI.",
-  heroSupportingParagraph: "I create modern, responsive websites using AI-powered workflows, no-code tools, and custom development.",
+  heroSupportingHeadline: "Bespoke websites for international startups and modern businesses.",
+  heroSupportingParagraph: "I design and build fast, responsive websites combining AI-assisted prototyping with handcrafted React, TypeScript, and Tailwind CSS polish. Direct 1-on-1 collaboration, clear milestones, and global delivery.",
   
   // Verified Contact Points
   email: "sonkusare.doc@gmail.com",
@@ -59,13 +59,13 @@ export const PERSONAL_INFO: PersonalConfig = {
   // About Me Section Content
   aboutHeading: "A Little About Me",
   aboutBio: [
-    "I'm Vaibhav Sonkusare, an independent website creator exploring the possibilities of AI-powered design and development.",
-    "I combine creative thinking, modern website tools, and a practical approach to help businesses establish a professional online presence.",
-    "I'm building my portfolio around real-world business needs, thoughtful design, and websites that are easy to use."
+    "I'm Vaibhav Sonkusare, an independent creative web developer and designer collaborating with founders, businesses, and creators globally.",
+    "I combine modern visual aesthetics, rapid AI-assisted workflows, and clean custom frontend engineering (React, TypeScript, Tailwind CSS) to deliver websites that communicate value clearly and convert visitors.",
+    "Working directly with me means zero agency bureaucracy, rapid turnaround, asynchronous communication across time zones, and transparent milestone-based pricing in USD."
   ],
   
   // Contact Section Content
   contactHeadline: "Let's Build Something Great.",
-  contactSupportingText: "Have a business idea, a website to redesign, or a project you want to bring to life? Tell me what you're planning, and let's discuss how I can help.",
+  contactSupportingText: "Have a new business idea, a product launch, or an existing website to modernize? Tell me what you're planning, and let's discuss how we can bring it to life.",
   availabilityStatus: "Open for New International Enquiries"
 };

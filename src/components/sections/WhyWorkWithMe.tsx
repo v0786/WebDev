@@ -11,40 +11,40 @@ import {
 export const WhyWorkWithMe: React.FC = () => {
   const points = [
     {
-      title: "Direct Collaboration & Clear Communication",
-      description: "You communicate directly with the person architecting, designing, and coding your site. No account handlers, no misinterpreted briefs, and zero agency bureaucratic delay.",
+      title: "Direct 1-on-1 Maker Collaboration",
+      description: "You work directly with the person designing and coding your website. No junior account handlers, no lost context in handover chains, and zero agency bureaucratic markup.",
       icon: <UserCheck className="w-6 h-6 text-neon-cyan" />,
-      tag: "1-on-1 Focus"
+      tag: "Direct Access"
     },
     {
-      title: "AI-Assisted Efficiency & Agility",
-      description: "I integrate state-of-the-art AI tooling into design ideation and code generation workflows, accelerating turnaround while dedicating time to handcrafted polish and performance.",
-      icon: <Cpu className="w-6 h-6 text-neon-violet" />,
-      tag: "Modern Workflows"
+      title: "Time Zone Overlap & Async Agility",
+      description: "Experienced in seamless asynchronous collaboration across North America, Europe, and Australia. You receive structured written briefs, milestone demos, and daily/weekly progress updates.",
+      icon: <Target className="w-6 h-6 text-neon-violet" />,
+      tag: "Global Workflow"
     },
     {
-      title: "Flawless Multi-Device Responsiveness",
-      description: "Every layout is tested across mobile screens, tablets, laptops, and wide monitors. Your visitors receive a seamless, intuitive experience no matter what device they use.",
-      icon: <Smartphone className="w-6 h-6 text-neon-electric" />,
-      tag: "Responsive First"
+      title: "AI Prototyping + Custom Code Polish",
+      description: "I harness modern AI design tooling to explore concepts rapidly and iterate on layouts, then write handcrafted, maintainable React and TypeScript code for production-grade speed and reliability.",
+      icon: <Cpu className="w-6 h-6 text-neon-electric" />,
+      tag: "Modern Tech"
     },
     {
-      title: "Clear Scope & Transparent Pricing",
-      description: "All milestones, deliverables, and payment structures are explicitly agreed upon before development kicks off. No surprise charges or vague contractual ambiguities.",
+      title: "Transparent USD Milestone Contracts",
+      description: "Every deliverable, timeline, and payment milestone is clearly outlined before work starts. Invoicing in USD (or EUR/GBP) via international bank transfer, Wise, or Stripe with no unexpected fees.",
       icon: <FileCheck2 className="w-6 h-6 text-emerald-400" />,
-      tag: "Upfront Integrity"
+      tag: "Fair & Upfront"
     },
     {
-      title: "Engineered for Real Business Objectives",
-      description: "A website must be more than eye candy—it must communicate your value proposition, build institutional trust, and make it effortless for prospects to get in touch.",
-      icon: <Target className="w-6 h-6 text-amber-400" />,
-      tag: "Outcome Driven"
+      title: "Mobile Ergonomics & Global Performance",
+      description: "Websites are optimized for fast load times worldwide and tested across iPhone, Android, tablets, and 4K displays with accessible typography and touch ergonomics.",
+      icon: <Smartphone className="w-6 h-6 text-sky-400" />,
+      tag: "Fast & Fluid"
     },
     {
-      title: "Honest, Realistic Commitments",
-      description: "I provide realistic technical timelines and genuine capability commitments without making unsupported guarantees about search rankings, instantaneous traffic, or inflated claims.",
-      icon: <ShieldAlert className="w-6 h-6 text-sky-400" />,
-      tag: "No Gimmicks"
+      title: "Honest Commitments & Zero Gimmicks",
+      description: "No inflated client logos, no fabricated testimonials, and no unrealistic SEO ranking guarantees. Just disciplined technical execution, genuine communication, and dedicated craftsmanship.",
+      icon: <ShieldAlert className="w-6 h-6 text-amber-400" />,
+      tag: "100% Authentic"
     }
   ];
 

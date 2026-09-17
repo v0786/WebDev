@@ -269,14 +269,14 @@ export const EnquiryForm: React.FC = () => {
             {/* Country / Location */}
             <div className="space-y-1.5">
               <label htmlFor="country" className="block text-xs font-mono text-slate-300">
-                Country / Location <span className="text-rose-400">*</span>
+                Country / Location & Timezone <span className="text-rose-400">*</span>
               </label>
               <input
                 id="country"
                 type="text"
                 autoComplete="country-name"
                 enterKeyHint="next"
-                placeholder="e.g. United States, UK, Canada..."
+                placeholder="e.g. United States (EST), UK (GMT), Canada..."
                 value={formData.country}
                 onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                 className={`w-full px-4 py-3 rounded-xl bg-dark-850 border text-base text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all ${
@@ -284,6 +284,31 @@ export const EnquiryForm: React.FC = () => {
                 }`}
               />
               {errors.country && <p className="text-xs text-rose-400">{errors.country}</p>}
+
+              {/* Quick Country Pills for International Visitors */}
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {[
+                  { label: '🇺🇸 USA', val: 'United States' },
+                  { label: '🇬🇧 UK', val: 'United Kingdom' },
+                  { label: '🇨🇦 Canada', val: 'Canada' },
+                  { label: '🇦🇺 Australia', val: 'Australia' },
+                  { label: '🇩🇪 Germany', val: 'Germany' },
+                  { label: '🌍 Other', val: 'International' },
+                ].map((c) => (
+                  <button
+                    key={c.val}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, country: c.val })}
+                    className={`text-[10px] font-mono px-2 py-1 rounded-md border transition-all cursor-pointer ${
+                      formData.country === c.val
+                        ? 'bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50'
+                        : 'bg-dark-800/80 text-slate-400 border-white/5 hover:border-white/20 hover:text-slate-200'
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Website Type */}
