@@ -40,7 +40,7 @@ export const Navbar: React.FC = () => {
             <div className="w-10 h-10 rounded-xl overflow-hidden bg-dark-900 border border-white/15 group-hover:border-neon-cyan/60 transition-all shadow-md shrink-0">
               <img 
                 src={PERSONAL_INFO.logoPlaceholder} 
-                alt="Vaibhav Sonkusare Logo" 
+                alt="Vaibhav Sonkusare — Creative Web Studio Logo" 
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform"
               />
             </div>

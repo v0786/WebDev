@@ -32,7 +32,7 @@ export const AboutMe: React.FC = () => {
                 <img
                   src={imageSrc}
                   onError={() => setImageSrc(`${import.meta.env.BASE_URL}images/profile-placeholder.svg`)}
-                  alt="Vaibhav Sonkusare"
+                  alt="Vaibhav Sonkusare — Creative Web Studio founder and web developer"
                   className="w-full aspect-square rounded-2xl object-cover bg-dark-850 transition-transform duration-500 group-hover:scale-102"
                 />
 
