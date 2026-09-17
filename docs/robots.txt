@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://v0786.github.io/WebDev/sitemap.xml
