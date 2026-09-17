@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" fill="none">
+  <rect width="240" height="60" rx="12" fill="#0A0E17"/>
+  <rect x="1" y="1" width="238" height="58" rx="11" stroke="url(#borderGlow)" stroke-width="1.5"/>
+  
+  <!-- Monogram Icon Box -->
+  <rect x="12" y="12" width="36" height="36" rx="8" fill="#141B2D" stroke="#00F2FE" stroke-width="1.5"/>
+  <text x="30" y="36" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="18" font-weight="800" fill="#00F2FE">VS</text>
+
+  <!-- Studio Typography -->
+  <text x="60" y="28" font-family="'Plus Jakarta Sans', sans-serif" font-size="14" font-weight="800" fill="#FFFFFF" letter-spacing="0.5">VAIBHAV SONKUSARE</text>
+  <text x="60" y="44" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" fill="#00F2FE" letter-spacing="1.5">CREATIVE WEB STUDIO</text>
+
+  <defs>
+    <linearGradient id="borderGlow" x1="0" y1="0" x2="240" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00F2FE" stop-opacity="0.8"/>
+      <stop offset="0.5" stop-color="#8A2BE2" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#00F2FE" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+</svg>
