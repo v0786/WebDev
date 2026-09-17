@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User, ArrowRight, Instagram, Mail, Code2, Cpu } from 'lucide-react';
 import { PERSONAL_INFO } from '../../config/personal';
 import { Button } from '../ui/Button';
 
 export const AboutMe: React.FC = () => {
+  const [imageSrc, setImageSrc] = useState<string>(PERSONAL_INFO.profilePhotoPlaceholder);
+
   return (
     <section id="about" className="py-24 relative bg-dark-950 border-t border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -16,8 +18,9 @@ export const AboutMe: React.FC = () => {
               
               <div className="rounded-[22px] bg-dark-900 overflow-hidden border border-white/10 p-4">
                 <img
-                  src={PERSONAL_INFO.profilePhotoPlaceholder}
-                  alt="Vaibhav Sonkusare Profile Photograph Placeholder"
+                  src={imageSrc}
+                  onError={() => setImageSrc(`${import.meta.env.BASE_URL}images/profile-placeholder.svg`)}
+                  alt="Vaibhav Sonkusare"
                   className="w-full aspect-square rounded-2xl object-cover bg-dark-850 transition-transform duration-500 group-hover:scale-102"
                 />
 
@@ -39,12 +42,12 @@ export const AboutMe: React.FC = () => {
             </div>
 
             {/* Direct Connect Pills */}
-            <div className="mt-8 flex items-center gap-3">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 w-full">
               <a
                 href={PERSONAL_INFO.instagramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-dark-850 border border-white/10 hover:border-neon-cyan/40 text-xs text-slate-300 hover:text-white transition-colors"
+                className="flex-1 sm:flex-initial min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-dark-850 border border-white/10 hover:border-neon-cyan/40 text-xs text-slate-300 hover:text-white transition-colors"
               >
                 <Instagram className="w-4 h-4 text-pink-400" />
                 <span>@{PERSONAL_INFO.instagramHandle}</span>
@@ -52,7 +55,7 @@ export const AboutMe: React.FC = () => {
 
               <a
                 href={`mailto:${PERSONAL_INFO.email}`}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-dark-850 border border-white/10 hover:border-neon-cyan/40 text-xs text-slate-300 hover:text-white transition-colors"
+                className="flex-1 sm:flex-initial min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-dark-850 border border-white/10 hover:border-neon-cyan/40 text-xs text-slate-300 hover:text-white transition-colors"
               >
                 <Mail className="w-4 h-4 text-neon-cyan" />
                 <span>Email Me</span>
@@ -112,7 +115,7 @@ export const AboutMe: React.FC = () => {
               </Button>
 
               <div className="text-xs text-slate-400 font-mono">
-                [ Photo & Logo ready to customize in <code className="text-neon-cyan">src/config/personal.ts</code> ]
+                Founder & Lead Creator • Vaibhav Sonkusare
               </div>
             </div>
 

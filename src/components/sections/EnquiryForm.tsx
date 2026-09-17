@@ -194,10 +194,13 @@ export const EnquiryForm: React.FC = () => {
               <input
                 id="fullName"
                 type="text"
+                autoComplete="name"
+                autoCapitalize="words"
+                enterKeyHint="next"
                 placeholder="e.g. Sarah Jenkins"
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                className={`w-full px-4 py-3 rounded-xl bg-dark-850 border text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all ${
+                className={`w-full px-4 py-3 rounded-xl bg-dark-850 border text-base text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all ${
                   errors.fullName ? 'border-rose-500' : 'border-white/10'
                 }`}
               />
@@ -212,10 +215,13 @@ export const EnquiryForm: React.FC = () => {
               <input
                 id="businessName"
                 type="text"
+                autoComplete="organization"
+                autoCapitalize="words"
+                enterKeyHint="next"
                 placeholder="e.g. NorthStar Advisory"
                 value={formData.businessName}
                 onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                className={`w-full px-4 py-3 rounded-xl bg-dark-850 border text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all ${
+                className={`w-full px-4 py-3 rounded-xl bg-dark-850 border text-base text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all ${
                   errors.businessName ? 'border-rose-500' : 'border-white/10'
                 }`}
               />
@@ -230,17 +236,22 @@ export const EnquiryForm: React.FC = () => {
               <input
                 id="email"
                 type="email"
+                inputMode="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                enterKeyHint="next"
                 placeholder="sarah@northstar.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className={`w-full px-4 py-3 rounded-xl bg-dark-850 border text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all ${
+                className={`w-full px-4 py-3 rounded-xl bg-dark-850 border text-base text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all ${
                   errors.email ? 'border-rose-500' : 'border-white/10'
                 }`}
               />
               {errors.email && <p className="text-xs text-rose-400">{errors.email}</p>}
             </div>
 
-            {/* Country / Timezone */}
+            {/* Country / Location */}
             <div className="space-y-1.5">
               <label htmlFor="country" className="block text-xs font-mono text-slate-300">
                 Country / Location <span className="text-rose-400">*</span>
@@ -248,10 +259,12 @@ export const EnquiryForm: React.FC = () => {
               <input
                 id="country"
                 type="text"
+                autoComplete="country-name"
+                enterKeyHint="next"
                 placeholder="e.g. United States, UK, Canada..."
                 value={formData.country}
                 onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                className={`w-full px-4 py-3 rounded-xl bg-dark-850 border text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all ${
+                className={`w-full px-4 py-3 rounded-xl bg-dark-850 border text-base text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all ${
                   errors.country ? 'border-rose-500' : 'border-white/10'
                 }`}
               />
@@ -267,7 +280,7 @@ export const EnquiryForm: React.FC = () => {
                 id="websiteType"
                 value={formData.websiteType}
                 onChange={(e) => setFormData({ ...formData, websiteType: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl bg-dark-850 border border-white/10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all"
+                className="w-full px-4 py-3 rounded-xl bg-dark-850 border border-white/10 text-base text-white focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all"
               >
                 {websiteTypes.map((type) => (
                   <option key={type} value={type} className="bg-dark-900 text-white">
@@ -286,7 +299,7 @@ export const EnquiryForm: React.FC = () => {
                 id="budget"
                 value={formData.budget}
                 onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl bg-dark-850 border border-white/10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all"
+                className="w-full px-4 py-3 rounded-xl bg-dark-850 border border-white/10 text-base text-white focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all"
               >
                 {budgetOptions.map((b) => (
                   <option key={b} value={b} className="bg-dark-900 text-white">
@@ -305,7 +318,7 @@ export const EnquiryForm: React.FC = () => {
                 id="timeline"
                 value={formData.timeline}
                 onChange={(e) => setFormData({ ...formData, timeline: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl bg-dark-850 border border-white/10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all"
+                className="w-full px-4 py-3 rounded-xl bg-dark-850 border border-white/10 text-base text-white focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all"
               >
                 {timelineOptions.map((t) => (
                   <option key={t} value={t} className="bg-dark-900 text-white">
@@ -324,7 +337,7 @@ export const EnquiryForm: React.FC = () => {
                 id="preferredCommunication"
                 value={formData.preferredCommunication}
                 onChange={(e) => setFormData({ ...formData, preferredCommunication: e.target.value as any })}
-                className="w-full px-4 py-3 rounded-xl bg-dark-850 border border-white/10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all"
+                className="w-full px-4 py-3 rounded-xl bg-dark-850 border border-white/10 text-base text-white focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all"
               >
                 <option value="Email" className="bg-dark-900 text-white">Email (Default)</option>
                 <option value="WhatsApp" className="bg-dark-900 text-white">WhatsApp</option>
@@ -340,10 +353,15 @@ export const EnquiryForm: React.FC = () => {
               <input
                 id="existingWebsiteUrl"
                 type="url"
+                inputMode="url"
+                autoComplete="url"
+                autoCapitalize="none"
+                spellCheck={false}
+                enterKeyHint="next"
                 placeholder="https://yourcurrentsite.com"
                 value={formData.existingWebsiteUrl}
                 onChange={(e) => setFormData({ ...formData, existingWebsiteUrl: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl bg-dark-850 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all"
+                className="w-full px-4 py-3 rounded-xl bg-dark-850 border border-white/10 text-base text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all"
               />
             </div>
 
@@ -355,10 +373,13 @@ export const EnquiryForm: React.FC = () => {
               <input
                 id="referenceWebsites"
                 type="text"
+                autoCapitalize="none"
+                spellCheck={false}
+                enterKeyHint="next"
                 placeholder="e.g. stripe.com, linear.app"
                 value={formData.referenceWebsites}
                 onChange={(e) => setFormData({ ...formData, referenceWebsites: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl bg-dark-850 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all"
+                className="w-full px-4 py-3 rounded-xl bg-dark-850 border border-white/10 text-base text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all"
               />
             </div>
 
@@ -372,10 +393,12 @@ export const EnquiryForm: React.FC = () => {
             <textarea
               id="description"
               rows={4}
+              spellCheck={true}
+              enterKeyHint="done"
               placeholder="Tell me about your business, the key pages or features you need, and the primary action you want visitors to take..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className={`w-full px-4 py-3 rounded-xl bg-dark-850 border text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all resize-y ${
+              className={`w-full px-4 py-3 rounded-xl bg-dark-850 border text-base text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-all resize-y ${
                 errors.description ? 'border-rose-500' : 'border-white/10'
               }`}
             />
@@ -384,16 +407,16 @@ export const EnquiryForm: React.FC = () => {
 
           {/* Bottom Actions */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-xs text-slate-400">
+            <div className="flex items-center gap-2 text-xs text-slate-400 text-center sm:text-left">
               <AlertCircle className="w-4 h-4 text-neon-cyan shrink-0" />
               <span>Response guaranteed within 24 hours. No sales spam.</span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={handleCopyBrief}
-                className="flex-1 sm:flex-none px-4 py-3 rounded-xl bg-dark-800 hover:bg-dark-700 border border-white/10 text-xs font-medium text-slate-300 hover:text-white flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-700 border border-white/10 text-xs font-medium text-slate-300 hover:text-white flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
                 <Copy className="w-3.5 h-3.5 text-neon-cyan" />
                 <span>Copy Brief</span>
@@ -402,7 +425,7 @@ export const EnquiryForm: React.FC = () => {
               <button
                 type="button"
                 onClick={handleWhatsAppSubmit}
-                className="flex-1 sm:flex-none px-4 py-3 rounded-xl bg-emerald-950/70 hover:bg-emerald-900/80 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-emerald-950/70 hover:bg-emerald-900/80 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 title="Send inquiry via WhatsApp"
               >
                 <MessageCircle className="w-3.5 h-3.5" />
@@ -411,7 +434,7 @@ export const EnquiryForm: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-neon-cyan via-neon-electric to-neon-violet text-dark-950 font-bold text-sm shadow-lg shadow-neon-cyan/20 hover:shadow-neon-cyan/35 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl bg-gradient-to-r from-neon-cyan via-neon-electric to-neon-violet text-dark-950 font-bold text-sm shadow-lg shadow-neon-cyan/20 hover:shadow-neon-cyan/35 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 <Send className="w-4 h-4" />
                 <span>Send Project Email</span>

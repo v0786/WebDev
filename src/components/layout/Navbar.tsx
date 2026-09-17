@@ -84,21 +84,23 @@ export const Navbar: React.FC = () => {
             </Button>
           </div>
 
-          {/* Mobile Menu Toggle Button */}
+          {/* Mobile Header Actions */}
           <div className="flex md:hidden items-center gap-2">
             <Button 
               href="#enquire" 
               variant="primary" 
               size="sm"
-              className="text-xs px-3 py-1.5"
+              className="text-xs px-3.5 py-2.5 min-h-[44px]"
             >
               Enquire
             </Button>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl bg-dark-850 border border-white/10 text-slate-300 hover:text-white focus:outline-none"
-              aria-label="Toggle navigation menu"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl bg-dark-850 border border-white/10 text-slate-300 hover:text-white hover:border-neon-cyan/40 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 transition-colors"
+              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-nav-menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -108,42 +110,45 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-dark-900/95 backdrop-blur-2xl border-b border-white/10 px-6 py-6 space-y-4 animate-in fade-in slide-in-from-top-4 duration-200">
+        <div 
+          id="mobile-nav-menu"
+          className="md:hidden bg-dark-950/95 backdrop-blur-2xl border-b border-white/10 px-4 sm:px-6 py-6 space-y-4 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-200"
+        >
           <div className="flex items-center justify-between pb-3 border-b border-white/10">
             <div className="text-xs text-slate-400 font-mono flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-neon-cyan" />
               <span>Creative Web Studio</span>
             </div>
-            <div className="px-2 py-0.5 rounded bg-neon-cyan/10 text-neon-cyan text-[10px] font-mono border border-neon-cyan/20">
+            <div className="px-2.5 py-1 rounded bg-neon-cyan/10 text-neon-cyan text-[10px] font-mono border border-neon-cyan/20">
               USD / Global
             </div>
           </div>
 
-          <div className="flex flex-col space-y-3">
+          <nav className="flex flex-col space-y-1.5" aria-label="Mobile Navigation">
             {navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-base font-medium text-slate-200 hover:text-neon-cyan py-1 transition-colors"
+                className="min-h-[48px] flex items-center px-3.5 rounded-xl hover:bg-white/5 active:bg-white/10 text-base font-medium text-slate-200 hover:text-neon-cyan transition-colors"
               >
                 {link.name}
               </a>
             ))}
-          </div>
+          </nav>
 
-          <div className="pt-4 border-t border-white/10 flex flex-col gap-2.5">
+          <div className="pt-4 border-t border-white/10 flex flex-col gap-3">
             <Button 
               href="#enquire" 
               variant="primary" 
-              size="md"
-              className="w-full justify-center"
+              size="lg"
+              className="w-full justify-center min-h-[48px]"
               onClick={() => setMobileMenuOpen(false)}
             >
               Start a Project
             </Button>
-            <div className="text-center text-xs text-slate-400">
-              Direct email: <a href={`mailto:${PERSONAL_INFO.email}`} className="text-neon-cyan hover:underline">{PERSONAL_INFO.email}</a>
+            <div className="text-center text-xs text-slate-400 py-1">
+              Direct email: <a href={`mailto:${PERSONAL_INFO.email}`} className="text-neon-cyan hover:underline p-1 inline-block">{PERSONAL_INFO.email}</a>
             </div>
           </div>
         </div>

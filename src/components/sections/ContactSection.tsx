@@ -45,13 +45,13 @@ export const ContactSection: React.FC = () => {
         </div>
 
         {/* Primary & Secondary Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 max-w-xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row items-stretch justify-center gap-3.5 pt-4 max-w-2xl mx-auto">
           <Button
             href="#enquire"
             variant="primary"
             size="lg"
             icon={<Sparkles className="w-4 h-4" />}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto min-h-[48px] justify-center"
           >
             Start a Project
           </Button>
@@ -61,7 +61,7 @@ export const ContactSection: React.FC = () => {
             variant="secondary"
             size="lg"
             icon={<Mail className="w-4 h-4 text-neon-cyan" />}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto min-h-[48px] justify-center"
           >
             Email Me
           </Button>
@@ -69,7 +69,7 @@ export const ContactSection: React.FC = () => {
           {/* WhatsApp Direct Option */}
           <button
             onClick={handleWhatsAppClick}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-base px-6 py-3.5 rounded-xl bg-dark-800/90 text-white border border-white/10 hover:border-emerald-500/40 hover:bg-dark-750 transition-all font-semibold cursor-pointer shadow-md group"
+            className="w-full sm:w-auto min-h-[48px] inline-flex items-center justify-center gap-2 text-base px-6 py-3 rounded-xl bg-dark-800/90 text-white border border-white/10 hover:border-emerald-500/40 hover:bg-dark-750 transition-all font-semibold cursor-pointer shadow-md group"
           >
             <MessageCircle className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
             <span>WhatsApp</span>
@@ -80,7 +80,7 @@ export const ContactSection: React.FC = () => {
             href={PERSONAL_INFO.instagramUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-base px-6 py-3.5 rounded-xl bg-dark-800/90 text-white border border-white/10 hover:border-pink-500/40 hover:bg-dark-750 transition-all font-semibold shadow-md group"
+            className="w-full sm:w-auto min-h-[48px] inline-flex items-center justify-center gap-2 text-base px-6 py-3 rounded-xl bg-dark-800/90 text-white border border-white/10 hover:border-pink-500/40 hover:bg-dark-750 transition-all font-semibold shadow-md group"
           >
             <Instagram className="w-4 h-4 text-pink-400 group-hover:scale-110 transition-transform" />
             <span>Instagram</span>
@@ -99,14 +99,18 @@ export const ContactSection: React.FC = () => {
 
           <div className="p-3 rounded-xl bg-dark-850/60 border border-white/5">
             <span className="text-emerald-400/90 block text-[10px] uppercase tracking-wider mb-0.5 font-bold">Direct WhatsApp:</span>
-            <a 
-              href={`https://wa.me/918652140271?text=${encodeURIComponent("Hi Vaibhav, I'm interested in starting a website project with you.")}`} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="text-emerald-400 hover:underline transition-colors"
-            >
-              +91 8652140271
-            </a>
+            {PERSONAL_INFO.isWhatsAppConfigured && PERSONAL_INFO.whatsAppNumber ? (
+              <a 
+                href={`https://wa.me/${PERSONAL_INFO.whatsAppNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent("Hi Vaibhav, I'm interested in starting a website project with you.")}`} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-emerald-400 hover:underline transition-colors"
+              >
+                {PERSONAL_INFO.whatsAppNumber}
+              </a>
+            ) : (
+              <span className="text-slate-300">Available upon request</span>
+            )}
           </div>
           
           <div className="p-3 rounded-xl bg-dark-850/60 border border-white/5">

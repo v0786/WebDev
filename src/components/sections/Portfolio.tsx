@@ -106,7 +106,7 @@ export const Portfolio: React.FC = () => {
               <div className="p-6 pt-0 mt-4">
                 <button
                   onClick={() => setSelectedProject(project)}
-                  className="w-full py-3 px-4 rounded-xl bg-dark-800 hover:bg-dark-750 border border-white/10 hover:border-neon-cyan/40 text-xs font-semibold text-slate-200 hover:text-neon-cyan flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  className="w-full min-h-[44px] py-3 px-4 rounded-xl bg-dark-800 hover:bg-dark-750 border border-white/10 hover:border-neon-cyan/40 text-xs font-semibold text-slate-200 hover:text-neon-cyan flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   <Eye className="w-4 h-4" />
                   <span>View Case Study & Spec</span>
@@ -119,7 +119,7 @@ export const Portfolio: React.FC = () => {
         </div>
 
         {/* Custom Project CTA Banner */}
-        <div className="mt-16 p-8 rounded-3xl bg-gradient-to-r from-dark-900 via-dark-850 to-dark-900 border border-white/15 flex flex-col lg:flex-row items-center justify-between gap-6">
+        <div className="mt-16 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-dark-900 via-dark-850 to-dark-900 border border-white/15 flex flex-col lg:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center lg:text-left">
             <h3 className="text-xl sm:text-2xl font-bold text-white">Have a unique business or product to launch?</h3>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
@@ -131,6 +131,7 @@ export const Portfolio: React.FC = () => {
             variant="primary"
             size="md"
             icon={<ArrowUpRight className="w-4 h-4" />}
+            className="w-full sm:w-auto min-h-[44px] justify-center"
           >
             Start a Project Enquiry
           </Button>

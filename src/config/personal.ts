@@ -21,6 +21,7 @@ export interface PersonalConfig {
   // Visual Assets
   logoPlaceholder: string;
   profilePhotoPlaceholder: string;
+  heroBackgroundImage: string;
   
   // About Me Section
   aboutHeading: string;
@@ -35,23 +36,25 @@ export interface PersonalConfig {
 export const PERSONAL_INFO: PersonalConfig = {
   brandName: "Vaibhav Sonkusare — Creative Web Studio",
   fullName: "Vaibhav Sonkusare",
-  heroHeadline: "Ideas into Digital Experiences.",
+  heroHeadline: "Ideas Into Digital Experiences.",
   heroSupportingHeadline: "Modern websites, built with creativity and AI.",
-  heroSupportingParagraph: "I help businesses, entrepreneurs, and creators turn their ideas into professional websites using a combination of AI-powered workflows, no-code tools, and custom development.",
+  heroSupportingParagraph: "I create modern, responsive websites using AI-powered workflows, no-code tools, and custom development.",
   
   // Verified Contact Points
   email: "sonkusare.doc@gmail.com",
   instagramHandle: "sonkusare_vaibhav",
   instagramUrl: "https://www.instagram.com/sonkusare_vaibhav/",
   
-  // WhatsApp: Verified International Contact
-  whatsAppNumber: "+91 8652140271",
-  isWhatsAppConfigured: true,
+  // WhatsApp: Configurable. Will activate once phone number is confirmed.
+  whatsAppNumber: "",
+  isWhatsAppConfigured: false,
   
   // Custom Domain & Assets
   domainPlaceholder: "https://v0786.github.io/WebDev/",
-  logoPlaceholder: "/images/logo.png",
-  profilePhotoPlaceholder: "/images/profile-placeholder.svg",
+  // Visual Assets (dynamic GitHub Pages base path)
+  logoPlaceholder: `${import.meta.env.BASE_URL}images/sonkusare-vaibhav-logo.png`,
+  heroBackgroundImage: `${import.meta.env.BASE_URL}images/vaibhav-bg.jpg`,
+  profilePhotoPlaceholder: `${import.meta.env.BASE_URL}images/vaibhav-sonkusare.jpg`,
   
   // About Me Section Content
   aboutHeading: "A Little About Me",

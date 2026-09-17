@@ -101,7 +101,7 @@ export const Services: React.FC = () => {
               <div className="pt-4 border-t border-white/5">
                 <a
                   href="#enquire"
-                  className="w-full py-2 px-3 rounded-xl bg-dark-800 hover:bg-dark-750 text-xs font-semibold text-neon-cyan hover:text-white flex items-center justify-center gap-1.5 transition-all border border-white/5 hover:border-neon-cyan/30"
+                  className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-dark-800 hover:bg-dark-750 text-xs font-semibold text-neon-cyan hover:text-white flex items-center justify-center gap-1.5 transition-all border border-white/5 hover:border-neon-cyan/30"
                 >
                   <span>{service.ctaText}</span>
                   <ArrowRight className="w-3.5 h-3.5" />

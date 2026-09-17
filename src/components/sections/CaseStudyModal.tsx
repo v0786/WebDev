@@ -34,7 +34,7 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({ project, onClose
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+          className="absolute top-4 right-4 sm:top-5 sm:right-5 min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-neon-cyan/50"
           aria-label="Close case study preview"
         >
           <X className="w-5 h-5" />

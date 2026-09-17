@@ -38,41 +38,43 @@ export const Footer: React.FC = () => {
           {/* Col 2: Navigation Links */}
           <div className="space-y-3">
             <h4 className="text-white font-mono text-xs uppercase tracking-wider font-semibold">Navigation</h4>
-            <ul className="space-y-2 text-xs">
-              <li><a href="#" className="hover:text-neon-cyan transition-colors">Home</a></li>
-              <li><a href="#services" className="hover:text-neon-cyan transition-colors">Services</a></li>
-              <li><a href="#work" className="hover:text-neon-cyan transition-colors">Demonstration Portfolio</a></li>
-              <li><a href="#process" className="hover:text-neon-cyan transition-colors">How I Work & Pricing</a></li>
-              <li><a href="#about" className="hover:text-neon-cyan transition-colors">A Little About Me</a></li>
-              <li><a href="#enquire" className="hover:text-neon-cyan transition-colors">Start a Project</a></li>
+            <ul className="space-y-1 text-xs">
+              <li><a href="#" className="py-1.5 inline-block text-slate-300 hover:text-neon-cyan transition-colors">Home</a></li>
+              <li><a href="#services" className="py-1.5 inline-block text-slate-300 hover:text-neon-cyan transition-colors">Services</a></li>
+              <li><a href="#work" className="py-1.5 inline-block text-slate-300 hover:text-neon-cyan transition-colors">Demonstration Portfolio</a></li>
+              <li><a href="#process" className="py-1.5 inline-block text-slate-300 hover:text-neon-cyan transition-colors">How I Work & Pricing</a></li>
+              <li><a href="#about" className="py-1.5 inline-block text-slate-300 hover:text-neon-cyan transition-colors">A Little About Me</a></li>
+              <li><a href="#enquire" className="py-1.5 inline-block text-slate-300 hover:text-neon-cyan transition-colors">Start a Project</a></li>
             </ul>
           </div>
 
           {/* Col 3: Direct Inquiries */}
           <div className="space-y-3">
             <h4 className="text-white font-mono text-xs uppercase tracking-wider font-semibold">Direct Inquiries</h4>
-            <ul className="space-y-2 text-xs font-mono">
+            <ul className="space-y-1 text-xs font-mono">
               <li>
-                <a href={`mailto:${PERSONAL_INFO.email}`} className="text-slate-300 hover:text-neon-cyan transition-colors break-all">
+                <a href={`mailto:${PERSONAL_INFO.email}`} className="py-1.5 inline-block text-slate-300 hover:text-neon-cyan transition-colors break-all">
                   {PERSONAL_INFO.email}
                 </a>
               </li>
-              <li>
-                <a 
-                  href={`https://wa.me/918652140271?text=${encodeURIComponent("Hi Vaibhav, I'm interested in starting a website project with you.")}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="text-emerald-400 hover:underline transition-colors"
-                >
-                  WhatsApp: +91 8652140271
-                </a>
-              </li>
+              {PERSONAL_INFO.isWhatsAppConfigured && PERSONAL_INFO.whatsAppNumber && (
+                <li>
+                  <a 
+                    href={`https://wa.me/${PERSONAL_INFO.whatsAppNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent("Hi Vaibhav, I'm interested in starting a website project with you.")}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="py-1.5 inline-block text-emerald-400 hover:underline transition-colors"
+                  >
+                    WhatsApp: {PERSONAL_INFO.whatsAppNumber}
+                  </a>
+                </li>
+              )}
               <li>
                 <a 
                   href={PERSONAL_INFO.instagramUrl} 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="text-slate-300 hover:text-pink-400 transition-colors"
+                  className="py-1.5 inline-block text-slate-300 hover:text-pink-400 transition-colors"
                 >
                   @{PERSONAL_INFO.instagramHandle}
                 </a>
@@ -83,9 +85,9 @@ export const Footer: React.FC = () => {
               <li className="pt-1">
                 <button
                   onClick={() => setPrivacyOpen(true)}
-                  className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  className="min-h-[44px] inline-flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer py-2 focus:outline-none focus:ring-1 focus:ring-neon-cyan/50"
                 >
-                  <Shield className="w-3 h-3 text-neon-cyan" />
+                  <Shield className="w-3.5 h-3.5 text-neon-cyan" />
                   <span>Privacy Policy</span>
                 </button>
               </li>
@@ -105,7 +107,7 @@ export const Footer: React.FC = () => {
 
           <button
             onClick={scrollToTop}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-dark-850 hover:bg-dark-800 border border-white/10 text-slate-300 hover:text-white transition-colors text-xs cursor-pointer"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-dark-850 hover:bg-dark-800 border border-white/10 text-slate-300 hover:text-white transition-colors text-xs cursor-pointer focus:outline-none focus:ring-1 focus:ring-neon-cyan/50"
             aria-label="Scroll back to top"
           >
             <span>Back to top</span>
