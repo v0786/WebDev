@@ -124,34 +124,42 @@ const MENU_ITEMS: MenuItem[] = [
   },
 ];
 
-const GALLERY_IMAGES = [
+const GALLERY_IMAGES_DATA = [
   {
     title: 'Culinary Precision',
     category: 'Plating Architecture',
     subtitle: 'Every plate is an orchestrated harmony of flavor, texture, and visual balance.',
-    image: '/demos/restaurant/plating.jpg',
+    file: 'demos/restaurant/plating.jpg',
   },
   {
     title: 'The Wine Sanctuary',
     category: 'Cellar Archive',
     subtitle: 'Over 1,200 temperature-regulated vintages from renowned terroirs across France and Italy.',
-    image: '/demos/restaurant/wine-cellar.jpg',
+    file: 'demos/restaurant/wine-cellar.jpg',
   },
   {
     title: 'Grand Dining Salon',
     category: 'Atmosphere',
     subtitle: 'Acoustically softened architecture with warm amber chandeliers and custom linen appointments.',
-    image: '/demos/restaurant/dining-salon.jpg',
+    file: 'demos/restaurant/dining-salon.jpg',
   },
   {
     title: 'Chef’s Counter Experience',
     category: 'Private Seating',
     subtitle: 'An intimate 8-seat culinary theater observing our brigade execute 10 bespoke courses.',
-    image: '/demos/restaurant/chef-counter.jpg',
+    file: 'demos/restaurant/chef-counter.jpg',
   },
 ];
 
 export const RestaurantDemo: React.FC = () => {
+  // Resolve image paths with the Vite base URL so they work on GitHub Pages (/WebDev/)
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const img = (file: string) => `${base}/${file}`;
+
+  const GALLERY_IMAGES = GALLERY_IMAGES_DATA.map((g) => ({ ...g, image: img(g.file) }));
+  const heroImg   = img('demos/restaurant/hero-bg.jpg');
+  const platingImg = img('demos/restaurant/plating.jpg');
+
   const [activeCategory, setActiveCategory] = useState('tasting');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [reservationModalOpen, setReservationModalOpen] = useState(false);
@@ -290,7 +298,7 @@ export const RestaurantDemo: React.FC = () => {
       <header id="hero" className="relative pt-20 pb-28 md:pt-28 md:pb-36 overflow-hidden border-b border-stone-800/60">
         {/* Real hero background image with rich dark overlay */}
         <img
-          src="/demos/restaurant/hero-bg.jpg"
+          src={heroImg}
           alt="L'Aura fine dining restaurant interior"
           className="absolute inset-0 w-full h-full object-cover object-center select-none pointer-events-none"
           aria-hidden="true"
@@ -457,7 +465,7 @@ export const RestaurantDemo: React.FC = () => {
               <Tilt rotationFactor={5} className="rounded-3xl border border-[#D4AF37]/25 shadow-2xl relative overflow-hidden">
                 {/* Chef plating image as visual panel background */}
                 <img
-                  src="/demos/restaurant/plating.jpg"
+                  src={platingImg}
                   alt="Chef's artisan plating at L'Aura"
                   className="w-full h-56 object-cover object-center"
                 />
