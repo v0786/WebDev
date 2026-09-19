@@ -103,7 +103,7 @@ export const Services: React.FC = () => {
               <span className="font-serif italic font-normal text-[#B8FF00] lowercase">directory</span>.
             </h2>
           </div>
-          <div className="mt-4 md:mt-0 max-w-md text-xs sm:text-sm font-mono text-bone-300/80 uppercase tracking-wider">
+          <div className="mt-4 md:mt-0 max-w-md text-xs sm:text-sm font-mono text-bone-300 uppercase tracking-wider">
             An agency-grade service hierarchy built to deliver measurable business clarity and visual authority.
           </div>
         </div>
@@ -145,7 +145,7 @@ export const Services: React.FC = () => {
                     <span className="text-base sm:text-lg font-mono text-[#B8FF00] font-bold">
                       {item.number}
                     </span>
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-bone-300/80">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-bone-300">
                       {item.subtitle}
                     </span>
                   </div>
@@ -157,7 +157,7 @@ export const Services: React.FC = () => {
                     </h3>
                     
                     {/* Always visible brief description */}
-                    <p className="text-xs sm:text-sm font-sans text-bone-300/80 leading-relaxed font-light">
+                    <p className="text-xs sm:text-sm font-sans text-bone-300 leading-relaxed font-light">
                       {item.explanation}
                     </p>
 
@@ -167,7 +167,7 @@ export const Services: React.FC = () => {
                         
                         {/* Deliverables */}
                         <div className="space-y-1.5">
-                          <div className="text-[10px] font-mono uppercase tracking-widest text-bone-300/80">
+                          <div className="text-[10px] font-mono uppercase tracking-widest text-bone-300">
                             DELIVERABLES
                           </div>
                           <div className="flex flex-wrap gap-2">
@@ -184,7 +184,7 @@ export const Services: React.FC = () => {
 
                         {/* Relevant Technologies */}
                         <div className="space-y-1.5">
-                          <div className="text-[10px] font-mono uppercase tracking-widest text-bone-300/80">
+                          <div className="text-[10px] font-mono uppercase tracking-widest text-bone-300">
                             RELEVANT TECHNOLOGIES
                           </div>
                           <div className="flex flex-wrap gap-1.5">

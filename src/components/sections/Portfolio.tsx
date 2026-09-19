@@ -103,7 +103,7 @@ export const Portfolio: React.FC = () => {
                     </div>
 
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
-                      <p className="text-xs sm:text-sm font-sans text-bone-300/80 max-w-xl font-light">
+                      <p className="text-xs sm:text-sm font-sans text-bone-300 max-w-xl font-light">
                         {project.shortDescription}
                       </p>
                       <div className="flex flex-wrap items-center gap-3 shrink-0">
@@ -186,7 +186,7 @@ export const Portfolio: React.FC = () => {
                         <span className="text-3xl sm:text-4xl font-serif italic text-[#B8FF00] font-bold">
                           {project.index}
                         </span>
-                        <span className="text-xs font-mono uppercase tracking-widest text-bone-300/70">
+                        <span className="text-xs font-mono uppercase tracking-widest text-bone-300">
                           // {project.category}
                         </span>
                       </div>
@@ -195,7 +195,7 @@ export const Portfolio: React.FC = () => {
                         {project.title}
                       </h3>
 
-                      <p className="text-xs sm:text-sm font-sans text-bone-300/80 font-light leading-relaxed">
+                      <p className="text-xs sm:text-sm font-sans text-bone-300 font-light leading-relaxed">
                         {project.shortDescription}
                       </p>
 
