@@ -41,7 +41,17 @@ export const HeroSection: React.FC = () => {
   const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
   const [isHovered, setIsHovered] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -57,6 +67,9 @@ export const HeroSection: React.FC = () => {
 
     video.defaultMuted = true;
     video.muted = true;
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
 
     const playVideo = () => {
       const playPromise = video.play();
@@ -78,7 +91,7 @@ export const HeroSection: React.FC = () => {
     };
 
     playVideo();
-  }, []);
+  }, [isMobile]);
 
   const toggleSound = () => {
     if (videoRef.current) {
@@ -89,9 +102,9 @@ export const HeroSection: React.FC = () => {
   };
 
   return (
-    <section className="relative w-screen h-screen overflow-hidden bg-black text-[#E8DFD8] font-sans selection:bg-[#cbb59d] selection:text-black cursor-none">
-      {/* ================= 1. MINIMAL CUSTOM CURSOR ================= */}
-      {cursorPos.x >= 0 && (
+    <section className="relative w-screen min-h-[100dvh] h-[100dvh] overflow-hidden bg-black text-[#E8DFD8] font-sans selection:bg-[#cbb59d] selection:text-black cursor-none">
+      {/* ================= 1. MINIMAL CUSTOM CURSOR (DESKTOP ONLY) ================= */}
+      {!isMobile && cursorPos.x >= 0 && (
         <motion.div
           className="fixed top-0 left-0 pointer-events-none z-50 rounded-full border border-[#D4AF37]/40 flex items-center justify-center backdrop-blur-[1px]"
           animate={{
@@ -105,26 +118,44 @@ export const HeroSection: React.FC = () => {
         />
       )}
 
-      {/* ================= 2. FIXED RIGHT-ALIGNED VIDEO LAYER ================= */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-black flex items-center justify-end">
+      {/* ================= 2. RESPONSIVE VIDEO LAYER (9:16 MOBILE & 16:9 DESKTOP) ================= */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-black flex items-center justify-center md:justify-end">
         <video
           ref={videoRef}
+          key={isMobile ? 'mobile-9-16' : 'desktop-16-9'}
           autoPlay
           muted
           loop
           playsInline
           preload="auto"
-          className="h-screen w-auto max-w-none object-contain origin-right scale-95 md:scale-[0.98] lg:scale-100"
+          className={
+            isMobile
+              ? "w-full h-full object-cover object-center opacity-65 sm:opacity-80"
+              : "h-screen w-auto max-w-none object-contain origin-right scale-95 md:scale-[0.98] lg:scale-100"
+          }
         >
+          {/* 9:16 Vertical video candidates on mobile */}
+          {isMobile && (
+            <>
+              <source src={`${import.meta.env.BASE_URL}hero-mobile.mp4`} type="video/mp4" />
+              <source src="./hero-mobile.mp4" type="video/mp4" />
+              <source src={`${import.meta.env.BASE_URL}hero_mobile.mp4`} type="video/mp4" />
+              <source src="./hero_mobile.mp4" type="video/mp4" />
+            </>
+          )}
+          {/* Universal fallback / desktop source */}
           <source src={`${import.meta.env.BASE_URL}hero.mp4`} type="video/mp4" />
           <source src="./hero.mp4" type="video/mp4" />
         </video>
 
-        {/* Seamless Soft Left Edge Blend */}
-        <div className="absolute inset-y-0 left-0 w-full sm:w-2/3 md:w-1/2 bg-gradient-to-r from-black via-black/85 to-transparent pointer-events-none" />
+        {/* Mobile Full-Bleed Vignette Shield for High Text Contrast */}
+        <div className="block md:hidden absolute inset-0 bg-gradient-to-b from-black/85 via-black/60 to-black/95 pointer-events-none z-[1]" />
+
+        {/* Desktop Soft Left Edge Blend */}
+        <div className="hidden md:block absolute inset-y-0 left-0 w-full sm:w-2/3 md:w-1/2 bg-gradient-to-r from-black via-black/85 to-transparent pointer-events-none z-[1]" />
 
         {/* ================= 3. ANIMATED WATERMARK EMBLEM ================= */}
-        <div className="absolute bottom-6 right-6 lg:bottom-10 lg:right-12 pointer-events-none flex items-center justify-center z-10">
+        <div className="hidden sm:flex absolute bottom-6 right-6 lg:bottom-10 lg:right-12 pointer-events-none items-center justify-center z-10">
           <div className="relative flex items-center justify-center">
             <div className="absolute w-36 h-36 bg-black/85 rounded-full blur-xl" />
 
@@ -143,7 +174,7 @@ export const HeroSection: React.FC = () => {
               <img
                 src={watermarkImg}
                 alt="Insignia"
-                className="w-24 h-24 lg:w-28 lg:h-28 object-contain drop-shadow-[0_0_15px_rgba(212,175,55,0.25)] opacity-80"
+                className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 object-contain drop-shadow-[0_0_15px_rgba(212,175,55,0.25)] opacity-80"
               />
             </motion.div>
           </div>
@@ -228,7 +259,7 @@ export const HeroSection: React.FC = () => {
             {/* Massive Condensed Headline */}
             <motion.div variants={fadeUpVariants} className="relative mb-3.5 select-none">
               <h1
-                className="text-6xl sm:text-7xl md:text-8xl lg:text-[7.2rem] xl:text-[7.8rem] tracking-tight uppercase leading-[0.83]"
+                className="text-[3.25rem] xs:text-6xl sm:text-7xl md:text-8xl lg:text-[7.2rem] xl:text-[7.8rem] tracking-tight uppercase leading-[0.86] sm:leading-[0.83]"
                 style={{ fontFamily: "'Bebas Neue', sans-serif" }}
               >
                 {/* Line 1: I BUILD */}
@@ -251,7 +282,7 @@ export const HeroSection: React.FC = () => {
             {/* Subtitle Technologies */}
             <motion.div variants={fadeUpVariants} className="mb-4">
               <p
-                className="text-[10px] sm:text-[11px] md:text-xs font-normal tracking-[0.28em] uppercase text-[#8C6D4F]"
+                className="text-[9.5px] sm:text-[11px] md:text-xs font-normal tracking-[0.2em] sm:tracking-[0.28em] uppercase text-[#8C6D4F]"
                 style={{ fontFamily: "'Montserrat', sans-serif" }}
               >
                 CREATIVE DEVELOPER <span className="text-[#8C6D4F] mx-1">•</span> WEB DESIGNER <span className="text-[#8C6D4F] mx-1">•</span> 3D &amp; MOTION
@@ -266,7 +297,7 @@ export const HeroSection: React.FC = () => {
             >
               <p>
                 I craft cinematic websites and bespoke digital experiences for bold brands worldwide.
-                <br />
+                <br className="hidden sm:inline" />
                 Combining visual direction, high-performance engineering, and fluid motion into memorable digital spaces.
               </p>
             </motion.div>
@@ -274,7 +305,7 @@ export const HeroSection: React.FC = () => {
             {/* CTA Buttons */}
             <motion.div
               variants={fadeUpVariants}
-              className="flex flex-row items-center gap-4 sm:gap-6"
+              className="flex flex-row items-center gap-3 sm:gap-6"
               style={{ fontFamily: "'Montserrat', sans-serif" }}
             >
               {/* Explore My Work CTA */}
@@ -283,7 +314,7 @@ export const HeroSection: React.FC = () => {
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
                 whileHover={{ scale: 1.02 }}
-                className="relative inline-flex items-center space-x-3 px-6 sm:px-7 py-3.5 border border-[#8C6D4F]/40 bg-[#120F0C]/80 hover:border-[#D4AF37] text-[#EAD8C7] hover:text-[#FFF5EB] text-[11px] font-medium tracking-[0.24em] uppercase transition-all duration-300 shadow-[0_0_25px_rgba(212,175,55,0.18)]"
+                className="relative inline-flex items-center space-x-2 sm:space-x-3 px-4 xs:px-6 sm:px-7 py-3 sm:py-3.5 border border-[#8C6D4F]/40 bg-[#120F0C]/80 hover:border-[#D4AF37] text-[#EAD8C7] hover:text-[#FFF5EB] text-[10px] sm:text-[11px] font-medium tracking-[0.2em] sm:tracking-[0.24em] uppercase transition-all duration-300 shadow-[0_0_25px_rgba(212,175,55,0.18)]"
               >
                 <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#E8D7C5]/40 to-transparent pointer-events-none" />
                 <span>EXPLORE MY WORK</span>
@@ -298,7 +329,7 @@ export const HeroSection: React.FC = () => {
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
                 whileHover={{ scale: 1.02 }}
-                className="relative inline-flex items-center space-x-2 px-6 sm:px-7 py-3.5 border border-[#8C6D4F]/40 hover:border-[#8C6D4F]/70 text-[#CBB59D] hover:text-[#EAD8C7] text-[11px] font-medium tracking-[0.24em] uppercase transition-all duration-300"
+                className="relative inline-flex items-center space-x-1.5 sm:space-x-2 px-4 xs:px-6 sm:px-7 py-3 sm:py-3.5 border border-[#8C6D4F]/40 hover:border-[#8C6D4F]/70 text-[#CBB59D] hover:text-[#EAD8C7] text-[10px] sm:text-[11px] font-medium tracking-[0.2em] sm:tracking-[0.24em] uppercase transition-all duration-300"
               >
                 <span>GET IN TOUCH</span>
                 <span className="transform transition-transform duration-300 group-hover:translate-x-0.5 text-xs">
