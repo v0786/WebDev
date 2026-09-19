@@ -27,3 +27,6 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# Local visual reference clone used during the cinematic redesign
+cinematic-portfolio-reference/

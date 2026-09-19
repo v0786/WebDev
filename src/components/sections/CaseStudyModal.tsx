@@ -59,14 +59,14 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
         </button>
 
         {/* Concept Notice Disclaimer (Section 31) */}
-        <div className="mb-6 p-3.5 rounded-xl bg-[#B8FF00]/10 border border-[#B8FF00]/20 text-[#B8FF00] text-xs font-mono flex items-start gap-3">
-          <ShieldCheck className="w-4 h-4 text-[#B8FF00] shrink-0 mt-0.5" />
+        <div className="mb-6 p-3.5 rounded-xl bg-[#D8A66B]/10 border border-[#D8A66B]/20 text-[#F0C892] text-xs font-mono flex items-start gap-3">
+          <ShieldCheck className="w-4 h-4 text-[#D8A66B] shrink-0 mt-0.5" />
           <span>{project.caseStudy.clientNotice}</span>
         </div>
 
         {/* Header Badges & Project Title */}
         <div className="space-y-3 mb-8">
-          <div className="flex items-center gap-3 text-xs font-mono uppercase tracking-widest text-[#B8FF00]">
+          <div className="flex items-center gap-3 text-xs font-mono uppercase tracking-widest text-[#D8A66B]">
             <span>PROJECT {project.index}</span>
             <span>&bull;</span>
             <span>{project.category}</span>
@@ -95,7 +95,7 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
           
           <div className="relative z-10 flex items-center justify-between text-xs font-mono uppercase tracking-widest text-bone-300/70">
             <span>{project.category}</span>
-            <span className="px-3 py-1 rounded-full bg-black/60 text-[#B8FF00] font-semibold border border-white/10">
+            <span className="px-3 py-1 rounded-full bg-black/60 text-[#F0C892] font-semibold border border-white/10">
               {project.year}
             </span>
           </div>
@@ -117,7 +117,7 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
           
           {/* About */}
           <div className="space-y-2 border-t border-white/10 pt-6">
-            <div className="text-xs font-mono uppercase tracking-widest text-[#B8FF00] font-bold">
+            <div className="text-xs font-mono uppercase tracking-widest text-[#D8A66B] font-bold">
               01 // ABOUT THE PROJECT
             </div>
             <p>{project.caseStudy.about}</p>
@@ -125,7 +125,7 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
 
           {/* The Challenge */}
           <div className="space-y-2 border-t border-white/10 pt-6">
-            <div className="text-xs font-mono uppercase tracking-widest text-[#B8FF00] font-bold">
+            <div className="text-xs font-mono uppercase tracking-widest text-[#D8A66B] font-bold">
               02 // THE CHALLENGE
             </div>
             <p>{project.caseStudy.challenge}</p>
@@ -133,7 +133,7 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
 
           {/* Strategy */}
           <div className="space-y-2 border-t border-white/10 pt-6">
-            <div className="text-xs font-mono uppercase tracking-widest text-[#B8FF00] font-bold">
+            <div className="text-xs font-mono uppercase tracking-widest text-[#D8A66B] font-bold">
               03 // STRATEGY &amp; STRUCTURE
             </div>
             <p>{project.caseStudy.strategy}</p>
@@ -142,14 +142,14 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
           {/* Design & Interaction */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-white/10 pt-6">
             <div className="space-y-2">
-              <div className="text-xs font-mono uppercase tracking-widest text-[#B8FF00] font-bold">
+              <div className="text-xs font-mono uppercase tracking-widest text-[#D8A66B] font-bold">
                 04 // DESIGN DIRECTION
               </div>
               <p className="text-xs sm:text-sm">{project.caseStudy.design}</p>
             </div>
 
             <div className="space-y-2">
-              <div className="text-xs font-mono uppercase tracking-widest text-[#B8FF00] font-bold">
+              <div className="text-xs font-mono uppercase tracking-widest text-[#D8A66B] font-bold">
                 05 // INTERACTION &amp; MOTION
               </div>
               <p className="text-xs sm:text-sm">{project.caseStudy.interaction}</p>
@@ -158,7 +158,7 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
 
           {/* Technology & Objective */}
           <div className="border-t border-white/10 pt-6 space-y-4">
-            <div className="text-xs font-mono uppercase tracking-widest text-[#B8FF00] font-bold">
+            <div className="text-xs font-mono uppercase tracking-widest text-[#D8A66B] font-bold">
               06 // RELEVANT TECHNOLOGY &amp; OBJECTIVES
             </div>
             <p>{project.caseStudy.objective}</p>
@@ -183,7 +183,7 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
             <a
               href={project.demoRoute}
               onClick={() => soundFx.playClick()}
-              className="min-h-[44px] px-6 py-2.5 rounded-full bg-[#B8FF00] text-[#07080B] font-mono text-xs uppercase font-bold tracking-wider hover:bg-white transition-colors flex items-center gap-2"
+              className="min-h-[44px] px-6 py-2.5 rounded-full bg-[#D8A66B] text-[#07080B] font-mono text-xs uppercase font-bold tracking-wider hover:bg-white transition-colors flex items-center gap-2"
             >
               <span>LAUNCH CONCEPT PROTOTYPE</span>
               <ArrowUpRight className="w-4 h-4" />
@@ -194,10 +194,10 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => soundFx.playClick()}
-              className="min-h-[44px] px-5 py-2.5 rounded-full border border-white/15 text-bone-200 hover:text-white hover:border-[#B8FF00] font-mono text-xs uppercase tracking-wider transition-colors flex items-center gap-1.5"
+              className="min-h-[44px] px-5 py-2.5 rounded-full border border-white/15 text-bone-200 hover:text-white hover:border-[#D8A66B] font-mono text-xs uppercase tracking-wider transition-colors flex items-center gap-1.5"
             >
               <span>GITHUB REPOSITORY</span>
-              <ArrowUpRight className="w-3.5 h-3.5 text-[#B8FF00]" />
+              <ArrowUpRight className="w-3.5 h-3.5 text-[#D8A66B]" />
             </a>
           </div>
 
@@ -207,10 +207,10 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
                 soundFx.playClick();
                 onSelectProject(nextProject);
               }}
-              className="min-h-[44px] text-xs font-mono text-bone-300 hover:text-[#B8FF00] transition-colors flex items-center gap-2 cursor-pointer uppercase tracking-wider"
+              className="min-h-[44px] text-xs font-mono text-bone-300 hover:text-[#D8A66B] transition-colors flex items-center gap-2 cursor-pointer uppercase tracking-wider"
             >
               <span>NEXT PROJECT: {nextProject.brandName}</span>
-              <ArrowRight className="w-4 h-4 text-[#B8FF00]" />
+              <ArrowRight className="w-4 h-4 text-[#D8A66B]" />
             </button>
           )}
         </div>

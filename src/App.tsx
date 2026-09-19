@@ -1,19 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { AmbientBackground } from './components/ambient/AmbientBackground';
-import { CustomCursor } from './components/cursor/CustomCursor';
-import { Navbar } from './components/layout/Navbar';
-import { Hero } from './components/sections/Hero';
-import { CredibilityStrip } from './components/sections/CredibilityStrip';
-import { PositioningSection } from './components/sections/PositioningSection';
-import { Services } from './components/sections/Services';
-import { Portfolio } from './components/sections/Portfolio';
-import { WhyWorkWithMe } from './components/sections/WhyWorkWithMe';
-import { Process } from './components/sections/Process';
-import { WhyVaibhav } from './components/sections/WhyVaibhav';
-import { TechMarquee } from './components/sections/TechMarquee';
-import { About } from './components/sections/About';
-import { ContactSection } from './components/sections/ContactSection';
-import { Footer } from './components/layout/Footer';
+import { CinematicPortfolio } from './components/cinematic/CinematicPortfolio';
 
 // Code-split all 9 dedicated concept project demos for instant initial bundle loading
 const FormaDemo = lazy(() =>
@@ -62,13 +48,20 @@ export const App: React.FC = () => {
       const hash = window.location.hash;
       setCurrentHash(hash);
       
-      // Handle section smooth scroll for /work, /services, etc.
+      // Handle section smooth scroll for /work, /about, /skills, /experience, /contact
       const sectionRoutes: Record<string, string> = {
         '#/work': 'work',
-        '#/services': 'services',
-        '#/process': 'process',
         '#/about': 'about',
-        '#/contact': 'contact'
+        '#/skills': 'skills',
+        '#/experience': 'experience',
+        '#/contact': 'contact',
+        '#work': 'work',
+        '#about': 'about',
+        '#skills': 'skills',
+        '#experience': 'experience',
+        '#contact': 'contact',
+        '#top': 'top',
+        '#/top': 'top',
       };
 
       if (sectionRoutes[hash]) {
@@ -93,6 +86,7 @@ export const App: React.FC = () => {
     };
 
     window.addEventListener('hashchange', handleHashChange);
+    handleHashChange();
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
@@ -179,40 +173,7 @@ export const App: React.FC = () => {
     );
   }
 
-  // Master Client-Conversion Portfolio View
-  return (
-    <div className="relative min-h-screen bg-[#07080B] text-bone-100 selection:bg-[#B8FF00]/20 selection:text-[#B8FF00] flex flex-col justify-between overflow-x-hidden">
-      {/* Global Dynamic Ambient Lighting */}
-      <AmbientBackground />
-
-      {/* Global Atmospheric Film Grain */}
-      <div className="film-grain" />
-
-      {/* Custom Physics Magnetic Cursor */}
-      <CustomCursor />
-
-      {/* Minimalist Fixed Editorial Header */}
-      <Navbar />
-
-      {/* Main Narrative & Conversion Flow (Section 07 Specification) */}
-      <main className="flex-grow relative z-10">
-        <Hero />
-        <CredibilityStrip />
-        <PositioningSection />
-        <Services />
-        <Portfolio />
-        <WhyWorkWithMe />
-        <Process />
-        <WhyVaibhav />
-        <TechMarquee />
-        <About />
-        <ContactSection />
-      </main>
-
-      {/* Global Editorial Footer */}
-      <Footer />
-    </div>
-  );
+  return <CinematicPortfolio />;
 };
 
 export default App;
