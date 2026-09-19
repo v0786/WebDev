@@ -28,10 +28,10 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const variantStyles = {
-    primary: "bg-gradient-to-r from-neon-cyan via-neon-electric to-neon-violet text-dark-950 font-bold shadow-lg shadow-neon-cyan/20 hover:shadow-neon-cyan/35 hover:scale-[1.02] active:scale-[0.98]",
-    secondary: "bg-dark-800/90 text-white border border-white/10 hover:border-neon-cyan/40 hover:bg-dark-700/90 backdrop-blur-md shadow-md hover:scale-[1.02] active:scale-[0.98]",
-    outline: "border border-slate-700 text-slate-200 hover:border-neon-cyan hover:text-neon-cyan hover:bg-neon-cyan/5 active:scale-[0.98]",
-    ghost: "text-slate-300 hover:text-white hover:bg-white/5",
+    primary: "bg-[#B8FF00] text-gray-900 font-bold shadow-lg shadow-[#B8FF00]/20 hover:bg-white hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8FF00] focus-visible:ring-offset-2 focus-visible:ring-offset-[#07080B] active:bg-[#A6E600] active:text-gray-900 hover:scale-[1.02] active:scale-[0.98]",
+    secondary: "bg-dark-800/90 text-white border border-white/10 hover:border-[#B8FF00]/40 hover:bg-dark-700/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8FF00] backdrop-blur-md shadow-md hover:scale-[1.02] active:scale-[0.98]",
+    outline: "border border-white/15 text-bone-200 hover:border-[#B8FF00] hover:text-[#B8FF00] hover:bg-[#B8FF00]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8FF00] active:scale-[0.98]",
+    ghost: "text-bone-300 hover:text-white hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8FF00]",
   };
 
   const combinedClass = `${baseStyles} ${sizeStyles[size]} ${variantStyles[variant]} ${className}`;

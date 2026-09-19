@@ -1,177 +1,268 @@
-import React, { useState } from 'react';
-import { Layers, Eye, ArrowUpRight, AlertCircle, Sparkles, Check } from 'lucide-react';
-import { DEMO_PROJECTS, PortfolioProject } from '../../config/portfolio';
-import { CaseStudyModal } from './CaseStudyModal';
-import { Button } from '../ui/Button';
-import { InView } from '../motion-primitives/in-view';
-import { Tilt } from '../motion-primitives/tilt';
-import { Spotlight } from '../motion-primitives/spotlight';
+import React, { useState, Suspense, lazy } from 'react';
+import { ArrowUpRight, Eye, Github } from 'lucide-react';
+import { PORTFOLIO_PROJECTS, PortfolioProject } from '../../config/portfolio';
+import { soundFx } from '../audio/SoundEffects';
+
+const CaseStudyModal = lazy(() =>
+  import('./CaseStudyModal').then((m) => ({ default: m.CaseStudyModal }))
+);
 
 export const Portfolio: React.FC = () => {
-  const [selectedProject, setSelectedProject] = useState<PortfolioProject | null>(null);
+  const [activeModalProject, setActiveModalProject] = useState<PortfolioProject | null>(null);
+
+  const handleOpenCaseStudy = (proj: PortfolioProject) => {
+    soundFx.playModalReveal();
+    setActiveModalProject(proj);
+  };
 
   return (
-    <section id="work" className="py-24 relative bg-dark-900/50 border-t border-white/5">
+    <section id="work" className="py-24 sm:py-36 relative border-b border-white/[0.08] overflow-hidden">
       
-      {/* Radial soft background light */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-neon-cyan/5 rounded-full blur-[160px] pointer-events-none" />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Section Header with InView Scroll Reveal */}
-        <InView
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 }
-          }}
-          transition={{ duration: 0.5 }}
-          className="text-center max-w-3xl mx-auto mb-14 space-y-4"
-        >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-dark-850 border border-white/10 text-xs font-mono text-neon-electric">
-            <Layers className="w-3.5 h-3.5" />
-            <span>DEMONSTRATION PORTFOLIO</span>
+        {/* Section Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-white/[0.08] pb-8 mb-16 sm:mb-24">
+          <div>
+            <div className="text-xs font-mono uppercase tracking-widest text-[#B8FF00] mb-3 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#B8FF00]" />
+              <span>[ 05 / SELECTED WORK ]</span>
+            </div>
+            <h2 className="text-4xl sm:text-6xl md:text-7xl font-sans text-bone-100 font-black tracking-tight uppercase">
+              SELECTED <br />
+              <span className="font-serif italic font-normal text-[#B8FF00] lowercase">
+                work
+              </span>.
+            </h2>
           </div>
-
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Curated Showcase Projects
-          </h2>
-
-          <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
-            I am actively building my professional portfolio. Below are three fully realized concept projects engineered to demonstrate my design quality, frontend capabilities, and strategic approach.
-          </p>
-
-          {/* Transparent Authenticity Disclaimer */}
-          <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-dark-850/90 border border-white/10 text-xs text-slate-300 max-w-xl mx-auto text-left sm:text-center">
-            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-            <span>All projects are fictional concept brands built for visual and architectural demonstration. Client case studies will be published upon completion.</span>
+          <div className="mt-4 md:mt-0 max-w-md text-xs sm:text-sm font-sans text-bone-300/85 font-light leading-relaxed">
+            A collection of digital experiences created across different industries, audiences and visual directions.
           </div>
-        </InView>
-
-        {/* 3 Showcase Projects Grid with InView, Tilt & Spotlight */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {DEMO_PROJECTS.map((project, index) => (
-            <InView
-              key={project.id}
-              variants={{
-                hidden: { opacity: 0, y: 30 },
-                visible: { opacity: 1, y: 0 }
-              }}
-              transition={{ duration: 0.5, delay: index * 0.12 }}
-            >
-              <Tilt
-                rotationFactor={7}
-                className="h-full rounded-3xl bg-dark-900/85 backdrop-blur-md border border-white/10 overflow-hidden flex flex-col justify-between transition-all duration-300 hover:border-neon-cyan/50 hover:shadow-2xl hover:shadow-neon-cyan/10 group relative"
-              >
-                <Spotlight className="from-neon-cyan/25 via-neon-cyan/5 to-transparent" size={260} />
-              <div>
-                {/* Visual Header / Mockup Gradient Banner */}
-                <div className={`h-52 rounded-t-3xl bg-gradient-to-br ${project.previewCardStyle} p-6 flex flex-col justify-between relative overflow-hidden`}>
-                  <div className="absolute inset-0 bg-grid-pattern opacity-25 group-hover:opacity-40 transition-opacity" />
-                  
-                  {/* Top Tags */}
-                  <div className="relative z-10 flex items-center justify-between">
-                    <span className="px-3 py-1 rounded-lg text-xs font-mono font-bold bg-dark-950/80 text-neon-cyan border border-white/10 backdrop-blur-md">
-                      {project.projectCode}
-                    </span>
-
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                      Concept Demo
-                    </span>
-                  </div>
-
-                  {/* Brand & Category Label */}
-                  <div className="relative z-10 space-y-1">
-                    <span className="text-[11px] font-mono text-slate-300 uppercase tracking-wider">
-                      {project.category}
-                    </span>
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                      <span>{project.brandName}</span>
-                      <Sparkles className="w-4 h-4 text-neon-cyan opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </h3>
-                  </div>
-                </div>
-
-                {/* Body Content */}
-                <div className="p-6 space-y-4">
-                  <div>
-                    <h4 className="text-base font-bold text-white group-hover:text-neon-cyan transition-colors">
-                      {project.title}
-                    </h4>
-                    <p className="text-xs font-mono text-neon-electric mt-0.5">
-                      {project.headline}
-                    </p>
-                  </div>
-
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                    {project.shortDescription}
-                  </p>
-
-                  {/* Highlights Bullets */}
-                  <div className="space-y-1.5 pt-2 border-t border-white/5">
-                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">
-                      Included Architecture:
-                    </span>
-                    {project.highlights.map((hl, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-xs text-slate-300">
-                        <Check className="w-3.5 h-3.5 text-neon-cyan shrink-0" />
-                        <span>{hl}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="p-6 pt-0 mt-4 space-y-2">
-                <a
-                  href={project.demoRoute}
-                  className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-neon-cyan to-neon-electric hover:opacity-95 text-dark-950 font-bold text-xs flex items-center justify-center gap-2 transition-all hover:shadow-lg hover:shadow-neon-cyan/20 cursor-pointer"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-dark-950" />
-                  <span>Launch Live Concept Demo</span>
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </a>
-
-                <button
-                  onClick={() => setSelectedProject(project)}
-                  className="w-full min-h-[38px] py-2 px-4 rounded-xl bg-dark-800/80 hover:bg-dark-750 border border-white/10 hover:border-neon-cyan/30 text-xs font-medium text-slate-300 hover:text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>View Case Study & Spec</span>
-                </button>
-              </div>
-
-              </Tilt>
-            </InView>
-          ))}
         </div>
 
-        {/* Custom Project CTA Banner */}
-        <div className="mt-16 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-dark-900 via-dark-850 to-dark-900 border border-white/15 flex flex-col lg:flex-row items-center justify-between gap-6">
-          <div className="space-y-2 text-center lg:text-left">
-            <h3 className="text-xl sm:text-2xl font-bold text-white">Have a unique business or product to launch?</h3>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-              I can help you build a clean, conversion-engineered website using a pragmatic mix of no-code speed and custom-coded polish.
-            </p>
-          </div>
-          <Button
-            href="#enquire"
-            variant="primary"
-            size="md"
-            icon={<ArrowUpRight className="w-4 h-4" />}
-            className="w-full sm:w-auto min-h-[44px] justify-center"
-          >
-            Start a Project Enquiry
-          </Button>
+        {/* 9 Projects with Varied Layout Compositions */}
+        <div className="space-y-24 sm:space-y-36">
+          {PORTFOLIO_PROJECTS.map((project) => {
+            const isFullWidth = project.layoutVariant === 'full-width' || project.layoutVariant === 'long-form-scroll';
+            const isImageLeft = project.layoutVariant === 'split-layout' || project.layoutVariant === 'dark-cinematic';
+            const isOverlapping = project.layoutVariant === 'overlapping' || project.layoutVariant === 'typography-driven';
+
+            return (
+              <article key={project.id} className="relative group">
+                
+                {isFullWidth ? (
+                  /* Full-Width Panoramic Visual Layout */
+                  <div className="space-y-6">
+                    <div 
+                      onClick={() => handleOpenCaseStudy(project)}
+                      className="relative w-full h-[360px] sm:h-[480px] md:h-[540px] rounded-3xl overflow-hidden border border-white/10 group-hover:border-[#B8FF00]/50 transition-all duration-700 cursor-pointer shadow-2xl p-8 sm:p-12 flex flex-col justify-between bg-gradient-to-br"
+                      style={{ backgroundImage: `linear-gradient(135deg, ${project.previewCardStyle})` }}
+                      data-cursor="view"
+                      data-cursor-text="INSPECT"
+                    >
+                      <div className="relative z-10 flex items-center justify-between text-xs font-mono uppercase tracking-widest text-bone-300/80">
+                        <span className="px-3 py-1 rounded-full bg-black/60 border border-white/10 backdrop-blur-md">
+                          PROJECT {project.index} &bull; {project.category}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {project.isConcept && (
+                            <span className="px-2.5 py-0.5 rounded bg-white/10 text-[10px] text-bone-200">
+                              CONCEPT PROJECT
+                            </span>
+                          )}
+                          <span className="text-[#B8FF00] font-semibold">{project.year}</span>
+                        </div>
+                      </div>
+
+                      <div className="relative z-10 my-auto text-center py-6">
+                        <h3 className="text-4xl sm:text-6xl md:text-7xl font-serif italic text-bone-100 tracking-tight group-hover:text-[#B8FF00] transition-colors drop-shadow-md">
+                          {project.brandName}
+                        </h3>
+                        <div className="mt-3 text-xs sm:text-sm font-sans text-bone-300/80 max-w-lg mx-auto font-light">
+                          {project.headline}
+                        </div>
+
+                        {/* Special UX supply chain badge for Farm/Fresh */}
+                        {project.id === 'farm-fresh-foodnia' && (
+                          <div className="mt-4 inline-flex flex-wrap items-center justify-center gap-2 text-[10px] font-mono text-emerald-400/90 bg-black/50 px-4 py-2 rounded-full border border-emerald-500/20">
+                            <span>Agriculture</span> &rarr; 
+                            <span>Research</span> &rarr; 
+                            <span>Formulation</span> &rarr; 
+                            <span>Production</span> &rarr; 
+                            <span>Distribution</span> &rarr; 
+                            <span>Consumer</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="relative z-10 flex items-center justify-between text-[11px] font-mono text-bone-300/85 border-t border-white/10 pt-4">
+                        <span>FULL-BLEED ARCHITECTURE</span>
+                        <span className="flex items-center gap-1.5 text-bone-100 group-hover:text-[#B8FF00]">
+                          CLICK TO INSPECT CASE STUDY &rarr;
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+                      <p className="text-xs sm:text-sm font-sans text-bone-300/80 max-w-xl font-light">
+                        {project.shortDescription}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-3 shrink-0">
+                        <button
+                          onClick={() => handleOpenCaseStudy(project)}
+                          aria-label={`View ${project.brandName} case study details`}
+                          className="min-h-[44px] px-5 py-2.5 rounded-full border border-white/15 text-bone-200 hover:text-white hover:border-[#B8FF00] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8FF00] text-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-[#B8FF00]" aria-hidden="true" />
+                          <span>CASE STUDY</span>
+                        </button>
+                        <a
+                          href={project.demoRoute}
+                          aria-label={`Launch ${project.brandName} interactive prototype demo`}
+                          className="min-h-[44px] px-5 py-2.5 rounded-full bg-[#B8FF00] text-gray-900 font-bold hover:bg-white hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8FF00] active:bg-[#A6E600] active:text-gray-900 text-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-1.5"
+                        >
+                          <span>LAUNCH DEMO</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
+                        </a>
+                        <a
+                          href="https://github.com/v0786/WebDev"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="min-h-[44px] px-4 py-2.5 rounded-full border border-white/15 text-bone-300 hover:text-white hover:border-[#B8FF00] text-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-1.5"
+                          title="View project source code on GitHub"
+                        >
+                          <Github className="w-3.5 h-3.5 text-[#B8FF00]" />
+                          <span className="hidden sm:inline">REPO</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Asymmetric / Split / Overlapping Layout */
+                  <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center ${isOverlapping ? 'relative' : ''}`}>
+                    
+                    {/* Visual Box */}
+                    <div className={`lg:col-span-7 ${isImageLeft ? 'lg:order-1' : 'lg:order-2'}`}>
+                      <div
+                        onClick={() => handleOpenCaseStudy(project)}
+                        className={`w-full h-[340px] sm:h-[420px] md:h-[460px] rounded-2xl overflow-hidden border border-white/10 group-hover:border-[#B8FF00]/50 transition-all duration-700 cursor-pointer shadow-2xl p-8 flex flex-col justify-between bg-gradient-to-br ${project.previewCardStyle}`}
+                        data-cursor="view"
+                        data-cursor-text="INSPECT"
+                      >
+                        <div className="relative z-10 flex items-center justify-between text-xs font-mono uppercase tracking-widest text-bone-300/80">
+                          <span className="px-3 py-1 rounded-full bg-black/60 border border-white/10 backdrop-blur-md">
+                            {project.category}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {project.isConcept && (
+                              <span className="px-2.5 py-0.5 rounded bg-white/10 text-[10px] text-bone-200">
+                                CONCEPT PROJECT
+                              </span>
+                            )}
+                            <span className="text-[#B8FF00] font-semibold">{project.year}</span>
+                          </div>
+                        </div>
+
+                        <div className="relative z-10 my-auto text-center py-4">
+                          <h3 className="text-3xl sm:text-5xl font-serif italic text-bone-100 tracking-tight group-hover:text-[#B8FF00] transition-colors">
+                            {project.brandName}
+                          </h3>
+                          <div className="mt-2 text-xs font-mono text-bone-300/85 uppercase tracking-widest max-w-sm mx-auto">
+                            {project.headline}
+                          </div>
+                        </div>
+
+                        <div className="relative z-10 flex items-center justify-between text-[11px] font-mono text-bone-300/85 border-t border-white/10 pt-3">
+                          <span>EDITION // {project.year}</span>
+                          <span className="text-bone-100 group-hover:text-[#B8FF00] flex items-center gap-1">
+                            VIEW CASE STUDY &rarr;
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Metadata Box */}
+                    <div className={`lg:col-span-5 ${isImageLeft ? 'lg:order-2' : 'lg:order-1'} space-y-5 text-left`}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl sm:text-4xl font-serif italic text-[#B8FF00] font-bold">
+                          {project.index}
+                        </span>
+                        <span className="text-xs font-mono uppercase tracking-widest text-bone-300/70">
+                          // {project.category}
+                        </span>
+                      </div>
+
+                      <h3 className="text-2xl sm:text-4xl font-sans font-bold text-bone-100 tracking-tight">
+                        {project.title}
+                      </h3>
+
+                      <p className="text-xs sm:text-sm font-sans text-bone-300/80 font-light leading-relaxed">
+                        {project.shortDescription}
+                      </p>
+
+                      {/* Highlights */}
+                      <div className="space-y-2 border-y border-white/[0.08] py-4">
+                        {project.highlights.slice(0, 3).map((item, hIdx) => (
+                          <div key={hIdx} className="flex items-center gap-2.5 text-xs font-mono text-bone-300">
+                            <span className="w-1 h-1 rounded-full bg-[#B8FF00] shrink-0" />
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-wrap items-center gap-3 pt-2">
+                        <button
+                          onClick={() => handleOpenCaseStudy(project)}
+                          aria-label={`View ${project.brandName} case study details`}
+                          className="min-h-[44px] px-5 py-2.5 rounded-full border border-white/15 hover:border-[#B8FF00] text-bone-200 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8FF00] text-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-[#B8FF00]" aria-hidden="true" />
+                          <span>CASE STUDY</span>
+                        </button>
+
+                        <a
+                          href={project.demoRoute}
+                          aria-label={`Launch ${project.brandName} interactive prototype demo`}
+                          className="min-h-[44px] px-5 py-2.5 rounded-full bg-[#B8FF00] text-gray-900 font-bold hover:bg-white hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8FF00] active:bg-[#A6E600] active:text-gray-900 text-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-1.5"
+                        >
+                          <span>LAUNCH DEMO</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
+                        </a>
+
+                        <a
+                          href="https://github.com/v0786/WebDev"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="min-h-[44px] px-4 py-2.5 rounded-full border border-white/15 text-bone-300 hover:text-white hover:border-[#B8FF00] text-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-1.5"
+                          title="View project source code on GitHub"
+                        >
+                          <Github className="w-3.5 h-3.5 text-[#B8FF00]" />
+                          <span className="hidden sm:inline">REPO</span>
+                        </a>
+                      </div>
+                    </div>
+
+                  </div>
+                )}
+
+              </article>
+            );
+          })}
         </div>
 
       </div>
 
-      {/* Case Study Preview Modal */}
-      <CaseStudyModal
-        project={selectedProject}
-        onClose={() => setSelectedProject(null)}
-      />
+      {/* Case Study Fullscreen Inspection Modal */}
+      {activeModalProject && (
+        <Suspense fallback={null}>
+          <CaseStudyModal
+            project={activeModalProject}
+            onClose={() => setActiveModalProject(null)}
+            onSelectProject={(p) => setActiveModalProject(p)}
+            allProjects={PORTFOLIO_PROJECTS}
+          />
+        </Suspense>
+      )}
     </section>
   );
 };

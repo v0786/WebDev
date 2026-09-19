@@ -12,6 +12,12 @@ if (!fs.existsSync(rootDocsDir)) {
   fs.mkdirSync(rootDocsDir, { recursive: true });
 }
 
+// Clean stale assets directory to prevent accumulation of outdated hashed bundles
+const rootDocsAssetsDir = path.join(rootDocsDir, 'assets');
+if (fs.existsSync(rootDocsAssetsDir)) {
+  fs.rmSync(rootDocsAssetsDir, { recursive: true, force: true });
+}
+
 const entries = fs.readdirSync(distDir, { withFileTypes: true });
 for (const entry of entries) {
   if (entry.name === 'docs') continue;

@@ -15,6 +15,37 @@ export default {
           700: '#1F293D',
           600: '#2E3D5B',
         },
+        obsidian: {
+          950: '#060709',
+          900: '#0A0C10',
+          850: '#11141B',
+          800: '#181C25',
+          700: '#232936',
+        },
+        lime: {
+          300: '#D4FF33',
+          400: '#B8FF00',
+          500: '#9EE600',
+        },
+        studio: {
+          primary: '#07080B',
+          warmWhite: '#F4F1EA',
+          softWhite: '#F8F8F5',
+          muted: '#92959D',
+          accent: '#B8FF00',
+        },
+        gold: {
+          300: '#F5D38A',
+          400: '#E5A958',
+          500: '#D49D42',
+          600: '#B87B28',
+        },
+        bone: {
+          50: '#F8F8F5',
+          100: '#F4F1EA',
+          200: '#EBE8DF',
+          300: '#92959D',
+        },
         neon: {
           cyan: '#00F2FE',
           electric: '#4FACFE',
@@ -25,6 +56,8 @@ export default {
         }
       },
       fontFamily: {
+        serif: ['Cormorant Garamond', 'Georgia', 'serif'],
+        display: ['Syne', 'sans-serif'],
         sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },

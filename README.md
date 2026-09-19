@@ -1,139 +1,130 @@
-# Vaibhav Sonkusare — Creative Web Studio
-> **AI-Powered, No-Code, and Custom-Coded Website Design & Development**  
-> Complete interactive 3D portfolio and client acquisition platform engineered to attract genuine international clients.
+# VAIBHAV — Creative Developer & Web Designer Portfolio
+
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-v0786.github.io%2FWebDev-B8FF00?style=for-the-badge&logo=githubpages&logoColor=07080B)](https://v0786.github.io/WebDev/)
+[![WhatsApp](https://img.shields.io/badge/WhatsApp-%2B91%208652140271-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://wa.me/918652140271)
+[![Email](https://img.shields.io/badge/Email-sonkusare.doc%40gmail.com-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:sonkusare.doc@gmail.com)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React%2018-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Three.js](https://img.shields.io/badge/Three.js-000000?style=for-the-badge&logo=three.js&logoColor=white)](https://threejs.org/)
+
+> **A high-performance, award-winning-style personal portfolio & client acquisition studio built for SONKUSARE VAIBHAV.** Engineered with custom physics interactions, a 3D Digital Monolith, procedural web audio micro-effects, and 9 fully functional interactive prototype concept applications.
 
 ---
 
-## 🎯 Business Identity
+## 🌐 Live Experience
 
-- **Brand Name**: Vaibhav Sonkusare — Creative Web Studio
-- **Business Model**: Independent Freelancer
-- **Focus**: Combining AI-assisted workflows, no-code tools, and custom development to build modern digital experiences.
-- **Experience Level**: Building my first professional portfolio.
-- **Target Market**: International businesses, startups, creators, and professionals (USA, UK, Canada, Australia, Europe, etc.).
-- **Primary Goal**: Generate qualified website development enquiries and convert them into paying projects.
-- **Verified Email**: `sonkusare.doc@gmail.com`
-- **Direct WhatsApp**: [`+91 8652140271`](https://wa.me/918652140271)
-- **Verified Instagram**: [instagram.com/sonkusare_vaibhav](https://www.instagram.com/sonkusare_vaibhav/)
-- **GitHub Repository**: [github.com/v0786/WebDev](https://github.com/v0786/WebDev)
-- **Live GitHub Pages URL**: [v0786.github.io/WebDev](https://v0786.github.io/WebDev/)
-- **Default Currency**: USD (with multi-currency invoicing options).
+- **Production URL**: [https://v0786.github.io/WebDev/](https://v0786.github.io/WebDev/)
+- **Repository**: [https://github.com/v0786/WebDev](https://github.com/v0786/WebDev)
+- **Local Dev Server**: `http://localhost:5000/` or `http://localhost:3000/`
 
 ---
 
-## 🚀 Key Website Features & Structure
+## ✨ Core Highlights & Architectural Features
 
-### 1. Interactive 3D Hero Section
-- **Brand Label**: `VAIBHAV SONKUSARE — CREATIVE WEB STUDIO`
-- **Main Headline**: *Ideas into Digital Experiences.*
-- **Supporting Headline**: *Modern websites, built with creativity and AI.*
-- **Supporting Paragraph**: *I help businesses, entrepreneurs, and creators turn their ideas into professional websites using a combination of AI-powered workflows, no-code tools, and custom development.*
-- **Centerpiece**: Procedural Three.js 3D glass icosahedron with glowing energy core, orbital rings, and mouse parallax interaction.
-- **Adaptive Fallback**: Seamless CSS glassmorphic preview fallback for mobile viewports, low-power devices, or when `prefers-reduced-motion` is active.
+### 1. 💎 3D Interactive Digital Monolith
+- Real-time mouse-tracking tilt physics driven by **Framer Motion springs** (`damping: 28, stiffness: 90, mass: 1.2`).
+- Specular edge highlights, concentric architectural reticle rings, and glowing focal core featuring the branded 3D emblem.
+- Dynamic visual mode toggle between the **3D Monolith** and the **Studio Portrait** view.
 
-### 2. Tailored Services (8 Core Offerings)
-Each service includes title, short description, business value, deliverables, and availability status:
-1. **Business websites** — *Available Now*
-2. **Landing pages** — *Available Now*
-3. **Personal portfolio websites** — *Available Now*
-4. **E-commerce websites** — *Available Now*
-5. **Website redesigns** — *Available Now*
-6. **Responsive website development** — *Available Now*
-7. **AI-assisted website creation** — *Available Now*
-8. **Website maintenance and improvements** — *In Active Development*
+### 2. ⚡ Instant Zero-Lag Initial Load
+- **No blocking preloader screen**: The main narrative mounts immediately for maximum visitor retention and rapid first-contentful-paint (FCP).
+- Optimized asset pipeline with **modern WebP images**, pre-sized intrinsic dimensions preventing Cumulative Layout Shift (CLS), and modern Google Fonts preconnects.
 
-### 3. Curated Demonstration Portfolio (Projects A, B, C)
-Clearly demarcated concept projects demonstrating architectural and conversion capabilities without claiming unverified client results:
-- **Project A: Modern Business Website** (*Vanguard Strategy Group*) — Corporate consultancy platform with advisory practice directories and consultation booking flow.
-- **Project B: SaaS Landing Page** (*PulseFlow AI*) — Conversion-focused landing page with software mockup, interactive features, pricing tiers, and FAQ.
-- **Project C: E-commerce Concept** (*Solis Horology*) — Luxury mechanical timepieces storefront with product cards, detail layouts, and cart drawer preview.
-- **Interactive Case Study Modals**: Open each project to view design goals, design decisions, tools and methodology, and architecture breakdown.
+### 3. 🔊 Bespoke Procedural Audio Synthesizer
+- Built with the native browser **Web Audio API** — zero external heavy audio files.
+- High-precision sine and triangle oscillator frequencies for:
+  - Fluid hover tick feedback (880 Hz harmonic)
+  - Crisp modal actuation click (620 Hz tone)
+  - Smooth closing transitions (420 Hz tone)
+  - Audio mute/unmute persistence toggle in the navigation bar.
 
-### 4. Transparent 5-Step Process (How I Work)
-- **Step 1 — Discovery**: Client explains business, goals, requirements, and budget.
-- **Step 2 — Planning**: Review requirements, prepare project scope, proposal, and timeline.
-- **Step 3 — Design and Development**: Craft website using intentional mix of no-code tools and AI-assisted custom development.
-- **Step 4 — Review**: Client reviews website and provides feedback within agreed scope.
-- **Step 5 — Delivery**: Deliver agreed website with relevant handover instructions.
+### 4. 🧲 Custom Physics Magnetic Cursor
+- Dual-ring inertial spring cursor tracking cursor coordinates with trailing smoothing.
+- Context-aware hover expansion with custom text badge triggers (`"MONOLITH"`, `"EXPLORE"`, `"VIEW"`, `"LISTEN"`).
 
-### 5. Flexible Service Packages & Pricing
-- **Starter Website**: Single-page / Landing Page (Includes "Request a Quote", page count, timeline, revisions).
-- **Business Website**: 3 to 6 custom pages, recommended for most businesses.
-- **Premium Website**: Custom coded bespoke web experience with 3D or advanced interactions.
-- *All packages display "Request a Quote" by default until you approve fixed rates.*
-
-### 6. "A Little About Me"
-- Authentic positioning as an independent website creator combining AI-powered design and development.
-- Decoupled placeholder for your portrait photograph and actual logo file.
-
-### 7. Project Enquiry & Brief Builder
-- Required fields: Full name, Business name, Email address, Country, Website type, Approximate budget, Desired timeline, Project description.
-- Optional fields: Existing website URL, Reference websites, Preferred communication method (Email, WhatsApp, Instagram).
-- **Handshake Email**: Formats a pre-addressed email to `sonkusare.doc@gmail.com`.
-- **WhatsApp Handshake**: Generates a pre-filled WhatsApp message.
-- **1-Click Clipboard Copy**: Copies the structured project brief to your clipboard.
-
-### 8. Privacy & Accessibility
-- Complete **Privacy Policy Modal** confirming zero marketing tracking scripts and direct email/WhatsApp transmission.
-- Narrow mobile testing down to **320px CSS width** without horizontal overflow.
+### 5. 💼 Frictionless Client Acquisition & Project Brief Builder
+- **Direct WhatsApp Project Brief**: One-click dispatch with structured budget, timeline, and requirements to [`+91 8652140271`](https://wa.me/918652140271).
+- **Direct Mailto Relay**: Pre-addressed email to `sonkusare.doc@gmail.com`.
+- **1-Click Clipboard Brief**: Formatted scope summary ready for instant paste.
 
 ---
 
-## 💻 Running Locally
+## 🎨 9 Production-Grade Concept Prototype Demonstrations
 
-### 1. Install Dependencies
+The portfolio features 9 dedicated, code-split concept web experiences across diverse industries:
+
+| # | Brand & Concept | Industry | Key Features & Interactions | Direct Deep Link |
+|---|----------------|----------|-----------------------------|------------------|
+| **01** | **FORMA** | Brutalist Architecture Studio | Blueprint grid overlay, project showcase, interactive measurement specs | [Launch FORMA](https://v0786.github.io/WebDev/#/demo/forma) |
+| **02** | **MAISON CÉLESTE** | Fine Dining & Culinary Salon | Degustation menu switcher, private salon booking drawer, sensory dark aesthetic | [Launch MAISON](https://v0786.github.io/WebDev/#/demo/maison) |
+| **03** | **ORBIT** | Enterprise Cloud AI Platform | Live latency metric counter, pricing tier toggle, terminal sandbox preview | [Launch ORBIT](https://v0786.github.io/WebDev/#/demo/orbit) |
+| **04** | **ATELIER 27** | Haute Couture & Runway Fashion | Editorial typography, garment detail zoom, concierge consultation booking | [Launch ATELIER 27](https://v0786.github.io/WebDev/#/demo/atelier27) |
+| **05** | **ARC RESIDENCES** | Ultra-Luxury Architecture & Living | Panoramic view controls, floorplan inspector, private gallery tour | [Launch ARC](https://v0786.github.io/WebDev/#/demo/arc) |
+| **06** | **VANTA** | Hypercar Aerodynamics Engineering | Aerodynamic flow telemetry, downforce simulator, wind tunnel viewer | [Launch VANTA](https://v0786.github.io/WebDev/#/demo/vanta) |
+| **07** | **NOIR** | Experimental Design & Motion Agency | Bold kinetic typography, reel playback modal, client credential index | [Launch NOIR](https://v0786.github.io/WebDev/#/demo/noir) |
+| **08** | **KANVAA** | Minimalist Scandinavian Furniture | Material tactile selector, dimension diagrams, curated living space lookbook | [Launch KANVAA](https://v0786.github.io/WebDev/#/demo/kanvaa) |
+| **09** | **FARM FRESH** | Regenerative Organic Farm-to-Table | Seasonal harvest timeline, harvest box builder, producer trace maps | [Launch FARM FRESH](https://v0786.github.io/WebDev/#/demo/farm-fresh) |
+
+---
+
+## 🛠️ Technology Stack
+
+- **Core**: [React 18](https://react.dev/), [TypeScript](https://www.typescriptlang.org/)
+- **Build Tooling**: [Vite 6](https://vitejs.dev/) with automatic chunk-splitting and lazy-loaded routes
+- **Styling**: [Tailwind CSS 3](https://tailwindcss.com/) with customized luxury design system tokens (Acid Lime `#B8FF00`, Bone shades, Obsidian `#07080B`)
+- **Animation & Motion**: [Framer Motion](https://www.framer.com/motion/) spring physics, transform hooks, and layout animations
+- **Graphics & 3D**: [Three.js](https://threejs.org/) and CSS 3D matrix transforms
+- **Audio Engine**: Native Browser [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Typography**: Cormorant Garamond, Syne, Plus Jakarta Sans, and JetBrains Mono via Google Fonts
+
+---
+
+## 💻 Local Development Setup
+
+### 1. Prerequisites
+- **Node.js**: v18.0 or higher
+- **npm**: v9.0 or higher
+
+### 2. Clone Repository
+```bash
+git clone https://github.com/v0786/WebDev.git
+cd WebDev
+```
+
+### 3. Install Dependencies
 ```bash
 npm install
 ```
 
-### 2. Start Dev Server
+### 4. Start Development Server
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:5000](http://localhost:5000) or [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 3. Build for Production
+### 5. Production Build & Validation
 ```bash
 npm run build
 ```
-Generates an optimized static bundle in `dist/` with strict TypeScript validation.
+Executes strict `tsc` TypeScript compilation and generates optimized production bundles in `dist/`.
 
-### 4. Preview Production Build Locally
+### 6. GitHub Pages Deployment Sync
 ```bash
-npm run preview
+node scripts/prepare-deploy.js
 ```
+Automatically synchronizes the compiled output into the root `/` and `/docs` directories for zero-friction GitHub Pages hosting.
 
 ---
 
-## 📝 Pre-Publishing Customization Checklist
+## 📬 Contact & Inquiries
 
-All content is centralized in the `src/config/` directory:
-
-| Config File | What to Customize |
-|---|---|
-| `src/config/personal.ts` | WhatsApp number (`whatsAppNumber`, `isWhatsAppConfigured`), Profile photo path, Logo path, Availability status, Custom domain |
-| `src/config/services.ts` | Add, remove, or edit service descriptions and availability tags |
-| `src/config/portfolio.ts` | Replace demonstration projects with real client case studies as you complete projects (`isConcept: false`) |
-| `src/config/process.ts` | Configure fixed package prices if desired, change delivery timelines or revision policies |
-
----
-
-## 🌐 Recommended Free Hosting Options
-
-### Option 1: Vercel (Recommended)
-1. Push this folder to your GitHub repository.
-2. Go to [vercel.com](https://vercel.com) and log in.
-3. Click **Add New Project**, select your repository. Vercel auto-detects Vite.
-4. Click **Deploy**. Your portfolio will be live on a fast global edge network with free automatic SSL.
-
-### Option 2: Netlify
-1. Log in to [netlify.com](https://netlify.com) and click **Add new site > Import an existing project**.
-2. Select your repository.
-3. Build command: `npm run build`, Publish directory: `dist`.
-4. Click **Deploy Site**.
-
-### Option 3: Cloudflare Pages
-1. Go to Cloudflare Dashboard > **Workers & Pages** > **Create application** > **Pages**.
-2. Connect your GitHub repository.
-3. Preset: **Vite**, Build command: `npm run build`, Output directory: `dist`.
-4. Click **Save and Deploy**.
+- **Creative Developer**: Sonkusare Vaibhav
+- **Brand**: VAIBHAV
+- **Location**: Mumbai, India *(Serving Global Clients)*
+- **Email**: [sonkusare.doc@gmail.com](mailto:sonkusare.doc@gmail.com)
+- **WhatsApp**: [+91 8652140271](https://wa.me/918652140271)
+- **GitHub**: [@v0786](https://github.com/v0786)
+- **Instagram**: [@sonkusare_vaibhav](https://www.instagram.com/sonkusare_vaibhav/)
+- **Live Portfolio**: [https://v0786.github.io/WebDev/](https://v0786.github.io/WebDev/)

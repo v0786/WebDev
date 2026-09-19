@@ -1,11 +1,14 @@
 /**
  * MASTER BRAND & PERSONAL CONFIGURATION
- * Vaibhav Sonkusare — Creative Web Studio
+ * SONKUSARE VAIBHAV — Creative Developer & Web Designer
  */
 
 export interface PersonalConfig {
   brandName: string;
   fullName: string;
+  shortName: string;
+  role: string;
+  location: string;
   heroHeadline: string;
   heroSupportingHeadline: string;
   heroSupportingParagraph: string;
@@ -14,8 +17,10 @@ export interface PersonalConfig {
   email: string;
   instagramHandle: string;
   instagramUrl: string;
-  whatsAppNumber: string; // Set when provided by user
-  isWhatsAppConfigured: boolean;
+  whatsAppNumber: string;
+  whatsAppUrl: string;
+  githubUrl: string;
+  linkedinUrl: string;
   domainPlaceholder: string;
   
   // Visual Assets
@@ -23,49 +28,45 @@ export interface PersonalConfig {
   profilePhotoPlaceholder: string;
   heroBackgroundImage: string;
   
-  // About Me Section
+  // Availability & Positioning
+  availabilityStatus: string;
+  primaryPositioning: string;
+  isWhatsAppConfigured: boolean;
   aboutHeading: string;
   aboutBio: string[];
-  
-  // Contact Section
-  contactHeadline: string;
-  contactSupportingText: string;
-  availabilityStatus: string;
 }
 
 export const PERSONAL_INFO: PersonalConfig = {
-  brandName: "Vaibhav Sonkusare — Creative Web Studio",
-  fullName: "Vaibhav Sonkusare",
-  heroHeadline: "Ideas Into Digital Experiences.",
+  brandName: "VAIBHAV",
+  fullName: "Sonkusare Vaibhav",
+  shortName: "Vaibhav",
+  role: "Creative Developer + Web Designer",
+  location: "Mumbai, India",
+  heroHeadline: "I DESIGN AND BUILD DIGITAL EXPERIENCES.",
   heroSupportingHeadline: "Bespoke websites for international startups and modern businesses.",
-  heroSupportingParagraph: "I design and build fast, responsive websites combining AI-assisted prototyping with handcrafted React, TypeScript, and Tailwind CSS polish. Direct 1-on-1 collaboration, clear milestones, and global delivery.",
+  heroSupportingParagraph: "I design and build websites that make businesses look better, communicate clearly and turn attention into action. Combining Design, Development, Motion, Interaction, AI and SEO.",
   
   // Verified Contact Points
   email: "sonkusare.doc@gmail.com",
   instagramHandle: "sonkusare_vaibhav",
   instagramUrl: "https://www.instagram.com/sonkusare_vaibhav/",
-  
-  // WhatsApp: Configurable. Will activate once phone number is confirmed.
-  whatsAppNumber: "",
-  isWhatsAppConfigured: false,
+  whatsAppNumber: "+91 8652140271",
+  whatsAppUrl: "https://wa.me/918652140271?text=Hi%20Vaibhav,%20I'd%20like%20to%20discuss%20a%20website%20project.",
+  githubUrl: "https://github.com/v0786/WebDev",
+  linkedinUrl: "https://www.linkedin.com/in/vaibhav-sonkusare/",
   
   // Custom Domain & Assets
   domainPlaceholder: "https://v0786.github.io/WebDev/",
-  // Visual Assets (dynamic GitHub Pages base path)
   logoPlaceholder: `${import.meta.env.BASE_URL}images/sonkusare-vaibhav-logo.png`,
   heroBackgroundImage: `${import.meta.env.BASE_URL}images/vaibhav-bg.jpg`,
   profilePhotoPlaceholder: `${import.meta.env.BASE_URL}images/vaibhav-sonkusare.jpg`,
   
-  // About Me Section Content
-  aboutHeading: "A Little About Me",
+  availabilityStatus: "AVAILABLE FOR SELECT PROJECTS",
+  primaryPositioning: "I design and build websites that make businesses look better, communicate clearly and turn attention into action.",
+  isWhatsAppConfigured: true,
+  aboutHeading: "About Vaibhav",
   aboutBio: [
-    "I'm Vaibhav Sonkusare, an independent creative web developer and designer collaborating with founders, businesses, and creators globally.",
-    "I combine modern visual aesthetics, rapid AI-assisted workflows, and clean custom frontend engineering (React, TypeScript, Tailwind CSS) to deliver websites that communicate value clearly and convert visitors.",
-    "Working directly with me means zero agency bureaucracy, rapid turnaround, asynchronous communication across time zones, and transparent milestone-based pricing in USD."
-  ],
-  
-  // Contact Section Content
-  contactHeadline: "Let's Build Something Great.",
-  contactSupportingText: "Have a new business idea, a product launch, or an existing website to modernize? Tell me what you're planning, and let's discuss how we can bring it to life.",
-  availabilityStatus: "Open for New International Enquiries"
+    "I'm Vaibhav. I'm a creative developer and web designer from Mumbai, India, focused on building websites and digital experiences that combine strong visual design with thoughtful engineering.",
+    "I work across Design, Development, Interaction, Motion, AI and Business Websites. Instead of separating design and code across disconnected teams, I provide one integrated workflow from concept to production."
+  ]
 };

@@ -1,97 +1,91 @@
 import React from 'react';
-import { 
-  UserCheck, 
-  Cpu, 
-  Smartphone, 
-  Target, 
-  FileCheck2, 
-  ShieldAlert 
-} from 'lucide-react';
 
 export const WhyWorkWithMe: React.FC = () => {
-  const points = [
+  const principles = [
     {
-      title: "Direct 1-on-1 Maker Collaboration",
-      description: "You work directly with the person designing and coding your website. No junior account handlers, no lost context in handover chains, and zero agency bureaucratic markup.",
-      icon: <UserCheck className="w-6 h-6 text-neon-cyan" />,
-      tag: "Direct Access"
+      number: '01',
+      title: 'DESIGN + DEVELOPMENT',
+      subtitle: 'ONE INTEGRATED WORKFLOW',
+      description: 'One integrated workflow where design concepts and frontend code are authored together, eliminating miscommunication and preserving visual nuance.'
     },
     {
-      title: "Time Zone Overlap & Async Agility",
-      description: "Experienced in seamless asynchronous collaboration across North America, Europe, and Australia. You receive structured written briefs, milestone demos, and daily/weekly progress updates.",
-      icon: <Target className="w-6 h-6 text-neon-violet" />,
-      tag: "Global Workflow"
+      number: '02',
+      title: 'CUSTOM VISUAL DIRECTION',
+      subtitle: 'DESIGNED AROUND THE PROJECT',
+      description: 'Design decisions are made specifically around your brand, audience and business goals—never forced into a generic off-the-shelf template.'
     },
     {
-      title: "AI Prototyping + Custom Code Polish",
-      description: "I harness modern AI design tooling to explore concepts rapidly and iterate on layouts, then write handcrafted, maintainable React and TypeScript code for production-grade speed and reliability.",
-      icon: <Cpu className="w-6 h-6 text-neon-electric" />,
-      tag: "Modern Tech"
+      number: '03',
+      title: 'RESPONSIVE',
+      subtitle: 'EVERY SCREEN CONSIDERED',
+      description: 'Mobile, tablet and desktop layouts are designed with purposeful hierarchy and ergonomic touch targets from the very beginning.'
     },
     {
-      title: "Transparent USD Milestone Contracts",
-      description: "Every deliverable, timeline, and payment milestone is clearly outlined before work starts. Invoicing in USD (or EUR/GBP) via international bank transfer, Wise, or Stripe with no unexpected fees.",
-      icon: <FileCheck2 className="w-6 h-6 text-emerald-400" />,
-      tag: "Fair & Upfront"
+      number: '04',
+      title: 'PERFORMANCE CONSCIOUS',
+      subtitle: 'EFFICIENT IMPLEMENTATION',
+      description: 'Efficient implementation and optimized assets throughout the development lifecycle to ensure snappy user experiences.'
     },
     {
-      title: "Mobile Ergonomics & Global Performance",
-      description: "Websites are optimized for fast load times worldwide and tested across iPhone, Android, tablets, and 4K displays with accessible typography and touch ergonomics.",
-      icon: <Smartphone className="w-6 h-6 text-sky-400" />,
-      tag: "Fast & Fluid"
+      number: '05',
+      title: 'SEO READY',
+      subtitle: 'SEMANTIC ARCHITECTURE',
+      description: 'Semantic HTML5, structured metadata, and accessible hierarchy built into the foundation to ensure clean discoverability.'
     },
     {
-      title: "Honest Commitments & Zero Gimmicks",
-      description: "No inflated client logos, no fabricated testimonials, and no unrealistic SEO ranking guarantees. Just disciplined technical execution, genuine communication, and dedicated craftsmanship.",
-      icon: <ShieldAlert className="w-6 h-6 text-amber-400" />,
-      tag: "100% Authentic"
+      number: '06',
+      title: 'DIRECT COLLABORATION',
+      subtitle: 'WORK DIRECTLY WITH THE CREATOR',
+      description: 'Direct communication with the person designing and building the experience—no middlemen, account layers, or outsourced handoffs.'
     }
   ];
 
   return (
-    <section id="why-me" className="py-24 relative bg-dark-950/70 border-t border-white/5">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-24 sm:py-36 relative border-b border-white/[0.08] overflow-hidden bg-white/[0.01]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-dark-850 border border-white/10 text-xs font-mono text-neon-cyan">
-            <span>THE FREELANCE ADVANTAGE</span>
+        <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-white/[0.08] pb-8 mb-16 sm:mb-20">
+          <div>
+            <div className="text-xs font-mono uppercase tracking-widest text-[#B8FF00] mb-3">
+              [ 06 / BUILT AROUND THE BUSINESS ]
+            </div>
+            <h2 className="text-3xl sm:text-5xl md:text-6xl font-sans text-bone-100 font-bold tracking-tight">
+              BUILT AROUND <br />
+              <span className="font-serif italic font-normal text-[#B8FF00]">THE BUSINESS</span>.
+            </h2>
           </div>
-
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Why Work Directly With Me
-          </h2>
-
-          <p className="text-slate-400 text-base sm:text-lg">
-            A focused partnership delivering international-standard digital solutions with speed, clarity, and personal accountability.
-          </p>
+          <div className="mt-4 md:mt-0 max-w-md text-xs sm:text-sm font-sans text-bone-300 font-light leading-relaxed">
+            Six principles that govern how I collaborate, architect experiences, and deliver production digital properties.
+          </div>
         </div>
 
-        {/* 6 Grid Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {points.map((pt, idx) => (
+        {/* 6 Core Principles Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {principles.map((item) => (
             <div
-              key={idx}
-              className="p-7 rounded-3xl bg-dark-900/70 backdrop-blur-md border border-white/10 flex flex-col justify-between hover:border-white/25 hover:shadow-xl hover:shadow-neon-cyan/5 transition-all duration-300 group"
+              key={item.number}
+              className="p-8 rounded-2xl bg-white/[0.02] border border-white/[0.08] space-y-4 hover:border-[#B8FF00]/40 transition-colors"
             >
-              <div>
-                <div className="flex items-center justify-between mb-5">
-                  <div className="w-12 h-12 rounded-2xl bg-dark-800 border border-white/10 flex items-center justify-center group-hover:scale-105 transition-transform">
-                    {pt.icon}
-                  </div>
-                  <span className="text-[11px] font-mono px-2.5 py-1 rounded-md bg-white/5 text-slate-400 border border-white/5">
-                    {pt.tag}
-                  </span>
-                </div>
-
-                <h3 className="text-lg font-bold text-white mb-2.5 group-hover:text-neon-cyan transition-colors">
-                  {pt.title}
-                </h3>
-
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  {pt.description}
-                </p>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono text-[#B8FF00] font-bold">
+                  PRINCIPLE {item.number}
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#B8FF00]/60" />
               </div>
+
+              <div>
+                <h3 className="text-xl sm:text-2xl font-sans font-bold text-bone-100 tracking-tight">
+                  {item.title}
+                </h3>
+                <div className="text-[10px] font-mono uppercase tracking-widest text-bone-300 mt-1">
+                  {item.subtitle}
+                </div>
+              </div>
+
+              <p className="text-xs sm:text-sm font-sans text-bone-300 font-light leading-relaxed">
+                {item.description}
+              </p>
             </div>
           ))}
         </div>
