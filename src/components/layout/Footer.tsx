@@ -35,33 +35,33 @@ export const Footer: React.FC = () => {
           {/* Col 2: Navigation Links */}
           <div className="space-y-2">
             <div className="text-bone-100 uppercase tracking-widest font-bold">DIRECTORY</div>
-            <ul className="space-y-2 text-bone-300">
-              <li><a href="#work" className="hover:text-[#B8FF00] transition-colors">WORK</a></li>
-              <li><a href="#services" className="hover:text-[#B8FF00] transition-colors">SERVICES</a></li>
-              <li><a href="#process" className="hover:text-[#B8FF00] transition-colors">PROCESS</a></li>
-              <li><a href="#about" className="hover:text-[#B8FF00] transition-colors">ABOUT</a></li>
-              <li><a href="#contact" className="hover:text-[#B8FF00] transition-colors">CONTACT</a></li>
+            <ul className="space-y-1 text-bone-300">
+              <li><a href="#work" className="inline-flex items-center min-h-[28px] py-1 hover:text-[#B8FF00] transition-colors">WORK</a></li>
+              <li><a href="#services" className="inline-flex items-center min-h-[28px] py-1 hover:text-[#B8FF00] transition-colors">SERVICES</a></li>
+              <li><a href="#process" className="inline-flex items-center min-h-[28px] py-1 hover:text-[#B8FF00] transition-colors">PROCESS</a></li>
+              <li><a href="#about" className="inline-flex items-center min-h-[28px] py-1 hover:text-[#B8FF00] transition-colors">ABOUT</a></li>
+              <li><a href="#contact" className="inline-flex items-center min-h-[28px] py-1 hover:text-[#B8FF00] transition-colors">CONTACT</a></li>
             </ul>
           </div>
 
           {/* Col 3: Direct Channels */}
           <div className="space-y-2">
             <div className="text-bone-100 uppercase tracking-widest font-bold">COMMISSION</div>
-            <ul className="space-y-2 text-bone-300">
+            <ul className="space-y-1 text-bone-300">
               <li>
-                <a href={`mailto:${PERSONAL_INFO.email}`} className="hover:text-[#B8FF00] transition-colors break-all">
+                <a href={`mailto:${PERSONAL_INFO.email}`} className="inline-flex items-center min-h-[28px] py-1 hover:text-[#B8FF00] transition-colors break-all">
                   EMAIL: {PERSONAL_INFO.email}
                 </a>
               </li>
               <li>
-                <a href={PERSONAL_INFO.whatsAppUrl} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">
+                <a href={PERSONAL_INFO.whatsAppUrl} target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[28px] py-1 text-emerald-400 hover:underline">
                   WHATSAPP: {PERSONAL_INFO.whatsAppNumber}
                 </a>
               </li>
               <li>
                 <button
                   onClick={() => setPrivacyOpen(true)}
-                  className="hover:text-bone-100 transition-colors text-left"
+                  className="inline-flex items-center min-h-[28px] py-1 hover:text-bone-100 transition-colors text-left cursor-pointer"
                 >
                   Privacy Policy &amp; Ethics
                 </button>
@@ -72,10 +72,10 @@ export const Footer: React.FC = () => {
           {/* Col 4: Verified Socials */}
           <div className="space-y-2">
             <div className="text-bone-100 uppercase tracking-widest font-bold">CONNECT</div>
-            <ul className="space-y-2 text-bone-300">
+            <ul className="space-y-1 text-bone-300">
               {PERSONAL_INFO.email && (
                 <li>
-                  <a href={`mailto:${PERSONAL_INFO.email}`} className="hover:text-[#B8FF00] transition-colors flex items-center gap-1">
+                  <a href={`mailto:${PERSONAL_INFO.email}`} className="inline-flex items-center min-h-[28px] py-1 hover:text-[#B8FF00] transition-colors gap-1">
                     <span>EMAIL</span>
                     <ArrowUpRight className="w-3 h-3 text-[#B8FF00]" />
                   </a>
@@ -83,7 +83,7 @@ export const Footer: React.FC = () => {
               )}
               {PERSONAL_INFO.whatsAppUrl && (
                 <li>
-                  <a href={PERSONAL_INFO.whatsAppUrl} target="_blank" rel="noreferrer" className="hover:text-[#B8FF00] transition-colors flex items-center gap-1">
+                  <a href={PERSONAL_INFO.whatsAppUrl} target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[28px] py-1 hover:text-[#B8FF00] transition-colors gap-1">
                     <span>WHATSAPP</span>
                     <ArrowUpRight className="w-3 h-3 text-[#B8FF00]" />
                   </a>
@@ -91,7 +91,7 @@ export const Footer: React.FC = () => {
               )}
               {PERSONAL_INFO.githubUrl && (
                 <li>
-                  <a href={PERSONAL_INFO.githubUrl} target="_blank" rel="noreferrer" className="hover:text-[#B8FF00] transition-colors flex items-center gap-1">
+                  <a href={PERSONAL_INFO.githubUrl} target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[28px] py-1 hover:text-[#B8FF00] transition-colors gap-1">
                     <span>GITHUB</span>
                     <ArrowUpRight className="w-3 h-3 text-[#B8FF00]" />
                   </a>
@@ -99,7 +99,7 @@ export const Footer: React.FC = () => {
               )}
               {PERSONAL_INFO.linkedinUrl && (
                 <li>
-                  <a href={PERSONAL_INFO.linkedinUrl} target="_blank" rel="noreferrer" className="hover:text-[#B8FF00] transition-colors flex items-center gap-1">
+                  <a href={PERSONAL_INFO.linkedinUrl} target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[28px] py-1 hover:text-[#B8FF00] transition-colors gap-1">
                     <span>LINKEDIN</span>
                     <ArrowUpRight className="w-3 h-3 text-[#B8FF00]" />
                   </a>
@@ -107,7 +107,7 @@ export const Footer: React.FC = () => {
               )}
               {PERSONAL_INFO.instagramUrl && (
                 <li>
-                  <a href={PERSONAL_INFO.instagramUrl} target="_blank" rel="noreferrer" className="hover:text-[#B8FF00] transition-colors flex items-center gap-1">
+                  <a href={PERSONAL_INFO.instagramUrl} target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[28px] py-1 hover:text-[#B8FF00] transition-colors gap-1">
                     <span>INSTAGRAM</span>
                     <ArrowUpRight className="w-3 h-3 text-[#B8FF00]" />
                   </a>
@@ -128,7 +128,7 @@ export const Footer: React.FC = () => {
             <span className="text-[#B8FF00]">AVAILABLE FOR SELECT COMMISSIONS</span>
             <button
               onClick={scrollToTop}
-              className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer text-bone-300"
+              className="inline-flex items-center gap-1 min-h-[32px] px-2 hover:text-white transition-colors cursor-pointer text-bone-300"
               title="Return to top of page"
             >
               <span>TOP</span>

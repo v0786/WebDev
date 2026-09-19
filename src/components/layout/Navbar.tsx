@@ -98,7 +98,7 @@ export const Navbar: React.FC = () => {
               <div className="text-sm sm:text-base font-sans font-bold tracking-widest text-bone-100 group-hover:text-[#B8FF00] transition-colors uppercase">
                 VAIBHAV
               </div>
-              <span className="hidden sm:inline text-[10px] font-mono tracking-widest text-bone-300/80 uppercase border-l border-white/10 pl-3">
+              <span className="hidden sm:inline text-[10px] font-mono tracking-widest text-bone-300/90 uppercase border-l border-white/10 pl-3">
                 CREATIVE DEVELOPER
               </span>
             </a>

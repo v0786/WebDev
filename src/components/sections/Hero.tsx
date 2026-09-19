@@ -29,14 +29,14 @@ export const Hero: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 my-auto">
         
         {/* Top Editorial Status Line */}
-        <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-mono uppercase tracking-widest text-bone-300/80 border-b border-white/[0.08] pb-4 mb-10 sm:mb-14">
+        <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-mono uppercase tracking-widest text-bone-200 border-b border-white/[0.08] pb-4 mb-10 sm:mb-14">
           <div className="flex items-center gap-3">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-bone-100 font-semibold">AVAILABLE FOR SELECT PROJECTS</span>
-            <span className="text-bone-300/70">//</span>
-            <span>2026</span>
+            <span className="text-bone-300/90">//</span>
+            <span className="text-bone-200 font-medium">2026</span>
           </div>
-          <div className="hidden sm:flex items-center gap-3 text-[11px]">
+          <div className="hidden sm:flex items-center gap-3 text-[11px] text-bone-200">
             <span>MUMBAI, INDIA &bull; SERVING INDIA + INTERNATIONAL CLIENTS</span>
           </div>
         </div>
