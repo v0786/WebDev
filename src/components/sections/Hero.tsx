@@ -146,7 +146,7 @@ export const Hero: React.FC = () => {
                       width={360}
                       height={360}
                       className="w-full h-full object-cover rounded-xl"
-                      loading="eager"
+                      loading="lazy"
                       decoding="async"
                     />
                   </picture>
@@ -166,7 +166,7 @@ export const Hero: React.FC = () => {
         <div className="mt-14 sm:mt-20 pt-8 border-t border-white/[0.08] grid grid-cols-2 sm:grid-cols-4 gap-6 text-left font-mono">
           
           <div className="space-y-1">
-            <div className="text-[10px] uppercase tracking-widest text-bone-300/80">
+            <div className="text-[10px] uppercase tracking-widest text-bone-300">
               BASED IN
             </div>
             <div className="text-xs text-bone-100 font-medium">
@@ -175,7 +175,7 @@ export const Hero: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            <div className="text-[10px] uppercase tracking-widest text-bone-300/80">
+            <div className="text-[10px] uppercase tracking-widest text-bone-300">
               FOCUS
             </div>
             <div className="text-xs text-bone-100 font-medium leading-snug">
@@ -184,7 +184,7 @@ export const Hero: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            <div className="text-[10px] uppercase tracking-widest text-bone-300/80">
+            <div className="text-[10px] uppercase tracking-widest text-bone-300">
               AVAILABLE FOR
             </div>
             <div className="text-xs text-[#B8FF00] font-medium flex items-center gap-1.5">
@@ -194,7 +194,7 @@ export const Hero: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            <div className="text-[10px] uppercase tracking-widest text-bone-300/80">
+            <div className="text-[10px] uppercase tracking-widest text-bone-300">
               EDITION
             </div>
             <div className="text-xs text-bone-100 font-medium">

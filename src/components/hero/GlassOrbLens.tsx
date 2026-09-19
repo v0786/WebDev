@@ -70,7 +70,7 @@ export const DigitalMonolith: React.FC = () => {
               width={64}
               height={64}
               className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border border-white/25 drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)] mx-auto group-hover:scale-105 transition-transform duration-500"
-              loading="eager"
+              loading="lazy"
               decoding="async"
             />
           </picture>

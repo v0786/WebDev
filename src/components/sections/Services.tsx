@@ -157,7 +157,7 @@ export const Services: React.FC = () => {
                     </h3>
                     
                     {/* Always visible brief description */}
-                    <p className="text-xs sm:text-sm font-sans text-bone-300 leading-relaxed font-light">
+                    <p className="max-w-prose text-xs sm:text-sm font-sans text-bone-300 leading-relaxed font-light">
                       {item.explanation}
                     </p>
 

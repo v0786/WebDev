@@ -75,7 +75,7 @@ export const Process: React.FC = () => {
               </span>.
             </h2>
           </div>
-          <div className="mt-4 md:mt-0 max-w-md text-xs sm:text-sm font-sans text-bone-300/85 font-light leading-relaxed">
+          <div className="mt-4 md:mt-0 max-w-md text-xs sm:text-sm font-sans text-bone-300 font-light leading-relaxed">
             A structured six-phase framework that takes your project from abstract concept to high-converting production with absolute transparency.
           </div>
         </div>
@@ -108,18 +108,18 @@ export const Process: React.FC = () => {
                     <h3 className="text-2xl sm:text-3xl font-sans font-bold text-bone-100 tracking-tight">
                       {phase.name}
                     </h3>
-                    <div className="text-[10px] font-mono text-bone-300/80 uppercase tracking-widest mt-1">
+                    <div className="text-[10px] font-mono text-bone-300 uppercase tracking-widest mt-1">
                       {phase.subtitle}
                     </div>
                   </div>
 
-                  <p className="text-xs sm:text-sm font-sans text-bone-300/80 font-light leading-relaxed">
+                  <p className="text-xs sm:text-sm font-sans text-bone-300 font-light leading-relaxed">
                     {phase.description}
                   </p>
                 </div>
 
                 <div className="pt-6 mt-6 border-t border-white/[0.06] space-y-2">
-                  <div className="text-[10px] font-mono uppercase tracking-widest text-bone-300/80">
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-bone-300">
                     KEY DELIVERABLES
                   </div>
                   <div className="flex flex-wrap gap-1.5">

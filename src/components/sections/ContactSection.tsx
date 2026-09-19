@@ -151,7 +151,7 @@ ${name}
                   <button
                     type="button"
                     onClick={() => setStatus('idle')}
-                    className="text-xs font-mono text-bone-300/80 hover:text-white underline"
+                    className="text-xs font-mono text-bone-300 hover:text-white underline min-h-[32px] py-1 inline-flex items-center"
                   >
                     Edit &amp; Submit Another Inquiry
                   </button>
@@ -344,13 +344,13 @@ ${name}
                 <div className="flex items-center justify-between">
                   <a
                     href={`mailto:${PERSONAL_INFO.email}`}
-                    className="text-sm sm:text-base font-mono text-bone-100 hover:text-[#B8FF00] transition-colors break-all"
+                    className="inline-flex items-center min-h-[32px] py-1 text-sm sm:text-base font-mono text-bone-100 hover:text-[#B8FF00] transition-colors break-all"
                   >
                     {PERSONAL_INFO.email}
                   </a>
                   <button
                     onClick={handleCopyEmail}
-                    className="p-2 text-bone-300 hover:text-[#B8FF00] transition-colors"
+                    className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-bone-300 hover:text-[#B8FF00] transition-colors"
                     title="Copy email to clipboard"
                   >
                     {copied ? <CheckCircle2 className="w-4 h-4 text-[#B8FF00]" /> : <Copy className="w-4 h-4" />}
@@ -367,12 +367,12 @@ ${name}
                   href={PERSONAL_INFO.whatsAppUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm font-mono text-emerald-400 hover:text-emerald-300 transition-colors"
+                  className="inline-flex items-center gap-2 min-h-[32px] py-1 text-sm font-mono text-emerald-400 hover:text-emerald-300 transition-colors"
                 >
                   <MessageSquare className="w-4 h-4" />
                   <span>{PERSONAL_INFO.whatsAppNumber} (Direct WhatsApp Chat)</span>
                 </a>
-                <div className="text-[10px] font-mono text-bone-300/80 pt-0.5">
+                <div className="text-[10px] font-mono text-bone-300 pt-0.5">
                   Prefilled: &quot;Hi Vaibhav, I&apos;d like to discuss a website project.&quot;
                 </div>
               </div>
@@ -488,7 +488,7 @@ ${name}
             </a>
           </div>
 
-          <div className="text-xs font-mono uppercase tracking-widest text-bone-300/80 pt-4 flex flex-wrap items-center justify-center gap-4">
+          <div className="text-xs font-mono uppercase tracking-widest text-bone-300 pt-4 flex flex-wrap items-center justify-center gap-4">
             <span>MUMBAI / INDIA</span>
             <span>&bull;</span>
             <span className="text-[#B8FF00]">AVAILABLE FOR SELECT PROJECTS</span>

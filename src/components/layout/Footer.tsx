@@ -28,7 +28,7 @@ export const Footer: React.FC = () => {
               <div>CREATIVE DEVELOPER</div>
               <div>WEB DESIGNER</div>
               <div className="text-[#B8FF00] font-bold">{PERSONAL_INFO.location.toUpperCase()}</div>
-              <div className="text-[11px] text-bone-300/80">&copy; 2026</div>
+              <div className="text-[11px] text-bone-300">&copy; 2026</div>
             </div>
           </div>
 

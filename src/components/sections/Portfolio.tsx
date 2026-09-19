@@ -34,8 +34,8 @@ export const Portfolio: React.FC = () => {
               </span>.
             </h2>
           </div>
-          <div className="mt-4 md:mt-0 max-w-md text-xs sm:text-sm font-sans text-bone-300/85 font-light leading-relaxed">
-            A collection of digital experiences created across different industries, audiences and visual directions.
+          <div className="mt-4 md:mt-0 max-w-md text-xs sm:text-sm font-sans text-bone-300 font-light leading-relaxed">
+            A curated selection of production websites engineered for high visual prestige, brand clarity, and performance.
           </div>
         </div>
 
@@ -59,7 +59,7 @@ export const Portfolio: React.FC = () => {
                       data-cursor="view"
                       data-cursor-text="INSPECT"
                     >
-                      <div className="relative z-10 flex items-center justify-between text-xs font-mono uppercase tracking-widest text-bone-300/80">
+                      <div className="relative z-10 flex items-center justify-between text-xs font-mono uppercase tracking-widest text-bone-300">
                         <span className="px-3 py-1 rounded-full bg-black/60 border border-white/10 backdrop-blur-md">
                           PROJECT {project.index} &bull; {project.category}
                         </span>
@@ -77,7 +77,7 @@ export const Portfolio: React.FC = () => {
                         <h3 className="text-4xl sm:text-6xl md:text-7xl font-serif italic text-bone-100 tracking-tight group-hover:text-[#B8FF00] transition-colors drop-shadow-md">
                           {project.brandName}
                         </h3>
-                        <div className="mt-3 text-xs sm:text-sm font-sans text-bone-300/80 max-w-lg mx-auto font-light">
+                        <div className="mt-3 text-xs sm:text-sm font-sans text-bone-300 max-w-lg mx-auto font-light">
                           {project.headline}
                         </div>
 
@@ -94,7 +94,7 @@ export const Portfolio: React.FC = () => {
                         )}
                       </div>
 
-                      <div className="relative z-10 flex items-center justify-between text-[11px] font-mono text-bone-300/85 border-t border-white/10 pt-4">
+                      <div className="relative z-10 flex items-center justify-between text-[11px] font-mono text-bone-300 border-t border-white/10 pt-4">
                         <span>FULL-BLEED ARCHITECTURE</span>
                         <span className="flex items-center gap-1.5 text-bone-100 group-hover:text-[#B8FF00]">
                           CLICK TO INSPECT CASE STUDY &rarr;
@@ -148,7 +148,7 @@ export const Portfolio: React.FC = () => {
                         data-cursor="view"
                         data-cursor-text="INSPECT"
                       >
-                        <div className="relative z-10 flex items-center justify-between text-xs font-mono uppercase tracking-widest text-bone-300/80">
+                        <div className="relative z-10 flex items-center justify-between text-xs font-mono uppercase tracking-widest text-bone-300">
                           <span className="px-3 py-1 rounded-full bg-black/60 border border-white/10 backdrop-blur-md">
                             {project.category}
                           </span>
@@ -166,12 +166,12 @@ export const Portfolio: React.FC = () => {
                           <h3 className="text-3xl sm:text-5xl font-serif italic text-bone-100 tracking-tight group-hover:text-[#B8FF00] transition-colors">
                             {project.brandName}
                           </h3>
-                          <div className="mt-2 text-xs font-mono text-bone-300/85 uppercase tracking-widest max-w-sm mx-auto">
+                          <div className="mt-2 text-xs font-mono text-bone-300 uppercase tracking-widest max-w-sm mx-auto">
                             {project.headline}
                           </div>
                         </div>
 
-                        <div className="relative z-10 flex items-center justify-between text-[11px] font-mono text-bone-300/85 border-t border-white/10 pt-3">
+                        <div className="relative z-10 flex items-center justify-between text-[11px] font-mono text-bone-300 border-t border-white/10 pt-3">
                           <span>EDITION // {project.year}</span>
                           <span className="text-bone-100 group-hover:text-[#B8FF00] flex items-center gap-1">
                             VIEW CASE STUDY &rarr;

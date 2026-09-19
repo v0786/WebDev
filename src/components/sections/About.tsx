@@ -21,7 +21,7 @@ export const About: React.FC = () => {
               I&apos;M <span className="font-serif italic font-normal text-[#B8FF00] lowercase">Vaibhav</span>.
             </h2>
           </div>
-          <div className="mt-4 md:mt-0 max-w-md text-xs sm:text-sm font-mono text-bone-300/80 uppercase tracking-wider">
+          <div className="mt-4 md:mt-0 max-w-md text-xs sm:text-sm font-mono text-bone-300 uppercase tracking-wider">
             Creative Developer &amp; Web Designer based in Mumbai, India. Serving clients worldwide.
           </div>
         </div>
