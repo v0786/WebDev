@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { HeroSection } from './HeroSection';
 import { AboutSection } from './AboutSection';
 import { ProjectsSection } from './ProjectsSection';
@@ -8,14 +8,12 @@ import { ContactSection } from './ContactSection';
 import { LeadCaptureModal } from '../modals/LeadCaptureModal';
 
 export const CinematicPortfolio: React.FC = () => {
-  const [videoEnded, setVideoEnded] = useState(false);
-
   return (
     <div
       id="top"
       className="w-full min-h-screen bg-black text-[#E8DFD8] selection:bg-[#cbb59d] selection:text-black overflow-x-hidden"
     >
-      <HeroSection onVideoEnd={() => setVideoEnded(true)} />
+      <HeroSection />
       <AboutSection />
       <ProjectsSection />
       <SkillsSection />
@@ -23,7 +21,7 @@ export const CinematicPortfolio: React.FC = () => {
       <ContactSection />
 
       {/* Dynamic Pop-up Lead Capture Form */}
-      <LeadCaptureModal videoEnded={videoEnded} />
+      <LeadCaptureModal />
     </div>
   );
 };

@@ -37,11 +37,7 @@ const navItems = [
   { name: 'CONTACT', href: '#contact' },
 ];
 
-interface HeroSectionProps {
-  onVideoEnd?: () => void;
-}
-
-export const HeroSection: React.FC<HeroSectionProps> = ({ onVideoEnd }) => {
+export const HeroSection: React.FC = () => {
   const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
   const [isHovered, setIsHovered] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
@@ -129,8 +125,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onVideoEnd }) => {
           key={isMobile ? 'mobile-9-16' : 'desktop-16-9'}
           autoPlay
           muted
-          loop={false}
-          onEnded={onVideoEnd}
+          loop
           playsInline
           preload="auto"
           className={
