@@ -72,7 +72,7 @@ ${name}
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const recordInquiryToDashboard = (clientName: string, clientEmail: string, businessName: string, reqType: string, budget: string, desc: string, channel: 'Website Form' | 'WhatsApp Inquiry' | 'Instagram DM' | 'Email Commission') => {
+  const recordInquiryToDashboard = async (clientName: string, clientEmail: string, businessName: string, reqType: string, budget: string, desc: string, channel: 'Website Form' | 'WhatsApp Inquiry' | 'Instagram DM' | 'Email Commission') => {
     try {
       const existingStr = localStorage.getItem('sales_portal_requests');
       const existing: any[] = existingStr ? JSON.parse(existingStr) : [];
@@ -93,13 +93,13 @@ ${name}
         attachedFilesCount: 0,
         channel: channel
       };
-      salesService.createRequest(newReq);
+      await salesService.createRequest(newReq);
     } catch {
       // ignore
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
 
@@ -112,19 +112,22 @@ ${name}
     soundFx.playModalReveal();
     setStatus('loading');
 
-    recordInquiryToDashboard(name, email, company, projectType, budgetRange, description, 'Website Form');
+    await recordInquiryToDashboard(name, email, company, projectType, budgetRange, description, 'Website Form');
 
-    // Simulate submission flow then open properly formatted mailto dispatch
+    setStatus('success');
+    setName('');
+    setEmail('');
+    setCompany('');
+    setDescription('');
+
     setTimeout(() => {
       try {
         const mailtoUrl = generateMailto();
-        window.location.href = mailtoUrl;
-        setStatus('success');
+        window.open(mailtoUrl, '_blank');
       } catch {
-        setStatus('error');
-        setErrorMessage('Failed to trigger email client. Please copy my direct email below.');
+        // ignore
       }
-    }, 600);
+    }, 400);
   };
 
   return (
