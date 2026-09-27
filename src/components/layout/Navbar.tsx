@@ -84,7 +84,7 @@ export const Navbar: React.FC = () => {
             {/* Logo / Personal Identity — Clicking VAIBHAV. triggers M3 Sales Login */}
             <a
               href="#/sales"
-              onClick={(e) => {
+              onClick={() => {
                 soundFx.playClick();
                 window.location.hash = '#/sales';
               }}

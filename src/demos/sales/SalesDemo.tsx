@@ -13,26 +13,18 @@ import {
   AlertCircle,
   DollarSign,
   Building2,
-  Briefcase,
   Search,
-  Filter,
   Plus,
   X,
   Eye,
   Check,
   FolderOpen,
-  ArrowRight,
   TrendingUp,
   LogOut,
   Sparkles,
-  Layers,
   ShieldCheck,
-  FileCheck,
-  Calendar,
   Layers3,
-  CheckSquare,
-  HelpCircle,
-  ChevronDown
+  CheckSquare
 } from 'lucide-react';
 
 // Types
