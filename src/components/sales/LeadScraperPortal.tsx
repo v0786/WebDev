@@ -297,10 +297,10 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         }
       }
     } catch {
-      // If CORS or Network block, seamlessly fallback to live web directory
+      // Network/CORS block fallback
     }
 
-    // 3. Fallback: Query Real Live OpenStreetMap / Nominatim API
+    // 3. Fallback: Query Real Live OpenStreetMap Directory
     setStatusMessage(`🔍 Extracting real business listings from live web map directory...`);
     const realLiveLeads = await fetchLiveWebLeads(keyword, city);
 
@@ -311,55 +311,9 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
       return;
     }
 
-    // 4. Smart Generator Fallback
-    const topic = keyword.split(' ')[0] || 'Business';
-    const cleanCity = city || 'Nagpur';
-
-    const fallbackLeads: ScrapedLead[] = [
-      {
-        id: `lead-${Date.now()}-1`,
-        name: `${cleanCity} ${topic} Hub & Studio`,
-        category: keyword,
-        address: `Main Market, Sitabuldi, ${cleanCity}`,
-        phone: '+91 98230 11992',
-        email: `contact@${topic.toLowerCase()}${cleanCity.toLowerCase()}.in`,
-        website: '',
-        rating: '4.8',
-        reviewCount: '154',
-        hasWebsite: false,
-        instagram: `https://instagram.com/${topic.toLowerCase()}_${cleanCity.toLowerCase()}`,
-        mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${cleanCity} ${topic} Hub & Studio ${cleanCity}`)}`
-      },
-      {
-        id: `lead-${Date.now()}-2`,
-        name: `Royal ${topic} Care Studio`,
-        category: keyword,
-        address: `Civil Lines, ${cleanCity}`,
-        phone: '+91 94221 88771',
-        email: '',
-        website: '',
-        rating: '4.7',
-        reviewCount: '92',
-        hasWebsite: false,
-        mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`Royal ${topic} Care Studio ${cleanCity}`)}`
-      },
-      {
-        id: `lead-${Date.now()}-3`,
-        name: `Apex ${topic} Center`,
-        category: keyword,
-        address: `Station Road, ${cleanCity}`,
-        phone: '+91 98900 44332',
-        email: `info@apex${topic.toLowerCase()}.com`,
-        website: '',
-        rating: '4.6',
-        reviewCount: '68',
-        hasWebsite: false,
-        mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`Apex ${topic} Center ${cleanCity}`)}`
-      }
-    ];
-
-    setLeads(fallbackLeads);
-    setStatusMessage(`✅ Loaded ${fallbackLeads.length} direct lead prospects for '${keyword}' in ${cleanCity}.`);
+    // 4. No Data Found Empty State (NO DEMO PLACEHOLDERS)
+    setLeads([]);
+    setStatusMessage(`⚠️ No live map listings found for '${keyword}' in ${city}. Please check search spelling or try a different city.`);
     setIsScraping(false);
   };
 
@@ -663,9 +617,9 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
             {filteredLeads.length === 0 ? (
               <div className="p-12 text-center bg-white/[0.02] border border-white/10 rounded-2xl space-y-3">
                 <AlertCircle className="w-8 h-8 text-[#D4AF37] mx-auto opacity-70" />
-                <div className="text-sm font-mono text-white font-bold">No leads found yet</div>
+                <div className="text-sm font-mono text-white font-bold">No lead results to display</div>
                 <p className="text-xs text-gray-400 font-mono max-w-sm mx-auto">
-                  Type a search query (e.g. <em>"salons in Nagpur"</em> or <em>"restaurants in Mumbai"</em>) on the left and click <strong>START GOOGLE MAPS SCRAPE</strong> to extract real live business listings!
+                  Type your target keyword (e.g. <em>"salons in Nagpur"</em> or <em>"restaurants in Mumbai"</em>) and click <strong>START GOOGLE MAPS SCRAPE</strong> to extract real business listings!
                 </p>
               </div>
             ) : (
