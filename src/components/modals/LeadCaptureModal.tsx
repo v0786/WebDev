@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, CheckCircle2, Phone, Sparkles, AlertCircle } from 'lucide-react';
 import { salesService } from '../../services/salesService';
 import { soundFx } from '../audio/SoundEffects';
+import { MediaBriefPicker, AttachedMedia } from '../media/MediaBriefPicker';
 
 interface LeadCaptureModalProps {
   videoEnded?: boolean;
@@ -16,6 +17,7 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({ videoEnded }
   const [phone, setPhone] = useState('');
   const [company, setCompany] = useState('');
   const [note, setNote] = useState('');
+  const [attachments, setAttachments] = useState<AttachedMedia[]>([]);
 
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -48,6 +50,14 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({ videoEnded }
     setIsOpen(false);
   };
 
+  const handleAddAttachment = (media: AttachedMedia) => {
+    setAttachments((prev) => [...prev, media]);
+  };
+
+  const handleRemoveAttachment = (id: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
@@ -68,9 +78,27 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({ videoEnded }
       exploring: 'Business Website',
     };
 
+    const reqNum = `REQ-2026-0${Math.floor(100 + Math.random() * 900)}`;
+
+    // Upload attached media to Supabase Vault
+    for (const att of attachments) {
+      try {
+        await salesService.uploadFile(
+          att.file,
+          att.name,
+          'Asset Upload',
+          reqNum,
+          name,
+          `Attached brief media (${att.typeCategory}): ${att.name}`
+        );
+      } catch (err) {
+        console.warn('File upload skipped or local saved:', err);
+      }
+    }
+
     const newReq: any = {
       id: `req-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      requestNumber: `REQ-2026-0${Math.floor(100 + Math.random() * 900)}`,
+      requestNumber: reqNum,
       clientName: name,
       clientEmail: email,
       clientPhone: phone,
@@ -81,9 +109,12 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({ videoEnded }
       dateSubmitted: new Date().toISOString().split('T')[0],
       deadline: '2026-11-30',
       requirementsSummary: note || `Lead capture popup submission. Intent: ${intent}`,
-      detailedRequirements: [note || `Customer lead via landing popup modal`],
+      detailedRequirements: [
+        note || `Customer lead via landing popup modal`,
+        attachments.length > 0 ? `Attached ${attachments.length} media files (Voice Notes / Wireframes / Video)` : 'No attachments'
+      ],
       techStackPreference: ['React', 'TypeScript', 'Tailwind CSS'],
-      attachedFilesCount: 0,
+      attachedFilesCount: attachments.length,
       channel: 'Website Form',
     };
 
@@ -288,6 +319,13 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({ videoEnded }
                     className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/15 focus:border-[#D4AF37] text-white placeholder-gray-500 text-xs focus:outline-none transition-colors resize-none"
                   />
                 </div>
+
+                {/* Attached Media Picker (Voice Notes, Images, Video, PDFs) */}
+                <MediaBriefPicker
+                  attachments={attachments}
+                  onAddAttachment={handleAddAttachment}
+                  onRemoveAttachment={handleRemoveAttachment}
+                />
 
                 {/* Submit Action */}
                 <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">

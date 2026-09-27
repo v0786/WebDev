@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import {
-  Send,
-  CheckCircle2,
-  Copy,
-  MessageSquare,
-  ArrowUpRight,
-  ShieldCheck,
-  Mail,
-  AlertCircle,
-  Instagram,
-  Github,
+import { 
+  Send, 
+  CheckCircle2, 
+  Copy, 
+  Mail, 
+  MessageSquare, 
+  Instagram, 
+  Github, 
   Linkedin,
   Phone,
+  ArrowUpRight,
+  ShieldCheck,
+  AlertCircle
 } from 'lucide-react';
 import { PERSONAL_INFO } from '../../config/personal';
 import { soundFx } from '../audio/SoundEffects';
 import { salesService } from '../../services/salesService';
+import { MediaBriefPicker, AttachedMedia } from '../media/MediaBriefPicker';
 
 export const ContactSection: React.FC = () => {
   const [name, setName] = useState('');
@@ -27,10 +28,19 @@ export const ContactSection: React.FC = () => {
   const [budgetRange, setBudgetRange] = useState('$5,000 – $10,000');
   const [timeline, setTimeline] = useState('Standard (4–8 Weeks)');
   const [description, setDescription] = useState('');
+  const [attachments, setAttachments] = useState<AttachedMedia[]>([]);
 
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [copied, setCopied] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  const handleAddAttachment = (media: AttachedMedia) => {
+    setAttachments((prev) => [...prev, media]);
+  };
+
+  const handleRemoveAttachment = (id: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  };
 
   const projectTypes = [
     'Web Design & UI/UX',
@@ -103,9 +113,27 @@ ${name}
     try {
       const existingStr = localStorage.getItem('sales_portal_requests');
       const existing: any[] = existingStr ? JSON.parse(existingStr) : [];
+      const reqNum = `REQ-2026-0${100 + existing.length + 1}`;
+
+      // Upload files
+      for (const att of attachments) {
+        try {
+          await salesService.uploadFile(
+            att.file,
+            att.name,
+            'Asset Upload',
+            reqNum,
+            clientName,
+            `Attached brief media (${att.typeCategory}): ${att.name}`
+          );
+        } catch {
+          // ignore
+        }
+      }
+
       const newReq: any = {
         id: `req-${Date.now()}-${Math.floor(Math.random()*1000)}`,
-        requestNumber: `REQ-2026-0${100 + existing.length + 1}`,
+        requestNumber: reqNum,
         clientName: clientName || 'Client Prospect',
         clientEmail: clientEmail || 'prospect@business.com',
         clientPhone: clientPhone,
@@ -116,9 +144,12 @@ ${name}
         dateSubmitted: new Date().toISOString().split('T')[0],
         deadline: '2026-11-30',
         requirementsSummary: desc || `Client inquiry received via ${channel}.`,
-        detailedRequirements: [desc || `Initial contact initiated through ${channel}`],
+        detailedRequirements: [
+          desc || `Initial contact initiated through ${channel}`,
+          attachments.length > 0 ? `Attached ${attachments.length} media files (Voice Notes / Wireframes / Video)` : 'No attachments'
+        ],
         techStackPreference: ['React', 'TypeScript', 'Tailwind CSS'],
-        attachedFilesCount: 0,
+        attachedFilesCount: attachments.length,
         channel: channel
       };
       await salesService.createRequest(newReq);
@@ -148,6 +179,7 @@ ${name}
     setPhone('');
     setCompany('');
     setDescription('');
+    setAttachments([]);
 
     setTimeout(() => {
       try {
@@ -453,6 +485,13 @@ ${name}
                     style={{ fontFamily: "'Montserrat', sans-serif" }}
                   />
                 </div>
+
+                {/* Attached Media Brief (Voice Recording, Images, Video, PDFs) */}
+                <MediaBriefPicker
+                  attachments={attachments}
+                  onAddAttachment={handleAddAttachment}
+                  onRemoveAttachment={handleRemoveAttachment}
+                />
 
                 {/* Submit Action */}
                 <button
