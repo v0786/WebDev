@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, CheckCircle2, Copy, MessageSquare, ArrowUpRight, ShieldCheck, Mail, AlertCircle } from 'lucide-react';
+import { Send, CheckCircle2, Copy, MessageSquare, ArrowUpRight, ShieldCheck, Mail, AlertCircle, Phone } from 'lucide-react';
 import { PERSONAL_INFO } from '../../config/personal';
 import { soundFx } from '../audio/SoundEffects';
 import { salesService } from '../../services/salesService';
@@ -7,6 +7,7 @@ import { salesService } from '../../services/salesService';
 export const ContactSection: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [company, setCompany] = useState('');
   const [projectType, setProjectType] = useState('Business Website');
   const [budgetRange, setBudgetRange] = useState('$5,000 – $10,000');
@@ -44,12 +45,13 @@ export const ContactSection: React.FC = () => {
   const generateMailto = () => {
     const subject = encodeURIComponent(`Project Inquiry: ${projectType} — ${name} (${company || 'Direct Client'})`);
     const body = encodeURIComponent(
-`Hi Vaibhav,
+      `Hi Vaibhav,
 
-I would like to discuss a new website project with you:
+I would like to discuss a project with you. Here are the key details:
 
 — NAME: ${name}
 — EMAIL: ${email}
+— MOBILE NUMBER: ${phone}
 — COMPANY / BRAND: ${company || 'Not specified'}
 — PROJECT TYPE: ${projectType}
 — BUDGET RANGE: ${budgetRange}
@@ -72,7 +74,16 @@ ${name}
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const recordInquiryToDashboard = async (clientName: string, clientEmail: string, businessName: string, reqType: string, budget: string, desc: string, channel: 'Website Form' | 'WhatsApp Inquiry' | 'Instagram DM' | 'Email Commission') => {
+  const recordInquiryToDashboard = async (
+    clientName: string,
+    clientEmail: string,
+    clientPhone: string = 'Not Provided',
+    businessName: string = '',
+    reqType: string = '',
+    budget: string = '',
+    desc: string = '',
+    channel: 'Website Form' | 'WhatsApp Inquiry' | 'Instagram DM' | 'Email Commission' = 'Website Form'
+  ) => {
     try {
       const existingStr = localStorage.getItem('sales_portal_requests');
       const existing: any[] = existingStr ? JSON.parse(existingStr) : [];
@@ -81,6 +92,7 @@ ${name}
         requestNumber: `REQ-2026-0${100 + existing.length + 1}`,
         clientName: clientName || 'Client Prospect',
         clientEmail: clientEmail || 'prospect@business.com',
+        clientPhone: clientPhone,
         businessName: businessName || `${clientName || 'New Client'}'s Business`,
         requestType: (reqType.includes('3D') || reqType.includes('Design') ? 'UI/UX Redesign' : reqType.includes('AI') || reqType.includes('Automation') ? 'SaaS Automation' : 'Custom Web App') as any,
         budget: budget || '$5,000 – $10,000',
@@ -103,8 +115,8 @@ ${name}
     e.preventDefault();
     setErrorMessage('');
 
-    if (!name.trim() || !email.trim() || !description.trim()) {
-      setErrorMessage('Please fill in your name, email, and project description.');
+    if (!name.trim() || !email.trim() || !phone.trim() || !description.trim()) {
+      setErrorMessage('Please fill in all compulsory fields (*): Your Name, Email Address, Mobile Number, and Project Description.');
       setStatus('error');
       return;
     }
@@ -112,11 +124,12 @@ ${name}
     soundFx.playModalReveal();
     setStatus('loading');
 
-    await recordInquiryToDashboard(name, email, company, projectType, budgetRange, description, 'Website Form');
+    await recordInquiryToDashboard(name, email, phone, company, projectType, budgetRange, description, 'Website Form');
 
     setStatus('success');
     setName('');
     setEmail('');
+    setPhone('');
     setCompany('');
     setDescription('');
 
@@ -234,19 +247,37 @@ ${name}
                   </div>
                 </div>
 
-                {/* Company / Brand */}
-                <div className="space-y-1.5">
-                  <label htmlFor="contact-company" className="text-xs font-mono text-bone-300 uppercase tracking-widest block">
-                    COMPANY / BRAND NAME
-                  </label>
-                  <input
-                    id="contact-company"
-                    type="text"
-                    placeholder="Studio, Brand or Organization"
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 focus:border-[#B8FF00] focus:ring-1 focus:ring-[#B8FF00] text-bone-100 placeholder:text-bone-300/70 text-sm font-sans focus:outline-none transition-colors min-h-[44px]"
-                  />
+                {/* Mobile / Phone Number & Company / Brand */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label htmlFor="contact-phone" className="text-xs font-mono text-[#B8FF00] uppercase tracking-widest block font-bold flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-[#B8FF00]" />
+                      <span>MOBILE / PHONE NUMBER *</span>
+                    </label>
+                    <input
+                      id="contact-phone"
+                      type="tel"
+                      required
+                      placeholder="+91 98765 43210 / +1 (555) 000-0000"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-[#B8FF00]/40 focus:border-[#B8FF00] focus:ring-1 focus:ring-[#B8FF00] text-bone-100 placeholder:text-bone-300/70 text-sm font-sans focus:outline-none transition-colors min-h-[44px]"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="contact-company" className="text-xs font-mono text-bone-300 uppercase tracking-widest block">
+                      COMPANY / BRAND NAME
+                    </label>
+                    <input
+                      id="contact-company"
+                      type="text"
+                      placeholder="Studio, Brand or Organization"
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 focus:border-[#B8FF00] focus:ring-1 focus:ring-[#B8FF00] text-bone-100 placeholder:text-bone-300/70 text-sm font-sans focus:outline-none transition-colors min-h-[44px]"
+                    />
+                  </div>
                 </div>
 
                 {/* Project Type Selector */}

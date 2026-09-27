@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS public.sales_requests (
     request_number TEXT NOT NULL,
     client_name TEXT NOT NULL,
     client_email TEXT NOT NULL,
+    client_phone TEXT,
     business_name TEXT NOT NULL,
     request_type TEXT NOT NULL,
     budget TEXT NOT NULL,
@@ -21,6 +22,9 @@ CREATE TABLE IF NOT EXISTS public.sales_requests (
     channel TEXT DEFAULT 'Website Form',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Ensure client_phone column exists if table was already created
+ALTER TABLE public.sales_requests ADD COLUMN IF NOT EXISTS client_phone TEXT;
 
 -- 2. Client Files & Vault Table
 CREATE TABLE IF NOT EXISTS public.client_files (
