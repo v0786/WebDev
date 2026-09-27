@@ -187,13 +187,19 @@ export const HeroSection: React.FC = () => {
         {/* Navigation Bar */}
         <header className="relative flex items-center justify-between w-full pointer-events-auto">
           <a
-            href="#top"
+            href="#/sales"
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.hash = '#/sales';
+            }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className="text-xs sm:text-sm font-semibold tracking-[0.35em] uppercase text-[#EAD8C7] hover:opacity-75 transition-opacity"
+            className="text-xs sm:text-sm font-semibold tracking-[0.35em] uppercase text-[#EAD8C7] hover:text-[#D0BCFF] transition-all cursor-pointer flex items-center gap-1"
             style={{ fontFamily: "'Montserrat', sans-serif" }}
+            title="Click VAIBHAV. to access Portal Login"
           >
-            {PERSONAL_INFO.brandName}.
+            <span>{PERSONAL_INFO.brandName}</span>
+            <span className="text-[#D0BCFF] font-bold">.</span>
           </a>
 
           {/* Navigation Links */}

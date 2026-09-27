@@ -80,13 +80,17 @@ export const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             
-            {/* Logo / Personal Identity */}
+            {/* Logo / Personal Identity — Clicking VAIBHAV. triggers M3 Sales Login */}
             <a
-              href="#"
-              onClick={() => soundFx.playClick()}
-              className="flex items-center gap-3 group"
+              href="#/sales"
+              onClick={(e) => {
+                soundFx.playClick();
+                window.location.hash = '#/sales';
+              }}
+              className="flex items-center gap-3 group cursor-pointer"
               data-cursor="explore"
-              data-cursor-text="VAIBHAV"
+              data-cursor-text="LOGIN"
+              title="Click VAIBHAV. to access Material 3 Login Portal"
             >
               <picture className="shrink-0">
                 <source srcSet={`${import.meta.env.BASE_URL}images/logo-icon-128.webp`} type="image/webp" />
@@ -95,16 +99,17 @@ export const Navbar: React.FC = () => {
                   alt="Vaibhav Sonkusare — Creative Web Studio Logo"
                   width={40}
                   height={40}
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border border-white/20 group-hover:border-[#B8FF00] transition-colors shadow-md"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border border-white/20 group-hover:border-[#D0BCFF] transition-colors shadow-md"
                   loading="eager"
                   decoding="async"
                 />
               </picture>
-              <div className="text-sm sm:text-base font-sans font-bold tracking-widest text-bone-100 group-hover:text-[#B8FF00] transition-colors uppercase">
-                VAIBHAV
+              <div className="text-base sm:text-lg font-sans font-extrabold tracking-widest text-white group-hover:text-[#D0BCFF] transition-colors uppercase flex items-center gap-1">
+                <span>VAIBHAV</span>
+                <span className="text-[#D0BCFF] font-black font-mono">.</span>
               </div>
-              <span className="hidden sm:inline text-[10px] font-mono tracking-widest text-bone-300/90 uppercase border-l border-white/10 pl-3">
-                CREATIVE DEVELOPER
+              <span className="hidden sm:inline text-[10px] font-mono tracking-widest text-[#D0BCFF] uppercase border-l border-white/10 pl-3">
+                [CLICK TO LOGIN]
               </span>
             </a>
 
