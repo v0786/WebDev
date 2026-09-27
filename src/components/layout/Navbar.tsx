@@ -60,6 +60,7 @@ export const Navbar: React.FC = () => {
     setMobileMenuOpen(false);
     if (href.startsWith('#/')) {
       window.location.hash = href;
+      window.scrollTo({ top: 0, behavior: 'auto' });
       return;
     }
     const elem = document.querySelector(href);
@@ -159,6 +160,18 @@ export const Navbar: React.FC = () => {
                 ) : (
                   <Volume2 className="w-4 h-4 text-[#B8FF00] animate-pulse" />
                 )}
+              </button>
+
+              {/* Material 3 Portal Login Button */}
+              <button
+                onClick={() => handleNavClick('#/sales')}
+                onMouseEnter={() => soundFx.playHover()}
+                className="flex min-h-[44px] items-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-full bg-[#6750A4] text-white hover:bg-[#7F67BE] font-mono text-xs uppercase font-bold tracking-wider transition-all duration-300 shadow-md active:scale-95"
+                data-cursor="link"
+                title="Access Material 3 Sales Portal Login"
+              >
+                <span>LOGIN</span>
+                <span className="text-[#D0BCFF] font-bold">&rarr;</span>
               </button>
 
               {/* Start a Project Primary CTA Button */}

@@ -76,6 +76,9 @@ export const App: React.FC = () => {
       }
 
       if (
+        hash.includes('sales') ||
+        hash.includes('login') ||
+        hash.includes('dashboard') ||
         hash.startsWith('#/demo/') ||
         hash.startsWith('#/work/') ||
         hash.startsWith('#/restaurant') ||
@@ -84,7 +87,7 @@ export const App: React.FC = () => {
         hash === '' ||
         hash === '#'
       ) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'auto' });
       }
     };
 
@@ -93,8 +96,15 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Determine active concept demo based on hash route (supporting #/demo/... and #/work/...)
-  const isSales = currentHash.startsWith('#/demo/sales') || currentHash.startsWith('#/work/sales') || currentHash === '#/sales' || currentHash === '#sales' || currentHash === '#/dashboard' || currentHash === '#dashboard';
+  // Determine active concept demo based on hash route (supporting #/demo/..., #/sales, #/login, #login)
+  const isSales =
+    currentHash.includes('sales') ||
+    currentHash.includes('login') ||
+    currentHash.includes('dashboard') ||
+    currentHash === '#/sales' ||
+    currentHash === '#sales' ||
+    currentHash === '#/login' ||
+    currentHash === '#login';
   const isForma = currentHash.startsWith('#/demo/forma') || currentHash.startsWith('#/work/forma') || currentHash === '#/forma';
   const isMaison = currentHash.startsWith('#/demo/maison') || currentHash.startsWith('#/work/maison') || currentHash === '#/maison' || currentHash.startsWith('#/restaurant') || currentHash === '#restaurant';
   const isOrbit = currentHash.startsWith('#/demo/orbit') || currentHash.startsWith('#/work/orbit') || currentHash === '#/orbit' || currentHash.startsWith('#/saas') || currentHash === '#saas';
