@@ -71,6 +71,35 @@ ${name}
     setTimeout(() => setCopied(false), 2500);
   };
 
+  const recordInquiryToDashboard = (clientName: string, clientEmail: string, businessName: string, reqType: string, budget: string, desc: string, channel: 'Website Form' | 'WhatsApp Inquiry' | 'Instagram DM' | 'Email Commission') => {
+    try {
+      const existingStr = localStorage.getItem('sales_portal_requests');
+      const existing: any[] = existingStr ? JSON.parse(existingStr) : [];
+      const newReq = {
+        id: `req-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+        requestNumber: `REQ-2026-0${100 + existing.length + 1}`,
+        clientName: clientName || 'Client Prospect',
+        clientEmail: clientEmail || 'prospect@business.com',
+        businessName: businessName || `${clientName || 'New Client'}'s Business`,
+        requestType: reqType.includes('3D') || reqType.includes('Design') ? 'UI/UX Redesign' : reqType.includes('AI') || reqType.includes('Automation') ? 'SaaS Automation' : 'Custom Web App',
+        budget: budget || '$5,000 – $10,000',
+        status: 'New',
+        dateSubmitted: new Date().toISOString().split('T')[0],
+        deadline: '2026-11-30',
+        requirementsSummary: desc || `Client inquiry received via ${channel}.`,
+        detailedRequirements: [desc || `Initial contact initiated through ${channel}`],
+        techStackPreference: ['React', 'TypeScript', 'Tailwind CSS'],
+        attachedFilesCount: 0,
+        channel: channel
+      };
+      existing.unshift(newReq);
+      localStorage.setItem('sales_portal_requests', JSON.stringify(existing));
+      window.dispatchEvent(new Event('storage'));
+    } catch {
+      // ignore
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
@@ -83,6 +112,8 @@ ${name}
 
     soundFx.playModalReveal();
     setStatus('loading');
+
+    recordInquiryToDashboard(name, email, company, projectType, budgetRange, description, 'Website Form');
 
     // Simulate submission flow then open properly formatted mailto dispatch
     setTimeout(() => {
@@ -367,6 +398,7 @@ ${name}
                   href={PERSONAL_INFO.whatsAppUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => recordInquiryToDashboard('WhatsApp Client', 'whatsapp.client@chat.com', 'WhatsApp Prospect', 'Custom Web App', '$5,000 – $10,000', 'Inquiry initiated via WhatsApp Chat link on portfolio site.', 'WhatsApp Inquiry')}
                   className="inline-flex items-center gap-2 min-h-[32px] py-1 text-sm font-mono text-emerald-400 hover:text-emerald-300 transition-colors"
                 >
                   <MessageSquare className="w-4 h-4" />
@@ -394,6 +426,7 @@ ${name}
                 href={PERSONAL_INFO.whatsAppUrl}
                 target="_blank"
                 rel="noreferrer"
+                onClick={() => recordInquiryToDashboard('WhatsApp Client', 'whatsapp.client@chat.com', 'WhatsApp Prospect', 'Custom Web App', '$5,000 – $10,000', 'Inquiry initiated via WhatsApp Chat button on portfolio.', 'WhatsApp Inquiry')}
                 className="p-4 rounded-xl bg-white/[0.02] border border-white/10 hover:border-emerald-400/50 flex items-center justify-between text-xs font-mono text-bone-200 hover:text-white transition-all min-h-[44px]"
               >
                 <div className="flex items-center gap-2">
@@ -405,6 +438,7 @@ ${name}
 
               <a
                 href={`mailto:${PERSONAL_INFO.email}`}
+                onClick={() => recordInquiryToDashboard('Email Client', 'email.client@inquiry.com', 'Direct Email Lead', 'Custom Web App', '$5,000 – $15,000', 'Inquiry initiated via Email link on portfolio.', 'Email Commission')}
                 className="p-4 rounded-xl bg-white/[0.02] border border-white/10 hover:border-[#B8FF00]/50 flex items-center justify-between text-xs font-mono text-bone-200 hover:text-white transition-all min-h-[44px]"
               >
                 <div className="flex items-center gap-2">
@@ -425,6 +459,7 @@ ${name}
                   href={PERSONAL_INFO.instagramUrl}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => recordInquiryToDashboard('Instagram DM Lead', 'insta.dm@client.com', 'Instagram DM Lead', 'UI/UX Redesign', '$3,000 – $8,000', 'Inquiry initiated via Instagram Direct Message link.', 'Instagram DM')}
                   className="flex items-center justify-between text-bone-200 hover:text-[#B8FF00] transition-colors py-1"
                 >
                   <span>Instagram (@{PERSONAL_INFO.instagramHandle})</span>
