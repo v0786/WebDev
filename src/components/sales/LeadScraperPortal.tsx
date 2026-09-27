@@ -62,6 +62,24 @@ const getStoredCloudApi = (): string => {
   return DEFAULT_CLOUD_API_URL;
 };
 
+// Helper: Determine if a raw website string is a valid custom business website
+function isValidWebsite(site: string): boolean {
+  if (!site) return false;
+  const clean = site.trim().toLowerCase().replace(/^"(.*)"$/, '$1');
+  if (
+    clean.length === 0 ||
+    clean === 'none' ||
+    clean === 'null' ||
+    clean === 'undefined' ||
+    clean === 'http://' ||
+    clean === 'https://' ||
+    clean === 'n/a'
+  ) {
+    return false;
+  }
+  return true;
+}
+
 // Real Live Web Map Search Engine (Queries OpenStreetMap Nominatim API in Real-Time)
 async function fetchLiveWebLeads(keyword: string, city: string): Promise<ScrapedLead[]> {
   try {
@@ -72,7 +90,7 @@ async function fetchLiveWebLeads(keyword: string, city: string): Promise<Scraped
     ];
 
     for (const qTerm of searchTerms) {
-      const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&extratags=1&namedetails=1&limit=25&q=${encodeURIComponent(qTerm)}`;
+      const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&extratags=1&namedetails=1&limit=30&q=${encodeURIComponent(qTerm)}`;
       const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
       if (!res.ok) continue;
 
@@ -84,11 +102,14 @@ async function fetchLiveWebLeads(keyword: string, city: string): Promise<Scraped
           const cityArea = hit.address?.city || hit.address?.county || hit.address?.state_district || city;
           const fullAddr = [hit.address?.house_number, road, hit.address?.suburb, cityArea, hit.address?.postcode].filter(Boolean).join(', ') || hit.display_name;
 
-          const phone = hit.extratags?.phone || hit.extratags?.['contact:phone'] || hit.extratags?.mobile || '';
-          const website = hit.extratags?.website || hit.extratags?.['contact:website'] || '';
-          const instagramTag = hit.extratags?.['contact:instagram'];
+          const phone = hit.extratags?.phone || hit.extratags?.['contact:phone'] || hit.extratags?.mobile || hit.extratags?.['contact:mobile'] || '';
+          
+          // Check ALL possible website tags in OpenStreetMap extratags
+          const website = hit.extratags?.website || hit.extratags?.['contact:website'] || hit.extratags?.url || hit.extratags?.['contact:url'] || hit.extratags?.link || '';
+          const instagramTag = hit.extratags?.['contact:instagram'] || hit.extratags?.instagram;
           const instagram = instagramTag ? `https://instagram.com/${instagramTag.replace(/^@/, '')}` : undefined;
-          const hasWebsite = website.length > 0 && website !== 'http://' && website !== 'https://';
+          
+          const hasWebsite = isValidWebsite(website);
           const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${rawName} ${fullAddr}`)}`;
 
           return {
@@ -97,7 +118,7 @@ async function fetchLiveWebLeads(keyword: string, city: string): Promise<Scraped
             category: hit.type || hit.class || keyword,
             address: fullAddr,
             phone: phone || (idx % 2 === 0 ? `+91 98230 ${11990 + idx}` : `+91 94221 ${88770 + idx}`),
-            email: hit.extratags?.email || '',
+            email: hit.extratags?.email || hit.extratags?.['contact:email'] || '',
             website: hasWebsite ? website : '',
             rating: (4.3 + (idx % 6) * 0.1).toFixed(1),
             reviewCount: String(34 + idx * 18),
@@ -140,40 +161,52 @@ function parseCsvLeads(csvText: string): ScrapedLead[] {
   };
 
   const headers = splitCsvRow(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9_]/g, ''));
-  const getIdx = (name: string) => headers.indexOf(name);
+  const findCol = (...candidates: string[]) => {
+    for (const cand of candidates) {
+      const idx = headers.indexOf(cand);
+      if (idx !== -1) return idx;
+    }
+    // Partial search fallback
+    for (const cand of candidates) {
+      const idx = headers.findIndex(h => h.includes(cand));
+      if (idx !== -1) return idx;
+    }
+    return -1;
+  };
 
-  const titleIdx = getIdx('title');
-  const linkIdx = getIdx('link');
-  const phoneIdx = getIdx('phone');
-  const emailIdx = getIdx('emails');
-  const webIdx = getIdx('website');
-  const catIdx = getIdx('category');
-  const addrIdx = getIdx('address');
-  const ratingIdx = getIdx('review_rating');
-  const reviewsIdx = getIdx('review_count');
+  const titleIdx = findCol('title', 'name', 'business_name');
+  const linkIdx = findCol('link', 'url', 'maps_url', 'google_maps_link');
+  const phoneIdx = findCol('phone', 'telephone', 'mobile', 'contact_number');
+  const emailIdx = findCol('emails', 'email', 'contact_email');
+  const webIdx = findCol('website', 'site', 'domain', 'web', 'url');
+  const catIdx = findCol('category', 'type', 'business_type');
+  const addrIdx = findCol('address', 'location', 'full_address');
+  const ratingIdx = findCol('review_rating', 'rating', 'stars');
+  const reviewsIdx = findCol('review_count', 'reviews', 'user_ratings_total');
 
   const leads: ScrapedLead[] = [];
 
   for (let i = 1; i < lines.length; i++) {
     const cols = splitCsvRow(lines[i]);
-    const rawName = cols[titleIdx] || '';
+    const rawName = titleIdx !== -1 ? cols[titleIdx] : cols[0];
     if (!rawName) continue;
 
     const name = rawName.replace(/^"(.*)"$/, '$1').trim();
-    const site = (cols[webIdx] || '').replace(/^"(.*)"$/, '$1').trim();
-    const mapsLink = (cols[linkIdx] || '').replace(/^"(.*)"$/, '$1').trim();
-    const hasWebsite = site.length > 0 && site !== 'http://' && site !== 'https://' && site.toLowerCase() !== 'none';
+    const rawSite = webIdx !== -1 ? (cols[webIdx] || '').replace(/^"(.*)"$/, '$1').trim() : '';
+    const mapsLink = linkIdx !== -1 ? (cols[linkIdx] || '').replace(/^"(.*)"$/, '$1').trim() : '';
+    
+    const hasWebsite = isValidWebsite(rawSite);
 
     leads.push({
       id: `lead-${Date.now()}-${i}`,
       name: name || 'Local Business',
-      category: (cols[catIdx] || 'Local Business').replace(/^"(.*)"$/, '$1'),
-      address: (cols[addrIdx] || '').replace(/^"(.*)"$/, '$1'),
-      phone: (cols[phoneIdx] || '').replace(/^"(.*)"$/, '$1'),
-      email: (cols[emailIdx] || '').replace(/^"(.*)"$/, '$1'),
-      website: hasWebsite ? site : '',
-      rating: (cols[ratingIdx] || '4.5').replace(/^"(.*)"$/, '$1'),
-      reviewCount: (cols[reviewsIdx] || '0').replace(/^"(.*)"$/, '$1'),
+      category: catIdx !== -1 ? (cols[catIdx] || 'Local Business').replace(/^"(.*)"$/, '$1') : 'Local Business',
+      address: addrIdx !== -1 ? (cols[addrIdx] || '').replace(/^"(.*)"$/, '$1') : '',
+      phone: phoneIdx !== -1 ? (cols[phoneIdx] || '').replace(/^"(.*)"$/, '$1') : '',
+      email: emailIdx !== -1 ? (cols[emailIdx] || '').replace(/^"(.*)"$/, '$1') : '',
+      website: hasWebsite ? rawSite : '',
+      rating: ratingIdx !== -1 ? (cols[ratingIdx] || '4.5').replace(/^"(.*)"$/, '$1') : '4.5',
+      reviewCount: reviewsIdx !== -1 ? (cols[reviewsIdx] || '0').replace(/^"(.*)"$/, '$1') : '0',
       hasWebsite,
       mapsUrl: mapsLink || undefined
     });
@@ -653,8 +686,8 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                           <span>{lead.category}</span>
                         </span>
                         <span>&bull;</span>
-                        <span className="flex items-center gap-1 text-amber-400">
-                          <Star className="w-3.5 h-3.5 fill-current" />
+                        <span className="flex items-center gap-1 text-[#D4AF37]">
+                          <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
                           <span>{lead.rating} ({lead.reviewCount} reviews)</span>
                         </span>
                       </div>
@@ -683,9 +716,20 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
 
                     <div className="flex items-center gap-2">
                       <Globe className="w-4 h-4 text-sky-400 shrink-0" />
-                      <span className={!lead.hasWebsite ? 'text-red-400 font-semibold' : 'text-emerald-400 truncate'}>
-                        {lead.website || 'No website found on Google Maps'}
-                      </span>
+                      {lead.hasWebsite ? (
+                        <a 
+                          href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-emerald-400 font-semibold underline truncate hover:text-white"
+                        >
+                          {lead.website}
+                        </a>
+                      ) : (
+                        <span className="text-red-400 font-semibold">
+                          No website found on Google Maps
+                        </span>
+                      )}
                     </div>
 
                     {lead.email && (
