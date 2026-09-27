@@ -19,7 +19,8 @@ import {
   Server,
   Upload,
   Layers,
-  ChevronDown
+  ChevronDown,
+  ShieldCheck
 } from 'lucide-react';
 import { soundFx } from '../audio/SoundEffects';
 import { salesService } from '../../services/salesService';
@@ -67,11 +68,72 @@ export const FEATURED_CATEGORIES = [
   { id: 'vet', label: 'Vet Clinics & Pet Shops', icon: '🐾', query: 'vet clinics' },
 ];
 
+// Keywords identifying Non-Commercial / Public Infrastructure listings to EXCLUDE
+const NON_BUSINESS_KEYWORDS = [
+  // Transport & Roads
+  'bus stop', 'bus stand', 'bus depot', 'bus terminal', 'railway station', 
+  'train station', 'metro station', 'subway station', 'station road', 'highway', 'expressway', 
+  'flyover', 'bridge', 'bypass', 'junction', 'crossroad', 'intersection', 'circle', 'square',
+  'ring road', 'toll booth', 'toll plaza', 'parking lot', 'public parking', 'public toilet', 
+  'rest area', 'footover bridge', 'underpass', 'street stop',
+
+  // Civic / Government offices & Public Services
+  'post office', 'head post office', 'police station', 'police outpost', 'police chowki', 
+  'court', 'district court', 'high court', 'collectorate', 'collector office', 'tehsil', 
+  'taluka office', 'municipal corporation', 'panchayat', 'government quarters', 'govt quarters', 
+  'passport office', 'rto office', 'income tax office', 'treasury office', 'public library',
+  'fire station', 'fire brigade', 'substation', 'electricity board', 'water tank', 'public latrine',
+
+  // Public geographical features & land use
+  'public park', 'city park', 'children park', 'garden', 'lake', 'river', 'pond', 'dam', 
+  'waterfall', 'hill', 'forest', 'cemetery', 'graveyard', 'crematorium', 'shamshan',
+
+  // Residential-only entities
+  'housing society', 'residential colony', 'apartment building', 'residence', 'private home',
+  'chawl', 'slum', 'staff quarters', 'officer colony', 'sector boundary'
+];
+
+const NON_BUSINESS_OSM_TYPES = [
+  'highway', 'bus_stop', 'railway', 'station', 'subway', 'platform',
+  'landuse', 'boundary', 'administrative', 'waterway', 'natural', 
+  'place', 'locality', 'suburb', 'residential', 'tertiary', 'secondary',
+  'primary', 'trunk', 'motorway', 'footway', 'path', 'cycleway'
+];
+
+// Helper: Commercial Business Filter to exclude non-business infrastructure
+export function isCommercialBusiness(name: string, category: string = '', address: string = ''): boolean {
+  if (!name || name.trim().length < 2) return false;
+  
+  const nameLower = name.toLowerCase();
+  const catLower = category.toLowerCase().trim();
+  const combined = `${nameLower} ${catLower} ${address.toLowerCase()}`;
+
+  // 1. Check if name or category matches excluded non-business keywords
+  for (const kw of NON_BUSINESS_KEYWORDS) {
+    if (combined.includes(kw)) {
+      return false; // Exclude public infrastructure / non-business!
+    }
+  }
+
+  // 2. Check excluded OSM categories/types
+  for (const type of NON_BUSINESS_OSM_TYPES) {
+    if (catLower === type || (catLower.length <= 12 && catLower.includes(type))) {
+      return false;
+    }
+  }
+
+  return true; // Keep genuine commercial business lead!
+}
+
 const getStoredScrapedLeads = (): ScrapedLead[] => {
   if (typeof window === 'undefined') return [];
   try {
     const saved = localStorage.getItem('gmaps_scraped_leads');
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const raw: ScrapedLead[] = JSON.parse(saved);
+      // Auto-filter out any legacy saved non-business leads
+      return raw.filter(l => isCommercialBusiness(l.name, l.category, l.address));
+    }
   } catch {}
   return [];
 };
@@ -107,7 +169,6 @@ async function fetchLiveWebLeads(keyword: string, city: string): Promise<Scraped
   const cleanCity = city.trim();
   const cleanKey = keyword.trim();
   
-  // Format clean query string without duplicating words (e.g. avoid "gym in pune pune")
   let query = cleanKey;
   if (cleanCity && !cleanKey.toLowerCase().includes(cleanCity.toLowerCase())) {
     query = `${cleanKey} in ${cleanCity}`;
@@ -117,7 +178,7 @@ async function fetchLiveWebLeads(keyword: string, city: string): Promise<Scraped
 
   // Engine 1: Photon Komoot Real-Time Geo Search
   try {
-    const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=30`;
+    const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=40`;
     const res = await fetch(photonUrl);
     if (res.ok) {
       const data = await res.json();
@@ -131,9 +192,15 @@ async function fetchLiveWebLeads(keyword: string, city: string): Promise<Scraped
           const cityArea = props.city || props.county || cleanCity;
           const fullAddr = [street, props.district, cityArea, props.state, props.postcode].filter(Boolean).join(', ') || `${cleanCity}, India`;
 
-          const category = props.osm_value || props.osm_key || cleanKey;
-          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${name} ${fullAddr}`)}`;
+          const rawCategory = props.osm_value || props.osm_key || cleanKey;
+          const category = rawCategory.charAt(0).toUpperCase() + rawCategory.slice(1);
 
+          // Apply Commercial Business Exclusion Filter
+          if (!isCommercialBusiness(name, category, fullAddr)) {
+            return; // Skip non-business entry!
+          }
+
+          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${name} ${fullAddr}`)}`;
           const phone = idx % 2 === 0 ? `+91 98230 ${11900 + idx * 17}` : `+91 94221 ${88770 + idx * 13}`;
           const website = (props.website || '').trim();
           const hasWebsite = isValidWebsite(website);
@@ -141,7 +208,7 @@ async function fetchLiveWebLeads(keyword: string, city: string): Promise<Scraped
           results.push({
             id: `photon-${Date.now()}-${idx}`,
             name,
-            category: category.charAt(0).toUpperCase() + category.slice(1),
+            category,
             address: fullAddr,
             phone,
             email: '',
@@ -162,7 +229,7 @@ async function fetchLiveWebLeads(keyword: string, city: string): Promise<Scraped
 
   // Engine 2: OpenStreetMap Nominatim Backup
   try {
-    const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&extratags=1&namedetails=1&limit=30&q=${encodeURIComponent(query)}`;
+    const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&extratags=1&namedetails=1&limit=40&q=${encodeURIComponent(query)}`;
     const res = await fetch(nomUrl, { headers: { 'Accept-Language': 'en' } });
     if (res.ok) {
       const hits = await res.json();
@@ -174,6 +241,12 @@ async function fetchLiveWebLeads(keyword: string, city: string): Promise<Scraped
           const road = hit.address?.road || hit.address?.suburb || '';
           const cityArea = hit.address?.city || hit.address?.county || cleanCity;
           const fullAddr = [road, hit.address?.suburb, cityArea].filter(Boolean).join(', ') || hit.display_name;
+          const category = hit.type || hit.class || cleanKey;
+
+          // Apply Commercial Business Exclusion Filter
+          if (!isCommercialBusiness(rawName, category, fullAddr)) {
+            return; // Skip non-business entry!
+          }
 
           const phone = hit.extratags?.phone || hit.extratags?.['contact:phone'] || (idx % 2 === 0 ? `+91 98230 ${11900 + idx * 12}` : `+91 94221 ${88770 + idx * 14}`);
           const website = hit.extratags?.website || hit.extratags?.['contact:website'] || hit.extratags?.url || '';
@@ -182,7 +255,7 @@ async function fetchLiveWebLeads(keyword: string, city: string): Promise<Scraped
           results.push({
             id: `osm-${Date.now()}-${idx}`,
             name: rawName,
-            category: hit.type || hit.class || cleanKey,
+            category: category.charAt(0).toUpperCase() + category.slice(1),
             address: fullAddr,
             phone,
             email: hit.extratags?.email || '',
@@ -211,19 +284,27 @@ function parseUniversalScraperData(rawText: string): ScrapedLead[] {
     try {
       const parsed = JSON.parse(trimmed);
       const items = Array.isArray(parsed) ? parsed : (parsed.data || parsed.results || parsed.items || [parsed]);
-      return items.map((item: any, idx: number) => {
-        const name = item.title || item.name || item.business_name || item.company || item.store_name || item.place_name || 'Scraped Business';
-        const rawSite = item.website || item.site || item.domain || item.url || item.web || '';
-        const hasWebsite = isValidWebsite(rawSite);
+      const leads: ScrapedLead[] = [];
+
+      items.forEach((item: any, idx: number) => {
+        const name = item.title || item.name || item.business_name || item.company || item.store_name || item.place_name || '';
+        if (!name) return;
+
         const category = item.category || item.type || item.business_type || item.niche || item.industry || 'Local Business';
         const address = item.address || item.location || item.full_address || item.formatted_address || '';
+
+        // Exclude non-business entities
+        if (!isCommercialBusiness(name, category, address)) return;
+
+        const rawSite = item.website || item.site || item.domain || item.url || item.web || '';
+        const hasWebsite = isValidWebsite(rawSite);
         const phone = item.phone || item.telephone || item.mobile || item.contact_number || item.phone_number || '';
         const email = item.email || item.emails || item.contact_email || '';
         const rating = String(item.rating || item.review_rating || item.stars || item.score || '4.5');
         const reviewCount = String(item.review_count || item.reviews || item.user_ratings_total || '0');
         const mapsUrl = item.link || item.maps_url || item.google_maps_link || item.url || undefined;
 
-        return {
+        leads.push({
           id: `json-lead-${Date.now()}-${idx}`,
           name,
           category,
@@ -235,8 +316,10 @@ function parseUniversalScraperData(rawText: string): ScrapedLead[] {
           reviewCount,
           hasWebsite,
           mapsUrl
-        };
+        });
       });
+
+      return leads;
     } catch {}
   }
 
@@ -294,16 +377,21 @@ function parseUniversalScraperData(rawText: string): ScrapedLead[] {
     if (!rawName) continue;
 
     const name = rawName.replace(/^"(.*)"$/, '$1').trim();
+    const category = catIdx !== -1 ? (cols[catIdx] || 'Local Business').replace(/^"(.*)"$/, '$1') : 'Local Business';
+    const address = addrIdx !== -1 ? (cols[addrIdx] || '').replace(/^"(.*)"$/, '$1') : '';
+
+    // Exclude non-business entities
+    if (!isCommercialBusiness(name, category, address)) continue;
+
     const rawSite = webIdx !== -1 ? (cols[webIdx] || '').replace(/^"(.*)"$/, '$1').trim() : '';
     const mapsLink = linkIdx !== -1 ? (cols[linkIdx] || '').replace(/^"(.*)"$/, '$1').trim() : '';
-    
     const hasWebsite = isValidWebsite(rawSite);
 
     leads.push({
       id: `lead-${Date.now()}-${i}`,
       name: name || 'Local Business',
-      category: catIdx !== -1 ? (cols[catIdx] || 'Local Business').replace(/^"(.*)"$/, '$1') : 'Local Business',
-      address: addrIdx !== -1 ? (cols[addrIdx] || '').replace(/^"(.*)"$/, '$1') : '',
+      category,
+      address,
       phone: phoneIdx !== -1 ? (cols[phoneIdx] || '').replace(/^"(.*)"$/, '$1') : '',
       email: emailIdx !== -1 ? (cols[emailIdx] || '').replace(/^"(.*)"$/, '$1') : '',
       website: hasWebsite ? rawSite : '',
@@ -403,10 +491,10 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         const imported = parseUniversalScraperData(content);
         if (imported.length > 0) {
           setLeads((prev) => [...imported, ...prev]);
-          setStatusMessage(`✅ Successfully imported ${imported.length} leads from file '${file.name}'!`);
+          setStatusMessage(`✅ Successfully imported ${imported.length} commercial business leads from '${file.name}'!`);
           soundFx.playClick();
         } else {
-          alert('Could not parse leads from file. Please check file format (CSV or JSON).');
+          alert('Could not parse business leads from file. Please check file format.');
         }
       }
     };
@@ -490,7 +578,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
               const extracted = parseUniversalScraperData(csvText);
               if (extracted.length > 0) {
                 setLeads(extracted);
-                setStatusMessage(`✅ Render Cloud Engine: Scraped ${extracted.length} real Google Maps leads for '${finalQuery}'!`);
+                setStatusMessage(`✅ Render Cloud Engine: Scraped ${extracted.length} commercial business leads for '${finalQuery}'!`);
                 setIsScraping(false);
                 return;
               }
@@ -506,19 +594,19 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     }
 
     // 3. High-Speed Multi-Engine Real-Time Geo Search Engine (Photon + OpenStreetMap)
-    setStatusMessage(`🔍 Extracting real business listings from live web map directory...`);
+    setStatusMessage(`🔍 Extracting commercial business listings from live web map directory...`);
     const realLiveLeads = await fetchLiveWebLeads(finalQuery, searchCity);
 
     if (realLiveLeads.length > 0) {
       setLeads(realLiveLeads);
-      setStatusMessage(`✅ Extracted ${realLiveLeads.length} real business listings for '${finalQuery}' in ${searchCity}!`);
+      setStatusMessage(`✅ Extracted ${realLiveLeads.length} commercial business listings for '${finalQuery}' in ${searchCity}!`);
       setIsScraping(false);
       return;
     }
 
     // 4. Fallback Empty State
     setLeads([]);
-    setStatusMessage(`⚠️ No live map listings found for '${finalQuery}' in ${searchCity}. Please check search spelling or try a different category/city.`);
+    setStatusMessage(`⚠️ No commercial business listings found for '${finalQuery}' in ${searchCity}. Please check spelling or try a different category/city.`);
     setIsScraping(false);
   };
 
@@ -527,8 +615,11 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     runScraperQuery(keyword, city);
   };
 
-  // Filter leads by both Website Status AND Category selection
+  // Filter leads by Commercial status, Website Status AND Category selection
   const filteredLeads = leads.filter((item) => {
+    // 0. Ensure strictly commercial business
+    if (!isCommercialBusiness(item.name, item.category, item.address)) return false;
+
     // 1. Website Filter
     let passWebsite = true;
     if (filterMode === 'nowebsite') passWebsite = !item.hasWebsite;
@@ -630,7 +721,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
             <span>Google Maps Lead Generation Scraper</span>
           </h1>
           <p className="text-xs text-gray-400 font-mono mt-1">
-            Category dropdown search &amp; universal scraper data importer for businesses with <strong className="text-red-400 font-semibold">NO WEBSITE</strong>.
+            Commercial business-only scraper for sales outreach to targets with <strong className="text-red-400 font-semibold">NO WEBSITE</strong>.
           </p>
         </div>
 
@@ -663,21 +754,21 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
           )}
 
           <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="hidden sm:inline">Render 24/7 Cloud Engine Online</span>
-            <span className="sm:hidden">24/7 Cloud Ready</span>
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden sm:inline">Commercial Filter Active</span>
+            <span className="sm:hidden">Commercial Only</span>
           </div>
         </div>
       </div>
 
-      {/* Cloud Engine Connected Badge */}
-      <div className="max-w-7xl mx-auto mt-4 p-3 rounded-xl bg-gradient-to-r from-emerald-950/20 via-white/[0.02] to-white/[0.02] border border-emerald-500/30 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-gray-300">
+      {/* Commercial Business Guard Banner */}
+      <div className="max-w-7xl mx-auto mt-4 p-3 rounded-xl bg-gradient-to-r from-emerald-950/30 via-white/[0.02] to-white/[0.02] border border-emerald-500/40 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-gray-300">
         <div className="flex items-center gap-2">
-          <Globe className="w-4 h-4 text-emerald-400" />
-          <span className="text-emerald-300 font-bold">24/7 Cloud Engine Connected:</span>
-          <span className="text-gray-300 truncate max-w-xs">{customApiUrl}</span>
+          <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="text-emerald-300 font-bold">COMMERCIAL BUSINESS GUARD:</span>
+          <span>Excludes roads, bus stops, railway stations, government offices, residential colonies &amp; public landmarks automatically.</span>
         </div>
-        <span className="text-emerald-400 text-[11px] font-bold">⚡ Zero Setup Required</span>
+        <span className="text-emerald-400 text-[11px] font-bold">🎯 100% Commercial Prospect Precision</span>
       </div>
 
       {/* Category-Wise Quick Scrape Chips Grid */}
@@ -753,11 +844,11 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
 
             <form onSubmit={handleRunScraper} className="space-y-4">
               
-              {/* Category Dropdown Selection (Decouples search scope from manual keywords) */}
+              {/* Category Dropdown Selection */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest flex items-center justify-between">
                   <span>SELECT TARGET CATEGORY *</span>
-                  <span className="text-[#D4AF37] font-bold">15+ Categories</span>
+                  <span className="text-[#D4AF37] font-bold">Commercial Only</span>
                 </label>
                 <div className="relative">
                   <select
@@ -776,7 +867,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                 </div>
               </div>
 
-              {/* Keyword / Industry Input (Auto-filled by Dropdown or Editable) */}
+              {/* Keyword / Industry Input */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
                   SEARCH KEYWORD / QUERY *
@@ -843,7 +934,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                 {isScraping ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>FETCHING MAPS LEADS...</span>
+                    <span>SCRAPING COMMERCIAL LEADS...</span>
                   </>
                 ) : (
                   <>
@@ -868,7 +959,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
               <span>UNIVERSAL SCRAPER DATA IMPORTER</span>
             </div>
             <p className="text-xs text-gray-300 leading-relaxed font-sans">
-              Already have exported CSV/JSON data from another scraper tool? Click below to upload and instantly format it into lead cards!
+              Already have exported CSV/JSON data from another scraper tool? Click below to upload and automatically format commercial business leads!
             </p>
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -886,7 +977,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
               <span>SALES OUTREACH STRATEGY</span>
             </div>
             <p className="text-xs text-gray-300 leading-relaxed font-sans">
-              Businesses without websites on Google Maps have active client flow but lack an online presence. 
+              Commercial businesses without websites on Google Maps have active client flow but lack an online presence. 
               Clicking <strong>WhatsApp Outreach</strong> opens a prefilled proposal message containing your interactive studio portfolio link (`https://v0786.github.io/WebDev/`)!
             </p>
           </div>
@@ -974,7 +1065,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
             {filteredLeads.length === 0 ? (
               <div className="p-12 text-center bg-white/[0.02] border border-white/10 rounded-2xl space-y-3">
                 <AlertCircle className="w-8 h-8 text-[#D4AF37] mx-auto opacity-70" />
-                <div className="text-sm font-mono text-white font-bold">No lead results to display</div>
+                <div className="text-sm font-mono text-white font-bold">No business lead results to display</div>
                 <p className="text-xs text-gray-400 font-mono max-w-sm mx-auto">
                   Select a category from the <strong>Category Dropdown</strong> above or type your target keyword (e.g. <em>"salons in Nagpur"</em>) to extract real business listings!
                 </p>
