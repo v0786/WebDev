@@ -125,14 +125,75 @@ export function isCommercialBusiness(name: string, category: string = '', addres
   return true; // Keep genuine commercial business lead!
 }
 
+// Strict Website Validator: Filters out empty values, Google Maps links, social media profiles & directory pages
+function isValidWebsite(site: string): boolean {
+  if (!site) return false;
+  const clean = site.trim().toLowerCase().replace(/^"(.*)"$/, '$1');
+
+  if (
+    clean.length === 0 ||
+    clean === 'none' ||
+    clean === 'null' ||
+    clean === 'undefined' ||
+    clean === 'http://' ||
+    clean === 'https://' ||
+    clean === 'n/a' ||
+    clean === '#'
+  ) {
+    return false;
+  }
+
+  // Social media profiles, Google Maps links, and directory listings are NOT custom business websites!
+  const NON_CUSTOM_DOMAINS = [
+    'google.com',
+    'maps.google',
+    'g.co/',
+    'goo.gl/',
+    'facebook.com',
+    'fb.com',
+    'instagram.com',
+    'justdial.com',
+    'indiamart.com',
+    'sulekha.com',
+    'whatsapp.com',
+    'wa.me',
+    'twitter.com',
+    'x.com',
+    'linkedin.com',
+    'youtube.com',
+    'zomato.com',
+    'swiggy.com',
+    'tripadvisor.com',
+    'wikipedia.org',
+    'wikimedia.org',
+    'openstreetmap.org'
+  ];
+
+  for (const domain of NON_CUSTOM_DOMAINS) {
+    if (clean.includes(domain)) {
+      return false; // Social profile / directory / map link is NOT a standalone business website!
+    }
+  }
+
+  // Must contain a valid domain dot extension (e.g. .com, .in, .org, .net, .co, .io, .biz)
+  if (!/\.[a-z]{2,}/.test(clean)) {
+    return false;
+  }
+
+  return true; // Genuine custom website!
+}
+
 const getStoredScrapedLeads = (): ScrapedLead[] => {
   if (typeof window === 'undefined') return [];
   try {
     const saved = localStorage.getItem('gmaps_scraped_leads');
     if (saved) {
       const raw: ScrapedLead[] = JSON.parse(saved);
-      // Auto-filter out any legacy saved non-business leads
-      return raw.filter(l => isCommercialBusiness(l.name, l.category, l.address));
+      // Re-verify leads with updated commercial business & website status filters
+      return raw.map(l => ({
+        ...l,
+        hasWebsite: isValidWebsite(l.website)
+      })).filter(l => isCommercialBusiness(l.name, l.category, l.address));
     }
   } catch {}
   return [];
@@ -145,24 +206,6 @@ const getStoredCloudApi = (): string => {
   } catch {}
   return DEFAULT_CLOUD_API_URL;
 };
-
-// Helper: Determine if a raw website string is a valid custom business website
-function isValidWebsite(site: string): boolean {
-  if (!site) return false;
-  const clean = site.trim().toLowerCase().replace(/^"(.*)"$/, '$1');
-  if (
-    clean.length === 0 ||
-    clean === 'none' ||
-    clean === 'null' ||
-    clean === 'undefined' ||
-    clean === 'http://' ||
-    clean === 'https://' ||
-    clean === 'n/a'
-  ) {
-    return false;
-  }
-  return true;
-}
 
 // Multi-Engine Real-Time Geo Search (Photon Komoot + Nominatim OpenStreetMap)
 async function fetchLiveWebLeads(keyword: string, city: string): Promise<ScrapedLead[]> {
@@ -202,8 +245,8 @@ async function fetchLiveWebLeads(keyword: string, city: string): Promise<Scraped
 
           const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${name} ${fullAddr}`)}`;
           const phone = idx % 2 === 0 ? `+91 98230 ${11900 + idx * 17}` : `+91 94221 ${88770 + idx * 13}`;
-          const website = (props.website || '').trim();
-          const hasWebsite = isValidWebsite(website);
+          const rawWebsite = (props.website || '').trim();
+          const hasWebsite = isValidWebsite(rawWebsite);
 
           results.push({
             id: `photon-${Date.now()}-${idx}`,
@@ -212,7 +255,7 @@ async function fetchLiveWebLeads(keyword: string, city: string): Promise<Scraped
             address: fullAddr,
             phone,
             email: '',
-            website: hasWebsite ? website : '',
+            website: hasWebsite ? rawWebsite : '',
             rating: (4.2 + (idx % 8) * 0.1).toFixed(1),
             reviewCount: String(45 + idx * 23),
             hasWebsite,
@@ -249,8 +292,8 @@ async function fetchLiveWebLeads(keyword: string, city: string): Promise<Scraped
           }
 
           const phone = hit.extratags?.phone || hit.extratags?.['contact:phone'] || (idx % 2 === 0 ? `+91 98230 ${11900 + idx * 12}` : `+91 94221 ${88770 + idx * 14}`);
-          const website = hit.extratags?.website || hit.extratags?.['contact:website'] || hit.extratags?.url || '';
-          const hasWebsite = isValidWebsite(website);
+          const rawWebsite = hit.extratags?.website || hit.extratags?.['contact:website'] || hit.extratags?.url || '';
+          const hasWebsite = isValidWebsite(rawWebsite);
 
           results.push({
             id: `osm-${Date.now()}-${idx}`,
@@ -259,7 +302,7 @@ async function fetchLiveWebLeads(keyword: string, city: string): Promise<Scraped
             address: fullAddr,
             phone,
             email: hit.extratags?.email || '',
-            website: hasWebsite ? website : '',
+            website: hasWebsite ? rawWebsite : '',
             rating: (4.3 + (idx % 6) * 0.1).toFixed(1),
             reviewCount: String(38 + idx * 19),
             hasWebsite,
@@ -620,10 +663,11 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     // 0. Ensure strictly commercial business
     if (!isCommercialBusiness(item.name, item.category, item.address)) return false;
 
-    // 1. Website Filter
+    // 1. Website Filter (strictly uses isValidWebsite logic)
+    const hasRealWebsite = isValidWebsite(item.website);
     let passWebsite = true;
-    if (filterMode === 'nowebsite') passWebsite = !item.hasWebsite;
-    if (filterMode === 'haswebsite') passWebsite = item.hasWebsite;
+    if (filterMode === 'nowebsite') passWebsite = !hasRealWebsite;
+    if (filterMode === 'haswebsite') passWebsite = hasRealWebsite;
 
     // 2. Category Filter Dropdown
     let passCategory = true;
@@ -755,8 +799,8 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
 
           <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center gap-2">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">Commercial Filter Active</span>
-            <span className="sm:hidden">Commercial Only</span>
+            <span className="hidden sm:inline">Commercial &amp; Custom Web Filter Active</span>
+            <span className="sm:hidden">Strict Filter</span>
           </div>
         </div>
       </div>
@@ -765,10 +809,10 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
       <div className="max-w-7xl mx-auto mt-4 p-3 rounded-xl bg-gradient-to-r from-emerald-950/30 via-white/[0.02] to-white/[0.02] border border-emerald-500/40 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-gray-300">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span className="text-emerald-300 font-bold">COMMERCIAL BUSINESS GUARD:</span>
-          <span>Excludes roads, bus stops, railway stations, government offices, residential colonies &amp; public landmarks automatically.</span>
+          <span className="text-emerald-300 font-bold">STRICT WEBSITE DETECTOR ACTIVE:</span>
+          <span>Google Maps links, Facebook/Instagram pages, JustDial &amp; directory links are correctly marked as <strong className="text-red-400">NO WEBSITE</strong>.</span>
         </div>
-        <span className="text-emerald-400 text-[11px] font-bold">🎯 100% Commercial Prospect Precision</span>
+        <span className="text-emerald-400 text-[11px] font-bold">🎯 Precise Lead Verification</span>
       </div>
 
       {/* Category-Wise Quick Scrape Chips Grid */}
@@ -977,7 +1021,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
               <span>SALES OUTREACH STRATEGY</span>
             </div>
             <p className="text-xs text-gray-300 leading-relaxed font-sans">
-              Commercial businesses without websites on Google Maps have active client flow but lack an online presence. 
+              Businesses without custom websites on Google Maps have active client flow but lack an online presence. 
               Clicking <strong>WhatsApp Outreach</strong> opens a prefilled proposal message containing your interactive studio portfolio link (`https://v0786.github.io/WebDev/`)!
             </p>
           </div>
@@ -1005,7 +1049,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                       : 'bg-white/[0.03] border-white/10 text-gray-400 hover:text-white'
                   }`}
                 >
-                  🔴 NO WEBSITE ({leads.filter((l) => !l.hasWebsite).length})
+                  🔴 NO WEBSITE ({leads.filter((l) => !isValidWebsite(l.website)).length})
                 </button>
 
                 <button
@@ -1027,7 +1071,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                       : 'bg-white/[0.03] border-white/10 text-gray-400 hover:text-white'
                   }`}
                 >
-                  🟢 HAS WEBSITE ({leads.filter((l) => l.hasWebsite).length})
+                  🟢 HAS WEBSITE ({leads.filter((l) => isValidWebsite(l.website)).length})
                 </button>
               </div>
             </div>
@@ -1071,142 +1115,145 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                 </p>
               </div>
             ) : (
-              filteredLeads.map((lead) => (
-                <div
-                  key={lead.id}
-                  className={`p-5 rounded-2xl border transition-all space-y-4 ${
-                    !lead.hasWebsite
-                      ? 'bg-gradient-to-r from-red-950/20 via-white/[0.03] to-white/[0.02] border-red-500/40 shadow-[0_0_20px_rgba(239,68,68,0.1)]'
-                      : 'bg-white/[0.02] border-white/10'
-                  }`}
-                >
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-base font-bold text-white font-sans">{lead.name}</h3>
-                        {!lead.hasWebsite ? (
-                          <span className="px-2.5 py-0.5 rounded-md bg-red-500/20 border border-red-500/50 text-red-400 font-mono text-[10px] font-bold uppercase tracking-wider">
-                            NO WEBSITE ❌
+              filteredLeads.map((lead) => {
+                const leadHasWebsite = isValidWebsite(lead.website);
+                return (
+                  <div
+                    key={lead.id}
+                    className={`p-5 rounded-2xl border transition-all space-y-4 ${
+                      !leadHasWebsite
+                        ? 'bg-gradient-to-r from-red-950/20 via-white/[0.03] to-white/[0.02] border-red-500/40 shadow-[0_0_20px_rgba(239,68,68,0.1)]'
+                        : 'bg-white/[0.02] border-white/10'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base font-bold text-white font-sans">{lead.name}</h3>
+                          {!leadHasWebsite ? (
+                            <span className="px-2.5 py-0.5 rounded-md bg-red-500/20 border border-red-500/50 text-red-400 font-mono text-[10px] font-bold uppercase tracking-wider">
+                              NO WEBSITE ❌
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 font-mono text-[10px] font-bold uppercase tracking-wider">
+                              HAS WEBSITE 🟢
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-3 text-xs font-mono text-gray-400 mt-1">
+                          <span className="flex items-center gap-1 text-[#D4AF37]">
+                            <Building2 className="w-3.5 h-3.5" />
+                            <span>{lead.category}</span>
                           </span>
+                          <span>&bull;</span>
+                          <span className="flex items-center gap-1 text-[#D4AF37]">
+                            <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
+                            <span>{lead.rating} ({lead.reviewCount} reviews)</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleImportToDashboard(lead)}
+                        className="px-3.5 py-2 rounded-xl bg-white/[0.08] hover:bg-[#D4AF37] hover:text-black border border-white/15 text-xs font-mono font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>IMPORT TO DASHBOARD</span>
+                      </button>
+                    </div>
+
+                    {/* Business Details Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono text-gray-300">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-gray-500 shrink-0" />
+                        <span className="truncate">{lead.address || 'Address listed on Maps'}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                        <span>{lead.phone || 'No Phone Listed'}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-sky-400 shrink-0" />
+                        {leadHasWebsite ? (
+                          <a 
+                            href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-emerald-400 font-semibold underline truncate hover:text-white"
+                          >
+                            {lead.website}
+                          </a>
                         ) : (
-                          <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 font-mono text-[10px] font-bold uppercase tracking-wider">
-                            HAS WEBSITE 🟢
+                          <span className="text-red-400 font-semibold">
+                            No custom website found on Google Maps
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-3 text-xs font-mono text-gray-400 mt-1">
-                        <span className="flex items-center gap-1 text-[#D4AF37]">
-                          <Building2 className="w-3.5 h-3.5" />
-                          <span>{lead.category}</span>
-                        </span>
-                        <span>&bull;</span>
-                        <span className="flex items-center gap-1 text-[#D4AF37]">
-                          <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
-                          <span>{lead.rating} ({lead.reviewCount} reviews)</span>
-                        </span>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => handleImportToDashboard(lead)}
-                      className="px-3.5 py-2 rounded-xl bg-white/[0.08] hover:bg-[#D4AF37] hover:text-black border border-white/15 text-xs font-mono font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>IMPORT TO DASHBOARD</span>
-                    </button>
-                  </div>
-
-                  {/* Business Details Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono text-gray-300">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-gray-500 shrink-0" />
-                      <span className="truncate">{lead.address || 'Address listed on Maps'}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-[#D4AF37] shrink-0" />
-                      <span>{lead.phone || 'No Phone Listed'}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-sky-400 shrink-0" />
-                      {lead.hasWebsite ? (
-                        <a 
-                          href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-emerald-400 font-semibold underline truncate hover:text-white"
-                        >
-                          {lead.website}
-                        </a>
-                      ) : (
-                        <span className="text-red-400 font-semibold">
-                          No website found on Google Maps
-                        </span>
+                      {lead.email && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-purple-400 shrink-0" />
+                          <span className="truncate">{lead.email}</span>
+                        </div>
                       )}
                     </div>
 
-                    {lead.email && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-purple-400 shrink-0" />
-                        <span className="truncate">{lead.email}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Outreach Action Buttons Bar */}
-                  <div className="pt-2 flex flex-wrap items-center gap-2.5">
-                    {/* View on Google Maps Button */}
-                    <a
-                      href={generateGoogleMapsLink(lead)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-[#D4AF37] hover:text-black border border-white/15 text-white font-mono text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
-                    >
-                      <MapPin className="w-4 h-4 text-red-400" />
-                      <span>VIEW ON GOOGLE MAPS →</span>
-                    </a>
-
-                    {/* WhatsApp Outreach */}
-                    {lead.phone && (
+                    {/* Outreach Action Buttons Bar */}
+                    <div className="pt-2 flex flex-wrap items-center gap-2.5">
+                      {/* View on Google Maps Button */}
                       <a
-                        href={generateWhatsAppLink(lead)}
+                        href={generateGoogleMapsLink(lead)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-[#D4AF37] hover:text-black border border-white/15 text-white font-mono text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
                       >
-                        <MessageSquare className="w-4 h-4 fill-current" />
-                        <span>WHATSAPP OUTREACH →</span>
+                        <MapPin className="w-4 h-4 text-red-400" />
+                        <span>VIEW ON GOOGLE MAPS →</span>
                       </a>
-                    )}
 
-                    {/* Mailto Link */}
-                    {lead.email && (
-                      <a
-                        href={generateMailtoLink(lead)}
-                        className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-white/15 text-white font-mono text-xs flex items-center gap-2 transition-all cursor-pointer"
-                      >
-                        <Mail className="w-4 h-4 text-purple-400" />
-                        <span>SEND EMAIL PROPOSAL</span>
-                      </a>
-                    )}
+                      {/* WhatsApp Outreach */}
+                      {lead.phone && (
+                        <a
+                          href={generateWhatsAppLink(lead)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] cursor-pointer"
+                        >
+                          <MessageSquare className="w-4 h-4 fill-current" />
+                          <span>WHATSAPP OUTREACH →</span>
+                        </a>
+                      )}
 
-                    {/* Instagram DM Link */}
-                    {lead.instagram && (
-                      <a
-                        href={lead.instagram}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-mono text-xs flex items-center gap-2 transition-all cursor-pointer"
-                      >
-                        <Instagram className="w-4 h-4" />
-                        <span>INSTAGRAM DM</span>
-                      </a>
-                    )}
+                      {/* Mailto Link */}
+                      {lead.email && (
+                        <a
+                          href={generateMailtoLink(lead)}
+                          className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-white/15 text-white font-mono text-xs flex items-center gap-2 transition-all cursor-pointer"
+                        >
+                          <Mail className="w-4 h-4 text-purple-400" />
+                          <span>SEND EMAIL PROPOSAL</span>
+                        </a>
+                      )}
+
+                      {/* Instagram DM Link */}
+                      {lead.instagram && (
+                        <a
+                          href={lead.instagram}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-mono text-xs flex items-center gap-2 transition-all cursor-pointer"
+                        >
+                          <Instagram className="w-4 h-4" />
+                          <span>INSTAGRAM DM</span>
+                        </a>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
