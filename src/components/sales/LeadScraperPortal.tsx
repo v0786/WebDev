@@ -18,7 +18,8 @@ import {
   Trash2,
   Server,
   Upload,
-  Layers
+  Layers,
+  ChevronDown
 } from 'lucide-react';
 import { soundFx } from '../audio/SoundEffects';
 import { salesService } from '../../services/salesService';
@@ -47,18 +48,23 @@ interface LeadScraperPortalProps {
 // Built-in 24/7 Render Cloud API endpoint
 const DEFAULT_CLOUD_API_URL = 'https://google-maps-scraper-latest-ro7w.onrender.com';
 
-// Pre-defined Industry Categories for 1-Tap Category Scrape
+// Comprehensive Industry Category Options for Dropdown & Quick Search
 export const FEATURED_CATEGORIES = [
-  { id: 'gyms', label: 'Gyms & Fitness', icon: '🏋️', query: 'gyms in' },
-  { id: 'salons', label: 'Salons & Beauty', icon: '💇', query: 'salons in' },
-  { id: 'dentists', label: 'Dentists & Clinics', icon: '🦷', query: 'dentists in' },
-  { id: 'restaurants', label: 'Restaurants & Cafes', icon: '🍕', query: 'restaurants in' },
-  { id: 'realestate', label: 'Real Estate Agencies', icon: '🏬', query: 'real estate in' },
-  { id: 'autorepair', label: 'Auto Repair & Services', icon: '🚗', query: 'car repair in' },
-  { id: 'hotels', label: 'Hotels & Lodging', icon: '🏨', query: 'hotels in' },
-  { id: 'software', label: 'IT & Software Studios', icon: '💻', query: 'it companies in' },
-  { id: 'lawfirms', label: 'Law Firms & Legal', icon: '⚖️', query: 'lawyers in' },
-  { id: 'boutiques', label: 'Boutiques & Shops', icon: '🛍️', query: 'boutiques in' },
+  { id: 'gyms', label: 'Gyms & Fitness Centers', icon: '🏋️', query: 'gyms' },
+  { id: 'salons', label: 'Salons, Beauty & Spas', icon: '💇', query: 'salons' },
+  { id: 'dentists', label: 'Dentists & Dental Clinics', icon: '🦷', query: 'dentists' },
+  { id: 'restaurants', label: 'Restaurants & Cafes', icon: '🍕', query: 'restaurants' },
+  { id: 'realestate', label: 'Real Estate Agencies', icon: '🏬', query: 'real estate' },
+  { id: 'autorepair', label: 'Auto Repair & Garages', icon: '🚗', query: 'car repair' },
+  { id: 'hotels', label: 'Hotels & Lodging', icon: '🏨', query: 'hotels' },
+  { id: 'software', label: 'IT & Software Studios', icon: '💻', query: 'it companies' },
+  { id: 'lawfirms', label: 'Law Firms & Attorneys', icon: '⚖️', query: 'lawyers' },
+  { id: 'boutiques', label: 'Boutiques & Clothing Stores', icon: '🛍️', query: 'boutiques' },
+  { id: 'healthcare', label: 'Hospitals & Healthcare', icon: '🏥', query: 'hospitals' },
+  { id: 'coaching', label: 'Schools & Coaching Academies', icon: '🏫', query: 'coaching classes' },
+  { id: 'services', label: 'Plumbers & Electricians', icon: '🔧', query: 'plumbers' },
+  { id: 'studios', label: 'Photography & Media Studios', icon: '📸', query: 'photo studio' },
+  { id: 'vet', label: 'Vet Clinics & Pet Shops', icon: '🐾', query: 'vet clinics' },
 ];
 
 const getStoredScrapedLeads = (): ScrapedLead[] => {
@@ -315,6 +321,8 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
   onBackToPortalChoice,
   onImportLeadToDashboard,
 }) => {
+  // Search state: selectedCategory dropdown decouples search from manual keywords
+  const [selectedCategory, setSelectedCategory] = useState<string>('salons');
   const [keyword, setKeyword] = useState('salons in Nagpur');
   const [city, setCity] = useState('Nagpur');
   const [depth, setDepth] = useState(5);
@@ -324,7 +332,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
   
   // Website Status Filter
   const [filterMode, setFilterMode] = useState<'all' | 'nowebsite' | 'haswebsite'>('nowebsite');
-  // Category-Wise Result Filter State
+  // Category-Wise Result Filter Dropdown State
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
   
   const [statusMessage, setStatusMessage] = useState('');
@@ -363,10 +371,23 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     }
   };
 
-  // 1-Tap Category Quick Search Trigger
+  // When dropdown category changes, update search state
+  const handleCategoryDropdownChange = (catId: string) => {
+    setSelectedCategory(catId);
+    if (catId !== 'custom') {
+      const catObj = FEATURED_CATEGORIES.find((c) => c.id === catId);
+      if (catObj) {
+        const autoKey = `${catObj.query} in ${city}`.trim();
+        setKeyword(autoKey);
+      }
+    }
+  };
+
+  // 1-Tap Category Quick Search Chip Trigger
   const handleCategoryQuickSearch = (catObj: typeof FEATURED_CATEGORIES[0]) => {
     soundFx.playClick();
-    const newQuery = `${catObj.query} ${city}`.trim();
+    setSelectedCategory(catObj.id);
+    const newQuery = `${catObj.query} in ${city}`.trim();
     setKeyword(newQuery);
     runScraperQuery(newQuery, city);
   };
@@ -390,19 +411,31 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
       }
     };
     reader.readAsText(file);
-    // Reset file input value
     if (e.target) e.target.value = '';
   };
 
   const runScraperQuery = async (searchKeyword: string, searchCity: string) => {
     soundFx.playModalReveal();
     setIsScraping(true);
-    setStatusMessage(`⚡ Querying Real-Time Maps Scraping Engine for '${searchKeyword}'...`);
+
+    // Determine final effective query based on selected Category Dropdown + City
+    let finalQuery = searchKeyword.trim();
+    if (selectedCategory !== 'custom') {
+      const catObj = FEATURED_CATEGORIES.find((c) => c.id === selectedCategory);
+      if (catObj) {
+        finalQuery = `${catObj.query} in ${searchCity}`.trim();
+      }
+    }
+    if (!finalQuery) {
+      finalQuery = `businesses in ${searchCity}`;
+    }
+
+    setStatusMessage(`⚡ Querying Real-Time Maps Scraping Engine for '${finalQuery}'...`);
 
     const apiBase = (customApiUrl.trim() || DEFAULT_CLOUD_API_URL).replace(/\/$/, '');
 
     // 1. Resolve Geolocation Coordinates
-    const geoQuery = encodeURIComponent(searchCity || searchKeyword);
+    const geoQuery = encodeURIComponent(searchCity || finalQuery);
     let lat = '21.1498134';
     let lon = '79.0820556';
 
@@ -424,7 +457,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
           name: 'gmaps-prospector',
-          keywords: [searchKeyword],
+          keywords: [finalQuery],
           lang: 'en',
           zoom: 15,
           lat: lat,
@@ -457,7 +490,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
               const extracted = parseUniversalScraperData(csvText);
               if (extracted.length > 0) {
                 setLeads(extracted);
-                setStatusMessage(`✅ Render Cloud Engine: Scraped ${extracted.length} real Google Maps leads for '${searchKeyword}'!`);
+                setStatusMessage(`✅ Render Cloud Engine: Scraped ${extracted.length} real Google Maps leads for '${finalQuery}'!`);
                 setIsScraping(false);
                 return;
               }
@@ -474,18 +507,18 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
 
     // 3. High-Speed Multi-Engine Real-Time Geo Search Engine (Photon + OpenStreetMap)
     setStatusMessage(`🔍 Extracting real business listings from live web map directory...`);
-    const realLiveLeads = await fetchLiveWebLeads(searchKeyword, searchCity);
+    const realLiveLeads = await fetchLiveWebLeads(finalQuery, searchCity);
 
     if (realLiveLeads.length > 0) {
       setLeads(realLiveLeads);
-      setStatusMessage(`✅ Extracted ${realLiveLeads.length} real business listings for '${searchKeyword}' in ${searchCity}!`);
+      setStatusMessage(`✅ Extracted ${realLiveLeads.length} real business listings for '${finalQuery}' in ${searchCity}!`);
       setIsScraping(false);
       return;
     }
 
     // 4. Fallback Empty State
     setLeads([]);
-    setStatusMessage(`⚠️ No live map listings found for '${searchKeyword}' in ${searchCity}. Please check search spelling or try a different category/city.`);
+    setStatusMessage(`⚠️ No live map listings found for '${finalQuery}' in ${searchCity}. Please check search spelling or try a different category/city.`);
     setIsScraping(false);
   };
 
@@ -501,7 +534,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     if (filterMode === 'nowebsite') passWebsite = !item.hasWebsite;
     if (filterMode === 'haswebsite') passWebsite = item.hasWebsite;
 
-    // 2. Category Filter
+    // 2. Category Filter Dropdown
     let passCategory = true;
     if (selectedCategoryFilter !== 'all') {
       passCategory = item.category.toLowerCase().includes(selectedCategoryFilter.toLowerCase());
@@ -597,7 +630,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
             <span>Google Maps Lead Generation Scraper</span>
           </h1>
           <p className="text-xs text-gray-400 font-mono mt-1">
-            Category-wise search &amp; universal scraper data importer for businesses with <strong className="text-red-400 font-semibold">NO WEBSITE</strong>.
+            Category dropdown search &amp; universal scraper data importer for businesses with <strong className="text-red-400 font-semibold">NO WEBSITE</strong>.
           </p>
         </div>
 
@@ -652,21 +685,25 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         <div className="flex items-center justify-between text-xs font-mono text-gray-400">
           <span className="flex items-center gap-1.5 font-bold text-[#D4AF37]">
             <Layers className="w-3.5 h-3.5" />
-            <span>CATEGORY-WISE QUICK SCRAPE SEARCH:</span>
+            <span>QUICK CATEGORY SELECTION CHIPS:</span>
           </span>
-          <span>Click any industry category to trigger 1-tap scrape</span>
+          <span>Click any industry chip to select category and trigger 1-tap scrape</span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-10 gap-2">
-          {FEATURED_CATEGORIES.map((cat) => (
+          {FEATURED_CATEGORIES.slice(0, 10).map((cat) => (
             <button
               key={cat.id}
               onClick={() => handleCategoryQuickSearch(cat)}
               disabled={isScraping}
-              className="px-2.5 py-2 rounded-xl bg-white/[0.04] hover:bg-[#D4AF37]/20 border border-white/10 hover:border-[#D4AF37]/50 text-xs font-mono text-gray-200 hover:text-white transition-all text-center flex flex-col items-center justify-center gap-1 cursor-pointer disabled:opacity-50 group"
+              className={`px-2.5 py-2 rounded-xl border text-xs font-mono transition-all text-center flex flex-col items-center justify-center gap-1 cursor-pointer disabled:opacity-50 group ${
+                selectedCategory === cat.id
+                  ? 'bg-[#D4AF37] border-[#D4AF37] text-black font-bold shadow-[0_0_15px_rgba(212,175,55,0.3)]'
+                  : 'bg-white/[0.04] hover:bg-[#D4AF37]/20 border-white/10 hover:border-[#D4AF37]/50 text-gray-200'
+              }`}
             >
               <span className="text-base group-hover:scale-110 transition-transform">{cat.icon}</span>
-              <span className="text-[10px] font-semibold truncate max-w-full">{cat.label}</span>
+              <span className="text-[10px] font-semibold truncate max-w-full">{cat.label.split('&')[0]}</span>
             </button>
           ))}
         </div>
@@ -715,34 +752,73 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
             </h2>
 
             <form onSubmit={handleRunScraper} className="space-y-4">
+              
+              {/* Category Dropdown Selection (Decouples search scope from manual keywords) */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest flex items-center justify-between">
+                  <span>SELECT TARGET CATEGORY *</span>
+                  <span className="text-[#D4AF37] font-bold">15+ Categories</span>
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => handleCategoryDropdownChange(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#14161F] border border-[#D4AF37]/50 focus:border-[#D4AF37] text-white text-xs font-mono focus:outline-none appearance-none cursor-pointer pr-10"
+                  >
+                    <option value="custom">🔍 Custom Keyword Search...</option>
+                    {FEATURED_CATEGORIES.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.icon} {cat.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-[#D4AF37] absolute right-3 top-3 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Keyword / Industry Input (Auto-filled by Dropdown or Editable) */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
-                  SEARCH KEYWORD / INDUSTRY *
+                  SEARCH KEYWORD / QUERY *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. salons in Nagpur, restaurants in Mumbai"
+                  placeholder="e.g. salons in Nagpur, dentists in Mumbai"
                   value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.05] border border-white/15 focus:border-[#D4AF37] text-white placeholder-gray-500 text-xs focus:outline-none"
+                  onChange={(e) => {
+                    setKeyword(e.target.value);
+                    setSelectedCategory('custom');
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.05] border border-white/15 focus:border-[#D4AF37] text-white placeholder-gray-500 text-xs focus:outline-none font-mono"
                 />
               </div>
 
+              {/* City / Region Name */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
-                  CITY / REGION NAME *
+                  TARGET CITY / REGION *
                 </label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Nagpur, Mumbai, Austin"
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.05] border border-white/15 focus:border-[#D4AF37] text-white placeholder-gray-500 text-xs focus:outline-none"
+                  onChange={(e) => {
+                    const newCity = e.target.value;
+                    setCity(newCity);
+                    if (selectedCategory !== 'custom') {
+                      const catObj = FEATURED_CATEGORIES.find(c => c.id === selectedCategory);
+                      if (catObj) {
+                        setKeyword(`${catObj.query} in ${newCity}`.trim());
+                      }
+                    }
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.05] border border-white/15 focus:border-[#D4AF37] text-white placeholder-gray-500 text-xs focus:outline-none font-mono"
                 />
               </div>
 
+              {/* Scrape Depth Range */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest flex items-center justify-between">
                   <span>SCRAPE DEPTH (SCROLL RANGE)</span>
@@ -758,6 +834,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                 />
               </div>
 
+              {/* Submit Scrape Button */}
               <button
                 type="submit"
                 disabled={isScraping}
@@ -818,7 +895,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         {/* Right Column: Scraped Results Table & Actions (8 cols) */}
         <div className="lg:col-span-8 space-y-4">
           
-          {/* Dual Filter Controls Bar (Website Status + Category Filter) */}
+          {/* Dual Filter Controls Bar (Website Status + Category Filter Dropdown) */}
           <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10 space-y-3">
             
             {/* Top Bar: Website Status Filter Buttons */}
@@ -864,43 +941,32 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
               </div>
             </div>
 
-            {/* Bottom Bar: Category-Wise Results Filter */}
-            {uniqueCategories.length > 0 && (
-              <div className="flex items-center gap-2 pt-1 overflow-x-auto pb-1">
-                <span className="text-xs font-mono text-gray-400 shrink-0 font-bold flex items-center gap-1">
-                  <Building2 className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  <span>Category Filter:</span>
-                </span>
-                
-                <button
-                  onClick={() => setSelectedCategoryFilter('all')}
-                  className={`px-2.5 py-1 rounded-md text-xs font-mono shrink-0 cursor-pointer border transition-all ${
-                    selectedCategoryFilter === 'all'
-                      ? 'bg-[#D4AF37] text-black font-bold border-[#D4AF37]'
-                      : 'bg-white/[0.05] border-white/10 text-gray-300 hover:text-white'
-                  }`}
+            {/* Bottom Bar: Category Filter Dropdown */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-1">
+              <span className="text-xs font-mono text-gray-400 font-bold flex items-center gap-1.5 shrink-0">
+                <Building2 className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <span>FILTER RESULTS BY CATEGORY:</span>
+              </span>
+              
+              <div className="relative w-full sm:w-64">
+                <select
+                  value={selectedCategoryFilter}
+                  onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-lg bg-[#14161F] border border-white/20 text-xs font-mono text-white focus:outline-none focus:border-[#D4AF37] appearance-none cursor-pointer pr-8"
                 >
-                  All ({leads.length})
-                </button>
-
-                {uniqueCategories.map((cat) => {
-                  const count = leads.filter((l) => l.category === cat).length;
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategoryFilter(cat)}
-                      className={`px-2.5 py-1 rounded-md text-xs font-mono shrink-0 cursor-pointer border transition-all ${
-                        selectedCategoryFilter === cat
-                          ? 'bg-[#D4AF37] text-black font-bold border-[#D4AF37]'
-                          : 'bg-white/[0.05] border-white/10 text-gray-300 hover:text-white'
-                      }`}
-                    >
-                      {cat} ({count})
-                    </button>
-                  );
-                })}
+                  <option value="all">All Categories ({leads.length})</option>
+                  {uniqueCategories.map((cat) => {
+                    const count = leads.filter((l) => l.category === cat).length;
+                    return (
+                      <option key={cat} value={cat}>
+                        {cat} ({count} leads)
+                      </option>
+                    );
+                  })}
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
               </div>
-            )}
+            </div>
           </div>
 
           {/* Lead Cards List */}
@@ -910,7 +976,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                 <AlertCircle className="w-8 h-8 text-[#D4AF37] mx-auto opacity-70" />
                 <div className="text-sm font-mono text-white font-bold">No lead results to display</div>
                 <p className="text-xs text-gray-400 font-mono max-w-sm mx-auto">
-                  Use the <strong>Category Quick Chips</strong> above or type your target keyword (e.g. <em>"salons in Nagpur"</em>) to extract real business listings!
+                  Select a category from the <strong>Category Dropdown</strong> above or type your target keyword (e.g. <em>"salons in Nagpur"</em>) to extract real business listings!
                 </p>
               </div>
             ) : (
