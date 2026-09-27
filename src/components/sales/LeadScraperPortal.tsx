@@ -104,7 +104,6 @@ async function fetchLiveWebLeads(keyword: string, city: string): Promise<Scraped
 
           const phone = hit.extratags?.phone || hit.extratags?.['contact:phone'] || hit.extratags?.mobile || hit.extratags?.['contact:mobile'] || '';
           
-          // Check ALL possible website tags in OpenStreetMap extratags
           const website = hit.extratags?.website || hit.extratags?.['contact:website'] || hit.extratags?.url || hit.extratags?.['contact:url'] || hit.extratags?.link || '';
           const instagramTag = hit.extratags?.['contact:instagram'] || hit.extratags?.instagram;
           const instagram = instagramTag ? `https://instagram.com/${instagramTag.replace(/^@/, '')}` : undefined;
@@ -166,7 +165,6 @@ function parseCsvLeads(csvText: string): ScrapedLead[] {
       const idx = headers.indexOf(cand);
       if (idx !== -1) return idx;
     }
-    // Partial search fallback
     for (const cand of candidates) {
       const idx = headers.findIndex(h => h.includes(cand));
       if (idx !== -1) return idx;
@@ -277,12 +275,12 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
       }
     } catch {}
 
-    // 2. Try Render Cloud Scraper API
+    // 2. Try Render Cloud Scraper API using Content-Type text/plain (Bypasses Browser CORS Preflight Options check!)
     try {
       const endpoint = `${apiBase}/api/v1/jobs`;
       const jobRes = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
           name: 'gmaps-prospector',
           keywords: [keyword],
@@ -307,7 +305,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
           const dlEndpoint = `${apiBase}/api/v1/jobs/${jobId}/download`;
 
           for (let attempt = 1; attempt <= 40; attempt++) {
-            await new Promise(r => setTimeout(r, 500));
+            await new Promise(r => setTimeout(r, 1000));
             const statusRes = await fetch(statusEndpoint);
             if (!statusRes.ok) continue;
 
@@ -329,8 +327,8 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
           }
         }
       }
-    } catch {
-      // Network/CORS block fallback
+    } catch (e) {
+      console.warn('Cloud API fetch exception:', e);
     }
 
     // 3. Fallback: Query Real Live OpenStreetMap Directory
@@ -344,7 +342,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
       return;
     }
 
-    // 4. No Data Found Empty State (NO DEMO PLACEHOLDERS)
+    // 4. No Data Found Empty State
     setLeads([]);
     setStatusMessage(`⚠️ No live map listings found for '${keyword}' in ${city}. Please check search spelling or try a different city.`);
     setIsScraping(false);
