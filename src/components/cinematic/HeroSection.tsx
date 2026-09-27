@@ -221,8 +221,27 @@ export const HeroSection: React.FC = () => {
             ))}
           </nav>
 
-          {/* Right Action: Sound Toggle + Let's Talk */}
+          {/* Right Action: Sound Toggle + Login + Let's Talk */}
           <div className="flex items-center space-x-3 sm:space-x-4 ml-auto md:ml-0">
+            <a
+              href="#/sales"
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.hash = '#/sales';
+                window.scrollTo({ top: 0, behavior: 'auto' });
+              }}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+              className="group flex items-center space-x-1.5 text-[10px] sm:text-[11px] tracking-[0.2em] font-semibold uppercase py-2 px-3 sm:px-4 border border-[#6750A4] bg-[#381E72]/60 hover:bg-[#6750A4] text-[#D0BCFF] hover:text-white transition-all duration-300 backdrop-blur-sm shadow-md cursor-pointer"
+              style={{ fontFamily: "'Montserrat', sans-serif" }}
+              title="Access Material 3 Sales Portal Login"
+            >
+              <span>M3 LOGIN</span>
+              <span className="transform transition-transform duration-300 group-hover:translate-x-0.5 text-xs text-[#D0BCFF]">
+                ↗
+              </span>
+            </a>
+
             <button
               type="button"
               onClick={toggleSound}
