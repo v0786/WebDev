@@ -16,8 +16,7 @@ import {
   Building2,
   Star,
   Trash2,
-  Server,
-  Laptop
+  Server
 } from 'lucide-react';
 import { soundFx } from '../audio/SoundEffects';
 import { salesService } from '../../services/salesService';
@@ -43,6 +42,9 @@ interface LeadScraperPortalProps {
   onImportLeadToDashboard?: (leadName: string, phone: string, email: string, category: string) => void;
 }
 
+// Built-in 24/7 Render Cloud API endpoint — ZERO SETUP REQUIRED!
+const DEFAULT_CLOUD_API_URL = 'https://google-maps-scraper-latest-ro7w.onrender.com';
+
 const getStoredScrapedLeads = (): ScrapedLead[] => {
   if (typeof window === 'undefined') return [];
   try {
@@ -53,11 +55,11 @@ const getStoredScrapedLeads = (): ScrapedLead[] => {
 };
 
 const getStoredCloudApi = (): string => {
-  if (typeof window === 'undefined') return '';
+  if (typeof window === 'undefined') return DEFAULT_CLOUD_API_URL;
   try {
-    return localStorage.getItem('gmaps_cloud_api') || '';
+    return localStorage.getItem('gmaps_cloud_api') || DEFAULT_CLOUD_API_URL;
   } catch {}
-  return '';
+  return DEFAULT_CLOUD_API_URL;
 };
 
 // Real Live Web Map Search Engine (Queries OpenStreetMap Nominatim API in Real-Time)
@@ -204,15 +206,12 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
   }, [leads]);
 
   const handleSaveCloudApi = (url: string) => {
-    setCustomApiUrl(url);
+    const finalUrl = url.trim() || DEFAULT_CLOUD_API_URL;
+    setCustomApiUrl(finalUrl);
     try {
-      if (url.trim()) {
-        localStorage.setItem('gmaps_cloud_api', url.trim());
-      } else {
-        localStorage.removeItem('gmaps_cloud_api');
-      }
+      localStorage.setItem('gmaps_cloud_api', finalUrl);
     } catch {}
-    alert(url.trim() ? `Saved Cloud API URL: ${url.trim()}` : 'Cleared custom cloud API URL.');
+    alert(`Saved Cloud API URL: ${finalUrl}`);
   };
 
   const handleClearLeads = () => {
@@ -227,13 +226,27 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     e.preventDefault();
     soundFx.playModalReveal();
     setIsScraping(true);
-    setStatusMessage(`⚡ Querying real live map business listings for '${keyword}'...`);
+    setStatusMessage(`⚡ Connecting to 24/7 Cloud Scraper Engine for '${keyword}'...`);
 
-    const apiBase = customApiUrl.trim() ? customApiUrl.trim().replace(/\/$/, '') : '';
+    const apiBase = (customApiUrl.trim() || DEFAULT_CLOUD_API_URL).replace(/\/$/, '');
 
-    // 1. Try Docker Scraper API if available (Local PC or Cloud Container)
+    // 1. Resolve Geolocation Coordinates
+    const geoQuery = encodeURIComponent(city || keyword);
+    let lat = '21.1498134';
+    let lon = '79.0820556';
+
     try {
-      const endpoint = apiBase ? `${apiBase}/api/v1/jobs` : '/api/v1/jobs';
+      const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${geoQuery}`);
+      const geoHits = await geoRes.json();
+      if (geoHits && geoHits[0]) {
+        lat = String(geoHits[0].lat);
+        lon = String(geoHits[0].lon);
+      }
+    } catch {}
+
+    // 2. Try Render Cloud Scraper API
+    try {
+      const endpoint = `${apiBase}/api/v1/jobs`;
       const jobRes = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -242,6 +255,8 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
           keywords: [keyword],
           lang: 'en',
           zoom: 15,
+          lat: lat,
+          lon: lon,
           fast_mode: true,
           radius: 10000,
           depth: Math.min(depth, 10),
@@ -255,8 +270,8 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         const jobId = jobData.id;
 
         if (jobId) {
-          const statusEndpoint = apiBase ? `${apiBase}/api/v1/jobs/${jobId}` : `/api/v1/jobs/${jobId}`;
-          const dlEndpoint = apiBase ? `${apiBase}/api/v1/jobs/${jobId}/download` : `/api/v1/jobs/${jobId}/download`;
+          const statusEndpoint = `${apiBase}/api/v1/jobs/${jobId}`;
+          const dlEndpoint = `${apiBase}/api/v1/jobs/${jobId}/download`;
 
           for (let attempt = 1; attempt <= 40; attempt++) {
             await new Promise(r => setTimeout(r, 500));
@@ -270,7 +285,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
               const extracted = parseCsvLeads(csvText);
               if (extracted.length > 0) {
                 setLeads(extracted);
-                setStatusMessage(`✅ Scraped ${extracted.length} real listings from Docker Google Maps engine!`);
+                setStatusMessage(`✅ Render Cloud Engine: Scraped ${extracted.length} real Google Maps leads for '${keyword}'!`);
                 setIsScraping(false);
                 return;
               }
@@ -282,21 +297,21 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         }
       }
     } catch {
-      // Docker API not running on client's network
+      // If CORS or Network block, seamlessly fallback to live web directory
     }
 
-    // 2. Query Real Live Web Map Listings (OpenStreetMap / Nominatim API)
-    setStatusMessage(`🔍 Fetching real business listings from live web map directory...`);
+    // 3. Fallback: Query Real Live OpenStreetMap / Nominatim API
+    setStatusMessage(`🔍 Extracting real business listings from live web map directory...`);
     const realLiveLeads = await fetchLiveWebLeads(keyword, city);
 
     if (realLiveLeads.length > 0) {
       setLeads(realLiveLeads);
-      setStatusMessage(`✅ Extracted ${realLiveLeads.length} real live business listings for '${keyword}' in ${city}!`);
+      setStatusMessage(`✅ Extracted ${realLiveLeads.length} real business listings for '${keyword}' in ${city}!`);
       setIsScraping(false);
       return;
     }
 
-    // 3. Smart Generator Fallback if live APIs are unreachable
+    // 4. Smart Generator Fallback
     const topic = keyword.split(' ')[0] || 'Business';
     const cleanCity = city || 'Nagpur';
 
@@ -344,7 +359,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     ];
 
     setLeads(fallbackLeads);
-    setStatusMessage(`✅ Extracted ${fallbackLeads.length} direct lead prospects for '${keyword}' in ${cleanCity}.`);
+    setStatusMessage(`✅ Loaded ${fallbackLeads.length} direct lead prospects for '${keyword}' in ${cleanCity}.`);
     setIsScraping(false);
   };
 
@@ -441,7 +456,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
             className="px-3 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/15 border border-white/15 text-xs font-mono text-gray-300 flex items-center gap-1.5 cursor-pointer"
           >
             <Server className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>Cloud API Setup</span>
+            <span>Cloud API Config</span>
           </button>
 
           {leads.length > 0 && (
@@ -456,25 +471,20 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
 
           <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="hidden sm:inline">Real Live Web Engine Ready</span>
-            <span className="sm:hidden">Engine Ready</span>
+            <span className="hidden sm:inline">Render 24/7 Cloud Engine Online</span>
+            <span className="sm:hidden">24/7 Cloud Ready</span>
           </div>
         </div>
       </div>
 
-      {/* Mobile + PC Real Map Data Badge */}
-      <div className="max-w-7xl mx-auto mt-4 p-3 rounded-xl bg-white/[0.02] border border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-gray-300">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5 text-emerald-400">
-            <Laptop className="w-4 h-4" />
-            <span>Docker Scraper (PC / Docker)</span>
-          </span>
-          <span className="flex items-center gap-1.5 text-sky-400">
-            <Globe className="w-4 h-4" />
-            <span>Live OpenStreetMap Directory (Web &amp; Mobile)</span>
-          </span>
+      {/* Cloud Engine Connected Badge */}
+      <div className="max-w-7xl mx-auto mt-4 p-3 rounded-xl bg-gradient-to-r from-emerald-950/20 via-white/[0.02] to-white/[0.02] border border-emerald-500/30 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-gray-300">
+        <div className="flex items-center gap-2">
+          <Globe className="w-4 h-4 text-emerald-400" />
+          <span className="text-emerald-300 font-bold">24/7 Cloud Engine Connected:</span>
+          <span className="text-gray-300 truncate max-w-xs">{customApiUrl}</span>
         </div>
-        <span className="text-gray-400 text-[11px]">100% Real Live Business Data</span>
+        <span className="text-emerald-400 text-[11px] font-bold">⚡ Zero Setup Required</span>
       </div>
 
       {/* Cloud API Configuration Accordion */}
@@ -488,12 +498,12 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
             <button onClick={() => setShowConfig(false)} className="text-xs text-gray-400 hover:text-white">✕ Close</button>
           </div>
           <p className="text-xs text-gray-300 font-mono">
-            To connect a remote cloud container (e.g. Render, Railway, Cloudflare Tunnel, or Ngrok), paste your public API URL below:
+            Default 24/7 Cloud Engine URL:
           </p>
           <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="url"
-              placeholder="e.g. https://my-gmaps-scraper.onrender.com or https://xxxx.trycloudflare.com"
+              placeholder="e.g. https://google-maps-scraper-latest-ro7w.onrender.com"
               value={customApiUrl}
               onChange={(e) => setCustomApiUrl(e.target.value)}
               className="flex-1 px-3.5 py-2 rounded-xl bg-black/40 border border-white/20 text-xs font-mono text-white placeholder-gray-500 focus:outline-none focus:border-[#D4AF37]"
@@ -571,7 +581,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                 {isScraping ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>FETCHING REAL MAPS DATA...</span>
+                    <span>FETCHING MAPS LEADS...</span>
                   </>
                 ) : (
                   <>
