@@ -100,7 +100,7 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({ videoEnded }
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/80 backdrop-blur-md cursor-auto">
           {/* Backdrop Click */}
           <motion.div
             initial={{ opacity: 0 }}
