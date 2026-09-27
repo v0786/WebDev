@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Send, CheckCircle2, Copy, MessageSquare, ArrowUpRight, ShieldCheck, Mail, AlertCircle } from 'lucide-react';
 import { PERSONAL_INFO } from '../../config/personal';
 import { soundFx } from '../audio/SoundEffects';
+import { salesService } from '../../services/salesService';
 
 export const ContactSection: React.FC = () => {
   const [name, setName] = useState('');
@@ -75,13 +76,13 @@ ${name}
     try {
       const existingStr = localStorage.getItem('sales_portal_requests');
       const existing: any[] = existingStr ? JSON.parse(existingStr) : [];
-      const newReq = {
+      const newReq: any = {
         id: `req-${Date.now()}-${Math.floor(Math.random()*1000)}`,
         requestNumber: `REQ-2026-0${100 + existing.length + 1}`,
         clientName: clientName || 'Client Prospect',
         clientEmail: clientEmail || 'prospect@business.com',
         businessName: businessName || `${clientName || 'New Client'}'s Business`,
-        requestType: reqType.includes('3D') || reqType.includes('Design') ? 'UI/UX Redesign' : reqType.includes('AI') || reqType.includes('Automation') ? 'SaaS Automation' : 'Custom Web App',
+        requestType: (reqType.includes('3D') || reqType.includes('Design') ? 'UI/UX Redesign' : reqType.includes('AI') || reqType.includes('Automation') ? 'SaaS Automation' : 'Custom Web App') as any,
         budget: budget || '$5,000 – $10,000',
         status: 'New',
         dateSubmitted: new Date().toISOString().split('T')[0],
@@ -92,9 +93,7 @@ ${name}
         attachedFilesCount: 0,
         channel: channel
       };
-      existing.unshift(newReq);
-      localStorage.setItem('sales_portal_requests', JSON.stringify(existing));
-      window.dispatchEvent(new Event('storage'));
+      salesService.createRequest(newReq);
     } catch {
       // ignore
     }

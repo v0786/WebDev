@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { salesService } from '../../services/salesService';
 import {
   Lock,
   Unlock,
@@ -159,19 +160,21 @@ export const SalesDemo: React.FC = () => {
     } catch {}
   }, [tasks]);
 
-  // Sync live inquiries when storage event triggers (e.g. from Website Contact Form, WhatsApp, Instagram DM)
+  // Sync live inquiries via salesService (Realtime PostgreSQL / local fallback)
   React.useEffect(() => {
-    const handleStorageChange = () => {
-      setRequests(getStoredRequests());
+    // Initial fetch
+    salesService.fetchRequests().then((data) => setRequests(data));
+
+    // Subscribe to realtime changes
+    const unsubscribe = salesService.subscribeToRequests((updatedRequests) => {
+      setRequests(updatedRequests);
       setPayments(getStoredPayments());
       setFiles(getStoredFiles());
       setTasks(getStoredTasks());
-    };
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('focus', handleStorageChange);
+    });
+
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('focus', handleStorageChange);
+      unsubscribe();
     };
   }, []);
 
@@ -291,7 +294,7 @@ export const SalesDemo: React.FC = () => {
       channel: newChannel
     };
 
-    setRequests([newReq, ...requests]);
+    salesService.createRequest(newReq);
     setIsNewRequestModalOpen(false);
     setNewClientName('');
     setNewClientEmail('');
