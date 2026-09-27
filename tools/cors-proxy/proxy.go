@@ -19,13 +19,26 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+func checkInternalScraper(targetURL string) bool {
+	client := &http.Client{Timeout: 2 * time.Second}
+	resp, err := client.Get(targetURL + "/api/v1/jobs")
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode == http.StatusOK
+}
+
 func main() {
 	port := getEnv("PORT", "10000")
+	allowedOrigin := getEnv("ALLOWED_ORIGIN", "https://v0786.github.io")
+	internalPort := "8081"
+	internalURL := fmt.Sprintf("http://127.0.0.1:%s", internalPort)
 
-	log.Println("[SCRAPER] Starting...")
+	log.Printf("[SCRAPER] Starting internal google-maps-scraper on 127.0.0.1:%s...\n", internalPort)
 
-	// 1. Launch google-maps-scraper binary in the background listening on 127.0.0.1:8081
-	cmd := exec.Command("/usr/bin/google-maps-scraper", "-web", "-addr", "127.0.0.1:8081", "-data-folder", "/tmp")
+	// 1. Launch google-maps-scraper binary listening internally on 127.0.0.1:8081
+	cmd := exec.Command("/usr/bin/google-maps-scraper", "-web", "-addr", "127.0.0.1:"+internalPort, "-data-folder", "/tmp")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -33,61 +46,87 @@ func main() {
 		log.Fatalf("[SCRAPER] Failed to start google-maps-scraper process: %v", err)
 	}
 
-	// Give the process time to initialize and bind to port 8081
-	time.Sleep(1500 * time.Millisecond)
-
-	log.Println("[SCRAPER] Browser dependencies available")
-	log.Printf("[SCRAPER] API listening on 0.0.0.0:%s\n", port)
-	log.Println("[SCRAPER] Ready")
-
-	target, err := url.Parse("http://127.0.0.1:8081")
-	if err != nil {
-		log.Fatalf("[SCRAPER] Failed to parse target URL: %v", err)
+	// 2. Wait for internal scraper to initialize
+	log.Printf("[SCRAPER] Waiting for internal scraper on 127.0.0.1:%s...\n", internalPort)
+	ready := false
+	for i := 0; i < 15; i++ {
+		if checkInternalScraper(internalURL) {
+			ready = true
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+	if ready {
+		log.Printf("[SCRAPER] Internal scraper ready on 127.0.0.1:%s\n", internalPort)
+	} else {
+		log.Println("[SCRAPER] Warning: Internal scraper taking longer to respond...")
 	}
 
-	proxy := httputil.NewSingleHostReverseProxy(target)
+	target, err := url.Parse(internalURL)
+	if err != nil {
+		log.Fatalf("[PROXY] Failed to parse target URL: %v", err)
+	}
 
-	// HTTP Handler with Fail-Safe CORS & Backend Routing
+	reverseProxy := httputil.NewSingleHostReverseProxy(target)
+
+	// Custom HTTP Handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := r.Header.Get("Origin")
-		if origin != "" {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
+		reqOrigin := r.Header.Get("Origin")
+
+		// CORS Header Rules
+		if reqOrigin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", reqOrigin)
+		} else if allowedOrigin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 		} else {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 		}
 
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE, PATCH")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization, X-Requested-With")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization, X-Requested-With, X-API-Key")
 		w.Header().Set("Access-Control-Expose-Headers", "*")
 
-		// Handle preflight OPTIONS requests immediately
+		// Preflight OPTIONS Handler
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 
-		// 1. Lightweight Health Endpoint for Render Health Checks & Cold Start Ping
+		// Requirement 4: Health Check (Must return JSON Content-Type: application/json)
 		if r.URL.Path == "/health" || r.URL.Path == "/healthz" {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"status":"ok"}`))
+			isAlive := checkInternalScraper(internalURL)
+			if isAlive {
+				w.Write([]byte(`{"status":"ok","scraper":"healthy"}`))
+			} else {
+				w.Write([]byte(`{"status":"ok","scraper":"starting"}`))
+			}
 			return
 		}
 
-		// 2. Alias Routing: Proxy safe frontend routes /api/scrape -> /api/v1/jobs
+		// Logging Request
+		log.Printf("[PROXY] %s %s (Origin: %s)\n", r.Method, r.URL.Path, reqOrigin)
+
+		// Requirement 5: Alias Routing for /api/scrape -> /api/v1/jobs
 		if r.URL.Path == "/api/scrape" {
+			log.Println("[PROXY] POST /api/scrape -> Forwarding request to scraper /api/v1/jobs")
 			r.URL.Path = "/api/v1/jobs"
 		} else if strings.HasPrefix(r.URL.Path, "/api/scrape/") {
-			r.URL.Path = strings.Replace(r.URL.Path, "/api/scrape/", "/api/v1/jobs/", 1)
+			subPath := strings.TrimPrefix(r.URL.Path, "/api/scrape/")
+			log.Printf("[PROXY] Forwarding GET /api/scrape/%s -> /api/v1/jobs/%s\n", subPath, subPath)
+			r.URL.Path = "/api/v1/jobs/" + subPath
 		}
 
-		// Forward request to local scraper engine
-		proxy.ServeHTTP(w, r)
+		// Forward to internal scraper process
+		reverseProxy.ServeHTTP(w, r)
 	})
 
+	log.Println("[PROXY] Starting public API...")
+	log.Printf("[PROXY] Listening on 0.0.0.0:%s\n", port)
 	listenAddr := fmt.Sprintf("0.0.0.0:%s", port)
 	if err := http.ListenAndServe(listenAddr, handler); err != nil {
-		log.Fatalf("[SCRAPER] Proxy server failed: %v", err)
+		log.Fatalf("[PROXY] Public server error: %v", err)
 	}
 }
