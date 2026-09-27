@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { SalesRequest } from '../demos/sales/SalesDemo';
+import { SalesRequest, ClientFile } from '../demos/sales/SalesDemo';
 
 const LOCAL_STORAGE_KEYS = {
   REQUESTS: 'sales_portal_requests',
@@ -63,7 +63,6 @@ export const salesService = {
 
   // Add New Sales Request
   async createRequest(newReq: SalesRequest): Promise<void> {
-    // Always write to local storage first for instant responsive feel
     const currentLocal = getLocalData<SalesRequest>(LOCAL_STORAGE_KEYS.REQUESTS);
     setLocalData(LOCAL_STORAGE_KEYS.REQUESTS, [newReq, ...currentLocal]);
 
@@ -94,7 +93,112 @@ export const salesService = {
     }
   },
 
-  // Subscribe to Realtime Updates
+  // Fetch Files
+  async fetchFiles(): Promise<ClientFile[]> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('client_files')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && data) {
+          return data.map((item) => ({
+            id: item.id,
+            name: item.name,
+            size: item.size,
+            type: item.type,
+            category: item.category,
+            requestNumber: item.request_number,
+            clientName: item.client_name,
+            uploadedBy: item.uploaded_by,
+            uploadedAt: item.uploaded_at,
+            contentSnippet: item.content_snippet,
+            downloadUrl: item.download_url
+          }));
+        }
+      } catch (err) {
+        console.warn('Supabase fetch files failed, using local storage:', err);
+      }
+    }
+    return getLocalData<ClientFile>(LOCAL_STORAGE_KEYS.FILES);
+  },
+
+  // Upload File to Supabase Storage Bucket ('client-files')
+  async uploadFile(
+    fileObj: File | null,
+    fileName: string,
+    category: ClientFile['category'],
+    requestNumber: string,
+    clientName: string,
+    contentSnippet?: string
+  ): Promise<ClientFile> {
+    const fileId = `file-${Date.now()}`;
+    const formattedSize = fileObj ? `${(fileObj.size / (1024 * 1024)).toFixed(2)} MB` : '1.2 MB';
+    let downloadUrl = '';
+
+    if (isSupabaseConfigured && supabase && fileObj) {
+      try {
+        const storagePath = `${requestNumber}/${Date.now()}_${fileObj.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from('client-files')
+          .upload(storagePath, fileObj, { upsert: true });
+
+        if (!uploadError) {
+          const { data: publicUrlData } = supabase.storage
+            .from('client-files')
+            .getPublicUrl(storagePath);
+          downloadUrl = publicUrlData.publicUrl;
+        }
+      } catch (err) {
+        console.warn('Supabase bucket upload failed, using fallback:', err);
+      }
+    }
+
+    const newFileRecord: ClientFile = {
+      id: fileId,
+      name: fileName.includes('.') ? fileName : `${fileName}.pdf`,
+      size: formattedSize,
+      type: fileName.endsWith('.json') ? 'JSON Data' : fileName.endsWith('.zip') ? 'ZIP Archive' : 'PDF Document',
+      category: category,
+      requestNumber: requestNumber,
+      clientName: clientName,
+      uploadedBy: 'Client / Admin',
+      uploadedAt: new Date().toISOString().split('T')[0],
+      contentSnippet: contentSnippet || `Document specifications for ${requestNumber}`,
+      downloadUrl: downloadUrl || undefined
+    };
+
+    // Save locally
+    const currentFiles = getLocalData<ClientFile>(LOCAL_STORAGE_KEYS.FILES);
+    setLocalData(LOCAL_STORAGE_KEYS.FILES, [newFileRecord, ...currentFiles]);
+
+    // Save metadata in Supabase client_files table
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('client_files').insert([
+          {
+            id: newFileRecord.id,
+            name: newFileRecord.name,
+            size: newFileRecord.size,
+            type: newFileRecord.type,
+            category: newFileRecord.category,
+            request_number: newFileRecord.requestNumber,
+            client_name: newFileRecord.clientName,
+            uploaded_by: newFileRecord.uploadedBy,
+            uploaded_at: newFileRecord.uploadedAt,
+            content_snippet: newFileRecord.contentSnippet,
+            download_url: newFileRecord.downloadUrl
+          }
+        ]);
+      } catch (err) {
+        console.error('Supabase file DB insert failed:', err);
+      }
+    }
+
+    return newFileRecord;
+  },
+
+  // Subscribe to Realtime Requests
   subscribeToRequests(onUpdate: (requests: SalesRequest[]) => void) {
     if (isSupabaseConfigured && supabase) {
       const channel = supabase
@@ -116,9 +220,44 @@ export const salesService = {
       };
     }
 
-    // Local fallback listener
     const handleStorage = async () => {
       const data = await this.fetchRequests();
+      onUpdate(data);
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('focus', handleStorage);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('focus', handleStorage);
+    };
+  },
+
+  // Subscribe to Realtime Files
+  subscribeToFiles(onUpdate: (files: ClientFile[]) => void) {
+    if (isSupabaseConfigured && supabase) {
+      const channel = supabase
+        .channel('public:client_files')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'client_files' },
+          async () => {
+            const updated = await this.fetchFiles();
+            onUpdate(updated);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        if (supabase) {
+          supabase.removeChannel(channel);
+        }
+      };
+    }
+
+    const handleStorage = async () => {
+      const data = await this.fetchFiles();
       onUpdate(data);
     };
 

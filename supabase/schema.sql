@@ -81,3 +81,26 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sales_requests;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.client_files;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.payment_records;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.implementation_tasks;
+
+-- ============================================================
+-- 5. SUPABASE STORAGE BUCKET SETUP ('client-files')
+-- ============================================================
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('client-files', 'client-files', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage Security Policies for 'client-files' bucket
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Public Read Access' AND tablename = 'objects'
+    ) THEN
+        CREATE POLICY "Public Read Access" ON storage.objects FOR SELECT USING (bucket_id = 'client-files');
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Public Insert Access' AND tablename = 'objects'
+    ) THEN
+        CREATE POLICY "Public Insert Access" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'client-files');
+    END IF;
+END $$;
+
