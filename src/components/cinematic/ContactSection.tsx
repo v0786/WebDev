@@ -12,13 +12,16 @@ import {
   Instagram,
   Github,
   Linkedin,
+  Phone,
 } from 'lucide-react';
 import { PERSONAL_INFO } from '../../config/personal';
 import { soundFx } from '../audio/SoundEffects';
+import { salesService } from '../../services/salesService';
 
 export const ContactSection: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [company, setCompany] = useState('');
   const [projectType, setProjectType] = useState('Business Website');
   const [budgetRange, setBudgetRange] = useState('$5,000 – $10,000');
@@ -64,6 +67,7 @@ I would like to discuss a new website project with you:
 
 — NAME: ${name}
 — EMAIL: ${email}
+— MOBILE NUMBER: ${phone}
 — COMPANY / BRAND: ${company || 'Not specified'}
 — PROJECT TYPE: ${projectType}
 — BUDGET RANGE: ${budgetRange}
@@ -86,12 +90,49 @@ ${name}
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const recordInquiryToDashboard = async (
+    clientName: string,
+    clientEmail: string,
+    clientPhone: string = 'Not Provided',
+    businessName: string = '',
+    reqType: string = '',
+    budget: string = '',
+    desc: string = '',
+    channel: 'Website Form' | 'WhatsApp Inquiry' | 'Instagram DM' | 'Email Commission' = 'Website Form'
+  ) => {
+    try {
+      const existingStr = localStorage.getItem('sales_portal_requests');
+      const existing: any[] = existingStr ? JSON.parse(existingStr) : [];
+      const newReq: any = {
+        id: `req-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+        requestNumber: `REQ-2026-0${100 + existing.length + 1}`,
+        clientName: clientName || 'Client Prospect',
+        clientEmail: clientEmail || 'prospect@business.com',
+        clientPhone: clientPhone,
+        businessName: businessName || `${clientName || 'New Client'}'s Business`,
+        requestType: (reqType.includes('3D') || reqType.includes('Design') ? 'UI/UX Redesign' : reqType.includes('AI') || reqType.includes('Automation') ? 'SaaS Automation' : 'Custom Web App') as any,
+        budget: budget || '$5,000 – $10,000',
+        status: 'New',
+        dateSubmitted: new Date().toISOString().split('T')[0],
+        deadline: '2026-11-30',
+        requirementsSummary: desc || `Client inquiry received via ${channel}.`,
+        detailedRequirements: [desc || `Initial contact initiated through ${channel}`],
+        techStackPreference: ['React', 'TypeScript', 'Tailwind CSS'],
+        attachedFilesCount: 0,
+        channel: channel
+      };
+      await salesService.createRequest(newReq);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
 
-    if (!name.trim() || !email.trim() || !description.trim()) {
-      setErrorMessage('Please fill in your name, email, and project description.');
+    if (!name.trim() || !email.trim() || !phone.trim() || !description.trim()) {
+      setErrorMessage('Please fill in all compulsory fields (*): Your Name, Email Address, Mobile Number, and Project Description.');
       setStatus('error');
       return;
     }
@@ -99,16 +140,23 @@ ${name}
     soundFx.playModalReveal();
     setStatus('loading');
 
+    await recordInquiryToDashboard(name, email, phone, company, projectType, budgetRange, description, 'Website Form');
+
+    setStatus('success');
+    setName('');
+    setEmail('');
+    setPhone('');
+    setCompany('');
+    setDescription('');
+
     setTimeout(() => {
       try {
         const mailtoUrl = generateMailto();
-        window.location.href = mailtoUrl;
-        setStatus('success');
+        window.open(mailtoUrl, '_blank');
       } catch {
-        setStatus('error');
-        setErrorMessage('Failed to trigger email client. Please copy my direct email below.');
+        // ignore
       }
-    }, 500);
+    }, 400);
   };
 
   return (
@@ -267,23 +315,45 @@ ${name}
                   </div>
                 </div>
 
-                {/* Company / Brand */}
-                <div className="space-y-2">
-                  <label
-                    htmlFor="inquiry-company"
-                    className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#C49B71] block font-medium"
-                  >
-                    COMPANY / BRAND NAME
-                  </label>
-                  <input
-                    id="inquiry-company"
-                    type="text"
-                    placeholder="Studio, Brand or Organization"
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
-                    className="w-full px-4 py-3.5 rounded-lg bg-[#120F0C] border border-[#8C6D4F]/30 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/50 text-white placeholder-[#8C6D4F]/60 text-xs font-sans focus:outline-none transition-colors min-h-[44px]"
-                    style={{ fontFamily: "'Montserrat', sans-serif" }}
-                  />
+                {/* Mobile / Phone Number & Company / Brand */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="inquiry-phone"
+                      className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#D4AF37] block font-bold flex items-center gap-1.5"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-[#D4AF37]" />
+                      <span>MOBILE / PHONE NUMBER *</span>
+                    </label>
+                    <input
+                      id="inquiry-phone"
+                      type="tel"
+                      required
+                      placeholder="+91 98765 43210 / +1 (555) 000-0000"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full px-4 py-3.5 rounded-lg bg-[#120F0C] border border-[#D4AF37]/50 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/50 text-white placeholder-[#8C6D4F]/60 text-xs font-sans focus:outline-none transition-colors min-h-[44px]"
+                      style={{ fontFamily: "'Montserrat', sans-serif" }}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="inquiry-company"
+                      className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#C49B71] block font-medium"
+                    >
+                      COMPANY / BRAND NAME
+                    </label>
+                    <input
+                      id="inquiry-company"
+                      type="text"
+                      placeholder="Studio, Brand or Organization"
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
+                      className="w-full px-4 py-3.5 rounded-lg bg-[#120F0C] border border-[#8C6D4F]/30 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/50 text-white placeholder-[#8C6D4F]/60 text-xs font-sans focus:outline-none transition-colors min-h-[44px]"
+                      style={{ fontFamily: "'Montserrat', sans-serif" }}
+                    />
+                  </div>
                 </div>
 
                 {/* Project Type Selector */}
