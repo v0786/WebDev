@@ -517,9 +517,6 @@ ${name}
                   <MessageSquare className="w-4 h-4" />
                   <span>{PERSONAL_INFO.whatsAppNumber} (Direct WhatsApp Chat)</span>
                 </a>
-                <div className="text-[10.5px] font-mono text-[#8C6D4F] pt-0.5">
-                  Prefilled: &quot;Hi Vaibhav, I&apos;d like to discuss a website project.&quot;
-                </div>
               </div>
 
               {/* Location */}
