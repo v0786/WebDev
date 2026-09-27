@@ -389,15 +389,24 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
 
     const apiBase = (customApiUrl.trim() || SCRAPER_API_URL).replace(/\/$/, '');
 
-    // Phase 15: Render Cold Start Ping
-    setStatusMessage('Waking up scraper service...');
-    try {
-      const healthRes = await fetch(`${apiBase}/health`, { method: 'GET' });
-      if (!healthRes.ok) {
-        setStatusMessage('Waking up scraper service (Cold start in progress)...');
+    // Phase 15: Render Cold Start Ping with Retry Loop
+    let serviceReady = false;
+    for (let attempt = 1; attempt <= 12; attempt++) {
+      setStatusMessage(`⏳ Waking up Render Scraper Service (Attempt ${attempt}/12)...`);
+      try {
+        const healthRes = await fetch(`${apiBase}/health`, { method: 'GET' });
+        if (healthRes.ok) {
+          serviceReady = true;
+          break;
+        }
+      } catch (healthErr) {
+        console.warn(`Health check attempt ${attempt} failed:`, healthErr);
       }
-    } catch {
-      setStatusMessage('Waking up scraper service (Cold start in progress)...');
+      await new Promise(r => setTimeout(r, 4000));
+    }
+
+    if (!serviceReady) {
+      setStatusMessage('⚡ Scraper API responding. Initiating scrape job...');
     }
 
     // Phase 8: Geocoding + Job Payload Construction
@@ -421,22 +430,42 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
 
     let jobId = '';
 
-    // POST /api/scrape (or /api/v1/jobs) with application/json
-    try {
-      const jobRes = await fetch(`${apiBase}/api/scrape`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
+    // POST /api/scrape (or /api/v1/jobs) with application/json & auto-retry on connection cold start
+    let jobRes: Response | null = null;
+    let createAttempts = 0;
+    while (createAttempts < 4 && !jobRes) {
+      createAttempts++;
+      try {
+        jobRes = await fetch(`${apiBase}/api/scrape`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+      } catch (fetchErr: any) {
+        console.warn(`Job creation attempt ${createAttempts} failed:`, fetchErr);
+        if (createAttempts < 4) {
+          setStatusMessage(`⏳ Connecting to Scraper API... (Attempt ${createAttempts}/4)`);
+          await new Promise(r => setTimeout(r, 4000));
+        } else {
+          setIsScraping(false);
+          setScrapePhase('idle');
+          setStatusMessage(`❌ Google Maps Scraper API is currently waking up or sleeping on Render. Please wait 15 seconds and try clicking 'START GOOGLE MAPS SCRAPE' again!`);
+          return;
+        }
+      }
+    }
 
-      if (!jobRes.ok) {
-        let errText = `HTTP ${jobRes.status} ${jobRes.statusText}`;
+    try {
+      if (!jobRes || !jobRes.ok) {
+        let errText = jobRes ? `HTTP ${jobRes.status} ${jobRes.statusText}` : 'Service unavailable';
         try {
-          const errJson = await jobRes.json();
-          if (errJson.error) errText = errJson.error;
+          if (jobRes) {
+            const errJson = await jobRes.json();
+            if (errJson.error) errText = errJson.error;
+          }
         } catch {}
         throw new Error(errText);
       }
@@ -448,7 +477,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
       setActiveJobId(jobId);
       setScrapePhase('scraping');
     } catch (err: any) {
-      console.error('Job creation error:', err);
+      console.error('Job creation parsing error:', err);
       setIsScraping(false);
       setScrapePhase('idle');
       setStatusMessage(`❌ Google Maps scraper unavailable: ${err.message || 'Network error'}. Please retry.`);
@@ -1046,7 +1075,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                         href={lead.googleMapsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-[#D4AF37] hover:text-black border border-white/15 text-white font-mono text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-[#D4AF37] hover:text-[#000000] border border-white/15 text-white font-mono text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
                       >
                         <MapPin className="w-4 h-4 text-red-400" />
                         <span>OPEN GOOGLE MAPS →</span>

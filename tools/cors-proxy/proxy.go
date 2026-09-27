@@ -21,7 +21,6 @@ func getEnv(key, fallback string) string {
 
 func main() {
 	port := getEnv("PORT", "10000")
-	allowedOrigin := getEnv("ALLOWED_ORIGIN", "https://v0786.github.io")
 
 	log.Println("[SCRAPER] Starting...")
 
@@ -48,19 +47,18 @@ func main() {
 
 	proxy := httputil.NewSingleHostReverseProxy(target)
 
-	// HTTP Handler with CORS & Safe Backend Routing
+	// HTTP Handler with Fail-Safe CORS & Backend Routing
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-
-		// CORS Origin Validation
-		if allowedOrigin == "*" || origin == allowedOrigin || (strings.HasSuffix(allowedOrigin, "github.io") && strings.HasPrefix(origin, "https://") && strings.Contains(origin, "github.io")) {
+		if origin != "" {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 		} else {
-			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+			w.Header().Set("Access-Control-Allow-Origin", "*")
 		}
 
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE, PATCH")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization, X-Requested-With")
 		w.Header().Set("Access-Control-Expose-Headers", "*")
 
 		// Handle preflight OPTIONS requests immediately
@@ -69,7 +67,7 @@ func main() {
 			return
 		}
 
-		// 1. Lightweight Health Endpoint for Render Health Checks
+		// 1. Lightweight Health Endpoint for Render Health Checks & Cold Start Ping
 		if r.URL.Path == "/health" || r.URL.Path == "/healthz" {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
