@@ -15,7 +15,8 @@ import {
   Zap,
   Building2,
   Star,
-  Trash2
+  Trash2,
+  Server
 } from 'lucide-react';
 import { soundFx } from '../audio/SoundEffects';
 import { salesService } from '../../services/salesService';
@@ -33,6 +34,7 @@ export interface ScrapedLead {
   hasWebsite: boolean;
   instagram?: string;
   facebook?: string;
+  mapsUrl?: string;
 }
 
 interface LeadScraperPortalProps {
@@ -76,6 +78,7 @@ function parseCsvLeads(csvText: string): ScrapedLead[] {
   const getIdx = (name: string) => headers.indexOf(name);
 
   const titleIdx = getIdx('title');
+  const linkIdx = getIdx('link');
   const phoneIdx = getIdx('phone');
   const emailIdx = getIdx('emails');
   const webIdx = getIdx('website');
@@ -93,6 +96,7 @@ function parseCsvLeads(csvText: string): ScrapedLead[] {
 
     const name = rawName.replace(/^"(.*)"$/, '$1').trim();
     const site = (cols[webIdx] || '').replace(/^"(.*)"$/, '$1').trim();
+    const mapsLink = (cols[linkIdx] || '').replace(/^"(.*)"$/, '$1').trim();
     const hasWebsite = site.length > 0 && site !== 'http://' && site !== 'https://' && site.toLowerCase() !== 'none';
 
     leads.push({
@@ -106,6 +110,7 @@ function parseCsvLeads(csvText: string): ScrapedLead[] {
       rating: (cols[ratingIdx] || '4.5').replace(/^"(.*)"$/, '$1'),
       reviewCount: (cols[reviewsIdx] || '0').replace(/^"(.*)"$/, '$1'),
       hasWebsite,
+      mapsUrl: mapsLink || undefined
     });
   }
 
@@ -119,6 +124,8 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
   const [keyword, setKeyword] = useState('salons in Nagpur');
   const [city, setCity] = useState('Nagpur');
   const [depth, setDepth] = useState(5);
+  const [customApiUrl, setCustomApiUrl] = useState('');
+  const [showConfig, setShowConfig] = useState(false);
   const [isScraping, setIsScraping] = useState(false);
   const [filterMode, setFilterMode] = useState<'all' | 'nowebsite' | 'haswebsite'>('nowebsite');
   const [statusMessage, setStatusMessage] = useState('');
@@ -145,7 +152,9 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     e.preventDefault();
     soundFx.playModalReveal();
     setIsScraping(true);
-    setStatusMessage(`⚡ Fetching Google Maps leads for '${keyword}'...`);
+    setStatusMessage(`⚡ Extracting Google Maps leads for '${keyword}'...`);
+
+    const apiBase = customApiUrl.trim() ? customApiUrl.trim().replace(/\/$/, '') : '';
 
     try {
       // 1. Resolve Location Coordinates
@@ -163,7 +172,8 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
       } catch {}
 
       // 2. Fast mode scrape job payload
-      const jobRes = await fetch('/api/v1/jobs', {
+      const endpoint = apiBase ? `${apiBase}/api/v1/jobs` : '/api/v1/jobs';
+      const jobRes = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -186,15 +196,17 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         const jobId = jobData.id;
 
         if (jobId) {
-          // Fast poll every 500ms (max 60 iterations)
+          const statusEndpoint = apiBase ? `${apiBase}/api/v1/jobs/${jobId}` : `/api/v1/jobs/${jobId}`;
+          const dlEndpoint = apiBase ? `${apiBase}/api/v1/jobs/${jobId}/download` : `/api/v1/jobs/${jobId}/download`;
+
           for (let attempt = 1; attempt <= 60; attempt++) {
             await new Promise(r => setTimeout(r, 500));
-            const statusRes = await fetch(`/api/v1/jobs/${jobId}`);
+            const statusRes = await fetch(statusEndpoint);
             if (!statusRes.ok) continue;
 
             const statusData = await statusRes.json();
             if (statusData.Status === 'ok') {
-              const dlRes = await fetch(`/api/v1/jobs/${jobId}/download`);
+              const dlRes = await fetch(dlEndpoint);
               const csvText = await dlRes.text();
               const extracted = parseCsvLeads(csvText);
               if (extracted.length > 0) {
@@ -221,14 +233,15 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         id: `lead-${Date.now()}-1`,
         name: `${city} ${topic} Hub & Studio`,
         category: keyword,
-        address: `Main Market, ${city}`,
+        address: `Main Market, Sitabuldi, ${city}`,
         phone: '+91 98230 11992',
         email: `contact@${topic.toLowerCase()}${city.toLowerCase()}.in`,
         website: '',
         rating: '4.8',
         reviewCount: '154',
         hasWebsite: false,
-        instagram: `https://instagram.com/${topic.toLowerCase()}_${city.toLowerCase()}`
+        instagram: `https://instagram.com/${topic.toLowerCase()}_${city.toLowerCase()}`,
+        mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${city} ${topic} Hub & Studio ${city}`)}`
       },
       {
         id: `lead-${Date.now()}-2`,
@@ -240,7 +253,8 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         website: '',
         rating: '4.7',
         reviewCount: '92',
-        hasWebsite: false
+        hasWebsite: false,
+        mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`Royal ${topic} Care Studio ${city}`)}`
       },
       {
         id: `lead-${Date.now()}-3`,
@@ -252,7 +266,8 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         website: '',
         rating: '4.6',
         reviewCount: '68',
-        hasWebsite: false
+        hasWebsite: false,
+        mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`Apex ${topic} Center ${city}`)}`
       },
       {
         id: `lead-${Date.now()}-4`,
@@ -264,7 +279,8 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         website: `https://urban${topic.toLowerCase()}.com`,
         rating: '4.9',
         reviewCount: '410',
-        hasWebsite: true
+        hasWebsite: true,
+        mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`Urban ${topic} Lounge ${city}`)}`
       }
     ];
 
@@ -278,6 +294,12 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     if (filterMode === 'haswebsite') return item.hasWebsite;
     return true;
   });
+
+  const generateGoogleMapsLink = (lead: ScrapedLead) => {
+    if (lead.mapsUrl && lead.mapsUrl.startsWith('http')) return lead.mapsUrl;
+    const q = encodeURIComponent(`${lead.name} ${lead.address || city}`);
+    return `https://www.google.com/maps/search/?api=1&query=${q}`;
+  };
 
   const generateWhatsAppLink = (lead: ScrapedLead) => {
     const rawPhone = lead.phone.replace(/[^0-9]/g, '');
@@ -354,7 +376,15 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => setShowConfig(!showConfig)}
+            className="px-3 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/15 border border-white/15 text-xs font-mono text-gray-300 flex items-center gap-1.5 cursor-pointer"
+          >
+            <Server className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <span>Cloud API Setup</span>
+          </button>
+
           {leads.length > 0 && (
             <button
               onClick={handleClearLeads}
@@ -367,10 +397,41 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
 
           <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span>Docker Scraper Engine Active</span>
+            <span>Engine Ready</span>
           </div>
         </div>
       </div>
+
+      {/* Cloud API Configuration Modal / Accordion */}
+      {showConfig && (
+        <div className="max-w-7xl mx-auto my-4 p-5 rounded-2xl bg-[#15171F] border border-[#D4AF37]/40 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-mono text-[#D4AF37] font-bold">
+              <Server className="w-4 h-4" />
+              <span>ONLINE CLOUD SCRAPER API CONFIGURATION</span>
+            </div>
+            <button onClick={() => setShowConfig(false)} className="text-xs text-gray-400 hover:text-white">✕ Close</button>
+          </div>
+          <p className="text-xs text-gray-300 font-mono">
+            To connect a remote cloud container (e.g. Render, Railway, Cloudflare Tunnel, or Ngrok), paste your public API URL below:
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="url"
+              placeholder="e.g. https://my-gmaps-scraper.onrender.com or https://xxxx.trycloudflare.com"
+              value={customApiUrl}
+              onChange={(e) => setCustomApiUrl(e.target.value)}
+              className="flex-1 px-3.5 py-2 rounded-xl bg-black/40 border border-white/20 text-xs font-mono text-white placeholder-gray-500 focus:outline-none focus:border-[#D4AF37]"
+            />
+            <button
+              onClick={() => alert(`Saved API URL: ${customApiUrl || 'Default Local Proxy'}`)}
+              className="px-4 py-2 rounded-xl bg-[#D4AF37] text-black font-mono text-xs font-bold"
+            >
+              Save URL
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Container */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 pt-6">
@@ -598,6 +659,17 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
 
                   {/* Outreach Action Buttons Bar */}
                   <div className="pt-2 flex flex-wrap items-center gap-2.5">
+                    {/* View on Google Maps Button */}
+                    <a
+                      href={generateGoogleMapsLink(lead)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-[#D4AF37] hover:text-black border border-white/15 text-white font-mono text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+                    >
+                      <MapPin className="w-4 h-4 text-red-400" />
+                      <span>VIEW ON GOOGLE MAPS →</span>
+                    </a>
+
                     {/* WhatsApp Outreach */}
                     {lead.phone && (
                       <a
