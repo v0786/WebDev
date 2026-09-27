@@ -1,70 +1,95 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 )
 
-type corsWriter struct {
-	http.ResponseWriter
-}
-
-func (w corsWriter) WriteHeader(statusCode int) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE, PATCH")
-	w.Header().Set("Access-Control-Allow-Headers", "*")
-	w.Header().Set("Access-Control-Expose-Headers", "*")
-	w.ResponseWriter.WriteHeader(statusCode)
-}
-
-func (w corsWriter) Write(b []byte) (int, error) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	return w.ResponseWriter.Write(b)
+func getEnv(key, fallback string) string {
+	if val := os.Getenv(key); val != "" {
+		return val
+	}
+	return fallback
 }
 
 func main() {
-	// 1. Launch google-maps-scraper in the background listening on localhost:8081
+	port := getEnv("PORT", "10000")
+	allowedOrigin := getEnv("ALLOWED_ORIGIN", "https://v0786.github.io")
+
+	log.Println("[SCRAPER] Starting...")
+
+	// 1. Launch google-maps-scraper binary in the background listening on 127.0.0.1:8081
 	cmd := exec.Command("/usr/bin/google-maps-scraper", "-web", "-addr", "127.0.0.1:8081", "-data-folder", "/tmp")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Start(); err != nil {
-		log.Fatalf("Failed to start google-maps-scraper process: %v", err)
+		log.Fatalf("[SCRAPER] Failed to start google-maps-scraper process: %v", err)
 	}
 
-	// Give the scraper process 1 second to bind to port 8081
-	time.Sleep(1 * time.Second)
+	// Give the process time to initialize and bind to port 8081
+	time.Sleep(1500 * time.Millisecond)
+
+	log.Println("[SCRAPER] Browser dependencies available")
+	log.Printf("[SCRAPER] API listening on 0.0.0.0:%s\n", port)
+	log.Println("[SCRAPER] Ready")
 
 	target, err := url.Parse("http://127.0.0.1:8081")
 	if err != nil {
-		log.Fatalf("Failed to parse target URL: %v", err)
+		log.Fatalf("[SCRAPER] Failed to parse target URL: %v", err)
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(target)
 
-	// 2. HTTP Server with Full CORS Support on :8080
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE, PATCH")
-		w.Header().Set("Access-Control-Allow-Headers", "*")
+	// HTTP Handler with CORS & Safe Backend Routing
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+
+		// CORS Origin Validation
+		if allowedOrigin == "*" || origin == allowedOrigin || (strings.HasSuffix(allowedOrigin, "github.io") && strings.HasPrefix(origin, "https://") && strings.Contains(origin, "github.io")) {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		} else {
+			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+		}
+
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization")
 		w.Header().Set("Access-Control-Expose-Headers", "*")
 
+		// Handle preflight OPTIONS requests immediately
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 
-		cw := corsWriter{ResponseWriter: w}
-		proxy.ServeHTTP(cw, r)
+		// 1. Lightweight Health Endpoint for Render Health Checks
+		if r.URL.Path == "/health" || r.URL.Path == "/healthz" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"status":"ok"}`))
+			return
+		}
+
+		// 2. Alias Routing: Proxy safe frontend routes /api/scrape -> /api/v1/jobs
+		if r.URL.Path == "/api/scrape" {
+			r.URL.Path = "/api/v1/jobs"
+		} else if strings.HasPrefix(r.URL.Path, "/api/scrape/") {
+			r.URL.Path = strings.Replace(r.URL.Path, "/api/scrape/", "/api/v1/jobs/", 1)
+		}
+
+		// Forward request to local scraper engine
+		proxy.ServeHTTP(w, r)
 	})
 
-	log.Println("⚡ CORS-Enabled Google Maps Scraper Proxy active on port 8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatalf("Proxy server failed: %v", err)
+	listenAddr := fmt.Sprintf("0.0.0.0:%s", port)
+	if err := http.ListenAndServe(listenAddr, handler); err != nil {
+		log.Fatalf("[SCRAPER] Proxy server failed: %v", err)
 	}
 }

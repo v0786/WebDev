@@ -5,9 +5,6 @@ import {
   Globe, 
   Phone, 
   MessageSquare, 
-  Mail, 
-  Instagram, 
-  Sparkles, 
   AlertCircle, 
   Plus, 
   Filter,
@@ -18,27 +15,36 @@ import {
   Trash2,
   Server,
   Upload,
-  Layers,
   ChevronDown,
-  ShieldCheck
+  ShieldCheck,
+  CheckCircle2,
+  ExternalLink,
+  Clock
 } from 'lucide-react';
 import { soundFx } from '../audio/SoundEffects';
 import { salesService } from '../../services/salesService';
+import { SCRAPER_API_URL } from '../../config/scraper';
 
+// Normalized Scraped Lead Interface
 export interface ScrapedLead {
   id: string;
   name: string;
   category: string;
   address: string;
-  phone: string;
-  email: string;
-  website: string;
-  rating: string;
-  reviewCount: string;
+  city: string;
+  state?: string;
+  country?: string;
+  phone: string | null;
+  email?: string | null;
+  website: string | null;
+  rating: string | null;
+  reviewCount: string | null;
+  latitude?: string | null;
+  longitude?: string | null;
+  googleMapsUrl: string | null;
   hasWebsite: boolean;
-  instagram?: string;
-  facebook?: string;
-  mapsUrl?: string;
+  source: 'google_maps' | 'import';
+  scrapedAt: string;
 }
 
 interface LeadScraperPortalProps {
@@ -46,8 +52,24 @@ interface LeadScraperPortalProps {
   onImportLeadToDashboard?: (leadName: string, phone: string, email: string, category: string) => void;
 }
 
-// Built-in 24/7 Render Cloud API endpoint
-const DEFAULT_CLOUD_API_URL = 'https://google-maps-scraper-latest-ro7w.onrender.com';
+// Predefined City Coordinates for legitimate geocoding
+const CITY_COORDINATES: Record<string, { lat: string; lon: string }> = {
+  'nagpur': { lat: '21.1458', lon: '79.0882' },
+  'mumbai': { lat: '19.0760', lon: '72.8777' },
+  'pune': { lat: '18.5204', lon: '73.8567' },
+  'delhi': { lat: '28.6139', lon: '77.2090' },
+  'bangalore': { lat: '12.9716', lon: '77.5946' },
+  'bengaluru': { lat: '12.9716', lon: '77.5946' },
+  'hyderabad': { lat: '17.3850', lon: '78.4867' },
+  'chennai': { lat: '13.0827', lon: '80.2707' },
+  'kolkata': { lat: '22.5726', lon: '88.3639' },
+  'ahmedabad': { lat: '23.0225', lon: '72.5714' },
+  'surat': { lat: '21.1702', lon: '72.8311' },
+  'jaipur': { lat: '26.9124', lon: '75.7873' },
+  'austin': { lat: '30.2672', lon: '-97.7431' },
+  'new york': { lat: '40.7128', lon: '-74.0060' },
+  'london': { lat: '51.5074', lon: '-0.1278' },
+};
 
 // Comprehensive Industry Category Options for Dropdown & Quick Search
 export const FEATURED_CATEGORIES = [
@@ -68,65 +90,35 @@ export const FEATURED_CATEGORIES = [
   { id: 'vet', label: 'Vet Clinics & Pet Shops', icon: '🐾', query: 'vet clinics' },
 ];
 
-// Keywords identifying Non-Commercial / Public Infrastructure listings to EXCLUDE
+// Non-Business Exclusion Filter
 const NON_BUSINESS_KEYWORDS = [
-  // Transport & Roads
   'bus stop', 'bus stand', 'bus depot', 'bus terminal', 'railway station', 
   'train station', 'metro station', 'subway station', 'station road', 'highway', 'expressway', 
   'flyover', 'bridge', 'bypass', 'junction', 'crossroad', 'intersection', 'circle', 'square',
   'ring road', 'toll booth', 'toll plaza', 'parking lot', 'public parking', 'public toilet', 
   'rest area', 'footover bridge', 'underpass', 'street stop',
-
-  // Civic / Government offices & Public Services
-  'post office', 'head post office', 'police station', 'police outpost', 'police chowki', 
+  'post office', 'police station', 'police outpost', 'police chowki', 
   'court', 'district court', 'high court', 'collectorate', 'collector office', 'tehsil', 
   'taluka office', 'municipal corporation', 'panchayat', 'government quarters', 'govt quarters', 
-  'passport office', 'rto office', 'income tax office', 'treasury office', 'public library',
-  'fire station', 'fire brigade', 'substation', 'electricity board', 'water tank', 'public latrine',
-
-  // Public geographical features & land use
+  'passport office', 'rto office', 'income tax office', 'public library',
+  'fire station', 'fire brigade', 'water tank',
   'public park', 'city park', 'children park', 'garden', 'lake', 'river', 'pond', 'dam', 
-  'waterfall', 'hill', 'forest', 'cemetery', 'graveyard', 'crematorium', 'shamshan',
-
-  // Residential-only entities
+  'cemetery', 'graveyard', 'crematorium', 'shamshan',
   'housing society', 'residential colony', 'apartment building', 'residence', 'private home',
-  'chawl', 'slum', 'staff quarters', 'officer colony', 'sector boundary'
+  'chawl', 'slum', 'staff quarters', 'sector boundary'
 ];
 
-const NON_BUSINESS_OSM_TYPES = [
-  'highway', 'bus_stop', 'railway', 'station', 'subway', 'platform',
-  'landuse', 'boundary', 'administrative', 'waterway', 'natural', 
-  'place', 'locality', 'suburb', 'residential', 'tertiary', 'secondary',
-  'primary', 'trunk', 'motorway', 'footway', 'path', 'cycleway'
-];
-
-// Helper: Commercial Business Filter to exclude non-business infrastructure
 export function isCommercialBusiness(name: string, category: string = '', address: string = ''): boolean {
   if (!name || name.trim().length < 2) return false;
-  
-  const nameLower = name.toLowerCase();
-  const catLower = category.toLowerCase().trim();
-  const combined = `${nameLower} ${catLower} ${address.toLowerCase()}`;
-
-  // 1. Check if name or category matches excluded non-business keywords
+  const combined = `${name.toLowerCase()} ${category.toLowerCase()} ${address.toLowerCase()}`;
   for (const kw of NON_BUSINESS_KEYWORDS) {
-    if (combined.includes(kw)) {
-      return false; // Exclude public infrastructure / non-business!
-    }
+    if (combined.includes(kw)) return false;
   }
-
-  // 2. Check excluded OSM categories/types
-  for (const type of NON_BUSINESS_OSM_TYPES) {
-    if (catLower === type || (catLower.length <= 12 && catLower.includes(type))) {
-      return false;
-    }
-  }
-
-  return true; // Keep genuine commercial business lead!
+  return true;
 }
 
-// Strict Website Validator: Filters out empty values, Google Maps links, social media profiles & directory pages
-function isValidWebsite(site: string): boolean {
+// Strict Website Validator
+function isValidWebsite(site: string | null | undefined): boolean {
   if (!site) return false;
   const clean = site.trim().toLowerCase().replace(/^"(.*)"$/, '$1');
 
@@ -143,241 +135,38 @@ function isValidWebsite(site: string): boolean {
     return false;
   }
 
-  // Social media profiles, Google Maps links, and directory listings are NOT custom business websites!
   const NON_CUSTOM_DOMAINS = [
-    'google.com',
-    'maps.google',
-    'g.co/',
-    'goo.gl/',
-    'facebook.com',
-    'fb.com',
-    'instagram.com',
-    'justdial.com',
-    'indiamart.com',
-    'sulekha.com',
-    'whatsapp.com',
-    'wa.me',
-    'twitter.com',
-    'x.com',
-    'linkedin.com',
-    'youtube.com',
-    'zomato.com',
-    'swiggy.com',
-    'tripadvisor.com',
-    'wikipedia.org',
-    'wikimedia.org',
-    'openstreetmap.org'
+    'google.com', 'maps.google', 'g.co/', 'goo.gl/', 'facebook.com', 'fb.com',
+    'instagram.com', 'justdial.com', 'indiamart.com', 'sulekha.com', 'whatsapp.com',
+    'wa.me', 'twitter.com', 'x.com', 'linkedin.com', 'youtube.com', 'zomato.com',
+    'swiggy.com', 'tripadvisor.com', 'wikipedia.org', 'wikimedia.org', 'openstreetmap.org'
   ];
 
   for (const domain of NON_CUSTOM_DOMAINS) {
-    if (clean.includes(domain)) {
-      return false; // Social profile / directory / map link is NOT a standalone business website!
-    }
+    if (clean.includes(domain)) return false;
   }
 
-  // Must contain a valid domain dot extension (e.g. .com, .in, .org, .net, .co, .io, .biz)
-  if (!/\.[a-z]{2,}/.test(clean)) {
-    return false;
-  }
-
-  return true; // Genuine custom website!
+  return /\.[a-z]{2,}/.test(clean);
 }
 
-const getStoredScrapedLeads = (): ScrapedLead[] => {
-  if (typeof window === 'undefined') return [];
-  try {
-    const saved = localStorage.getItem('gmaps_scraped_leads');
-    if (saved) {
-      const raw: ScrapedLead[] = JSON.parse(saved);
-      // Re-verify leads with updated commercial business & website status filters
-      return raw.map(l => ({
-        ...l,
-        hasWebsite: isValidWebsite(l.website)
-      })).filter(l => isCommercialBusiness(l.name, l.category, l.address));
-    }
-  } catch {}
-  return [];
-};
-
-const getStoredCloudApi = (): string => {
-  if (typeof window === 'undefined') return DEFAULT_CLOUD_API_URL;
-  try {
-    return localStorage.getItem('gmaps_cloud_api') || DEFAULT_CLOUD_API_URL;
-  } catch {}
-  return DEFAULT_CLOUD_API_URL;
-};
-
-// Multi-Engine Real-Time Geo Search (Photon Komoot + Nominatim OpenStreetMap)
-async function fetchLiveWebLeads(keyword: string, city: string): Promise<ScrapedLead[]> {
-  const cleanCity = city.trim();
-  const cleanKey = keyword.trim();
-  
-  let query = cleanKey;
-  if (cleanCity && !cleanKey.toLowerCase().includes(cleanCity.toLowerCase())) {
-    query = `${cleanKey} in ${cleanCity}`;
-  }
-
-  const results: ScrapedLead[] = [];
-
-  // Engine 1: Photon Komoot Real-Time Geo Search
-  try {
-    const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=40`;
-    const res = await fetch(photonUrl);
-    if (res.ok) {
-      const data = await res.json();
-      if (data && Array.isArray(data.features) && data.features.length > 0) {
-        data.features.forEach((feat: any, idx: number) => {
-          const props = feat.properties || {};
-          const name = props.name;
-          if (!name || name.length < 2) return;
-
-          const street = props.street || props.locality || props.district || '';
-          const cityArea = props.city || props.county || cleanCity;
-          const fullAddr = [street, props.district, cityArea, props.state, props.postcode].filter(Boolean).join(', ') || `${cleanCity}, India`;
-
-          const rawCategory = props.osm_value || props.osm_key || cleanKey;
-          const category = rawCategory.charAt(0).toUpperCase() + rawCategory.slice(1);
-
-          // Apply Commercial Business Exclusion Filter
-          if (!isCommercialBusiness(name, category, fullAddr)) {
-            return; // Skip non-business entry!
-          }
-
-          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${name} ${fullAddr}`)}`;
-          const phone = idx % 2 === 0 ? `+91 98230 ${11900 + idx * 17}` : `+91 94221 ${88770 + idx * 13}`;
-          const rawWebsite = (props.website || '').trim();
-          const hasWebsite = isValidWebsite(rawWebsite);
-
-          results.push({
-            id: `photon-${Date.now()}-${idx}`,
-            name,
-            category,
-            address: fullAddr,
-            phone,
-            email: '',
-            website: hasWebsite ? rawWebsite : '',
-            rating: (4.2 + (idx % 8) * 0.1).toFixed(1),
-            reviewCount: String(45 + idx * 23),
-            hasWebsite,
-            mapsUrl
-          });
-        });
-      }
-    }
-  } catch (e) {
-    console.warn('Photon engine exception:', e);
-  }
-
-  if (results.length > 0) return results;
-
-  // Engine 2: OpenStreetMap Nominatim Backup
-  try {
-    const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&extratags=1&namedetails=1&limit=40&q=${encodeURIComponent(query)}`;
-    const res = await fetch(nomUrl, { headers: { 'Accept-Language': 'en' } });
-    if (res.ok) {
-      const hits = await res.json();
-      if (Array.isArray(hits) && hits.length > 0) {
-        hits.forEach((hit: any, idx: number) => {
-          const rawName = hit.namedetails?.name || hit.name || hit.address?.shop || hit.address?.amenity || hit.address?.office;
-          if (!rawName) return;
-
-          const road = hit.address?.road || hit.address?.suburb || '';
-          const cityArea = hit.address?.city || hit.address?.county || cleanCity;
-          const fullAddr = [road, hit.address?.suburb, cityArea].filter(Boolean).join(', ') || hit.display_name;
-          const category = hit.type || hit.class || cleanKey;
-
-          // Apply Commercial Business Exclusion Filter
-          if (!isCommercialBusiness(rawName, category, fullAddr)) {
-            return; // Skip non-business entry!
-          }
-
-          const phone = hit.extratags?.phone || hit.extratags?.['contact:phone'] || (idx % 2 === 0 ? `+91 98230 ${11900 + idx * 12}` : `+91 94221 ${88770 + idx * 14}`);
-          const rawWebsite = hit.extratags?.website || hit.extratags?.['contact:website'] || hit.extratags?.url || '';
-          const hasWebsite = isValidWebsite(rawWebsite);
-
-          results.push({
-            id: `osm-${Date.now()}-${idx}`,
-            name: rawName,
-            category: category.charAt(0).toUpperCase() + category.slice(1),
-            address: fullAddr,
-            phone,
-            email: hit.extratags?.email || '',
-            website: hasWebsite ? rawWebsite : '',
-            rating: (4.3 + (idx % 6) * 0.1).toFixed(1),
-            reviewCount: String(38 + idx * 19),
-            hasWebsite,
-            mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${rawName} ${fullAddr}`)}`
-          });
-        });
-      }
-    }
-  } catch (e) {
-    console.warn('Nominatim engine exception:', e);
-  }
-
-  return results;
-}
-
-// Universal Parser for ANY Scraper Data (CSV or JSON output from any scraper tool)
-function parseUniversalScraperData(rawText: string): ScrapedLead[] {
-  const trimmed = rawText.trim();
-  
-  // 1. Try parsing JSON format if input is a JSON array or object
-  if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
-    try {
-      const parsed = JSON.parse(trimmed);
-      const items = Array.isArray(parsed) ? parsed : (parsed.data || parsed.results || parsed.items || [parsed]);
-      const leads: ScrapedLead[] = [];
-
-      items.forEach((item: any, idx: number) => {
-        const name = item.title || item.name || item.business_name || item.company || item.store_name || item.place_name || '';
-        if (!name) return;
-
-        const category = item.category || item.type || item.business_type || item.niche || item.industry || 'Local Business';
-        const address = item.address || item.location || item.full_address || item.formatted_address || '';
-
-        // Exclude non-business entities
-        if (!isCommercialBusiness(name, category, address)) return;
-
-        const rawSite = item.website || item.site || item.domain || item.url || item.web || '';
-        const hasWebsite = isValidWebsite(rawSite);
-        const phone = item.phone || item.telephone || item.mobile || item.contact_number || item.phone_number || '';
-        const email = item.email || item.emails || item.contact_email || '';
-        const rating = String(item.rating || item.review_rating || item.stars || item.score || '4.5');
-        const reviewCount = String(item.review_count || item.reviews || item.user_ratings_total || '0');
-        const mapsUrl = item.link || item.maps_url || item.google_maps_link || item.url || undefined;
-
-        leads.push({
-          id: `json-lead-${Date.now()}-${idx}`,
-          name,
-          category,
-          address,
-          phone,
-          email,
-          website: hasWebsite ? rawSite : '',
-          rating,
-          reviewCount,
-          hasWebsite,
-          mapsUrl
-        });
-      });
-
-      return leads;
-    } catch {}
-  }
-
-  // 2. Parse CSV format line by line with dynamic column matching
-  const lines = trimmed.split(/\r?\n/).filter(line => line.trim().length > 0);
+// RFC 4180 Compliant CSV Parser (Handles quotes and commas correctly)
+function parseRFC4180CSV(csvText: string): Record<string, string>[] {
+  const lines = csvText.trim().split(/\r?\n/);
   if (lines.length < 2) return [];
 
-  const splitCsvRow = (text: string) => {
+  const parseLine = (line: string): string[] => {
     const result: string[] = [];
     let cur = '';
     let inQuotes = false;
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
       if (char === '"') {
-        inQuotes = !inQuotes;
+        if (inQuotes && line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
       } else if (char === ',' && !inQuotes) {
         result.push(cur.trim());
         cur = '';
@@ -389,108 +178,135 @@ function parseUniversalScraperData(rawText: string): ScrapedLead[] {
     return result;
   };
 
-  const headers = splitCsvRow(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9_]/g, ''));
-  const findCol = (...candidates: string[]) => {
-    for (const cand of candidates) {
-      const idx = headers.indexOf(cand);
-      if (idx !== -1) return idx;
-    }
-    for (const cand of candidates) {
-      const idx = headers.findIndex(h => h.includes(cand));
-      if (idx !== -1) return idx;
-    }
-    return -1;
-  };
-
-  const titleIdx = findCol('title', 'name', 'business_name', 'company', 'store_name', 'place_name');
-  const linkIdx = findCol('link', 'url', 'maps_url', 'google_maps_link', 'place_link');
-  const phoneIdx = findCol('phone', 'telephone', 'mobile', 'contact_number', 'phone_number', 'tel');
-  const emailIdx = findCol('emails', 'email', 'contact_email', 'mail');
-  const webIdx = findCol('website', 'site', 'domain', 'web', 'url', 'web_site');
-  const catIdx = findCol('category', 'type', 'business_type', 'niche', 'industry', 'categories');
-  const addrIdx = findCol('address', 'location', 'full_address', 'formatted_address');
-  const ratingIdx = findCol('review_rating', 'rating', 'stars', 'score');
-  const reviewsIdx = findCol('review_count', 'reviews', 'user_ratings_total', 'num_reviews');
-
-  const leads: ScrapedLead[] = [];
+  const headers = parseLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9_]/g, ''));
+  const rows: Record<string, string>[] = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const cols = splitCsvRow(lines[i]);
-    const rawName = titleIdx !== -1 ? cols[titleIdx] : cols[0];
-    if (!rawName) continue;
+    if (!lines[i].trim()) continue;
+    const values = parseLine(lines[i]);
+    const row: Record<string, string> = {};
+    headers.forEach((h, idx) => {
+      row[h] = values[idx] ? values[idx].replace(/^"(.*)"$/, '$1').trim() : '';
+    });
+    rows.push(row);
+  }
+  return rows;
+}
 
-    const name = rawName.replace(/^"(.*)"$/, '$1').trim();
-    const category = catIdx !== -1 ? (cols[catIdx] || 'Local Business').replace(/^"(.*)"$/, '$1') : 'Local Business';
-    const address = addrIdx !== -1 ? (cols[addrIdx] || '').replace(/^"(.*)"$/, '$1') : '';
+// Normalize Scraper CSV Rows into ScrapedLead Interface
+function normalizeScraperRows(rows: Record<string, string>[], targetCity: string): ScrapedLead[] {
+  const leads: ScrapedLead[] = [];
 
-    // Exclude non-business entities
-    if (!isCommercialBusiness(name, category, address)) continue;
+  rows.forEach((row, idx) => {
+    const name = row.title || row.name || row.business_name || row.company || row.store_name || '';
+    if (!name || name.trim().length < 2) return;
 
-    const rawSite = webIdx !== -1 ? (cols[webIdx] || '').replace(/^"(.*)"$/, '$1').trim() : '';
-    const mapsLink = linkIdx !== -1 ? (cols[linkIdx] || '').replace(/^"(.*)"$/, '$1').trim() : '';
-    const hasWebsite = isValidWebsite(rawSite);
+    const rawCategory = row.category || row.type || row.business_type || 'Local Business';
+    const address = row.address || row.location || row.full_address || '';
+
+    if (!isCommercialBusiness(name, rawCategory, address)) return;
+
+    const rawWebsite = row.website || row.site || row.url || row.domain || '';
+    const hasWebsite = isValidWebsite(rawWebsite);
+
+    const rawPhone = row.phone || row.telephone || row.mobile || row.contact_number || '';
+    const phone = rawPhone && rawPhone.length > 4 ? rawPhone : null;
+
+    const rawRating = row.review_rating || row.rating || row.stars || '';
+    const rating = rawRating && !isNaN(parseFloat(rawRating)) ? parseFloat(rawRating).toFixed(1) : null;
+
+    const rawReviews = row.review_count || row.reviews || row.user_ratings_total || '';
+    const reviewCount = rawReviews && !isNaN(parseInt(rawReviews, 10)) ? String(parseInt(rawReviews, 10)) : null;
+
+    const googleMapsUrl = row.link || row.maps_url || row.google_maps_link || row.url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${name} ${address || targetCity}`)}`;
 
     leads.push({
-      id: `lead-${Date.now()}-${i}`,
-      name: name || 'Local Business',
-      category,
-      address,
-      phone: phoneIdx !== -1 ? (cols[phoneIdx] || '').replace(/^"(.*)"$/, '$1') : '',
-      email: emailIdx !== -1 ? (cols[emailIdx] || '').replace(/^"(.*)"$/, '$1') : '',
-      website: hasWebsite ? rawSite : '',
-      rating: ratingIdx !== -1 ? (cols[ratingIdx] || '4.5').replace(/^"(.*)"$/, '$1') : '4.5',
-      reviewCount: reviewsIdx !== -1 ? (cols[reviewsIdx] || '0').replace(/^"(.*)"$/, '$1') : '0',
+      id: `gmaps-${Date.now()}-${idx}`,
+      name,
+      category: rawCategory,
+      address: address || `${targetCity}, India`,
+      city: targetCity,
+      phone,
+      email: row.emails || row.email || null,
+      website: hasWebsite ? rawWebsite : null,
+      rating,
+      reviewCount,
+      googleMapsUrl,
       hasWebsite,
-      mapsUrl: mapsLink || undefined
+      source: 'google_maps',
+      scrapedAt: new Date().toISOString()
     });
-  }
+  });
 
   return leads;
 }
+
+const getStoredScrapedLeads = (): ScrapedLead[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem('gmaps_scraped_leads');
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return [];
+};
 
 export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
   onBackToPortalChoice,
   onImportLeadToDashboard,
 }) => {
-  // Search state: selectedCategory dropdown decouples search from manual keywords
   const [selectedCategory, setSelectedCategory] = useState<string>('salons');
   const [keyword, setKeyword] = useState('salons in Nagpur');
   const [city, setCity] = useState('Nagpur');
-  const [depth, setDepth] = useState(5);
-  const [customApiUrl, setCustomApiUrl] = useState(getStoredCloudApi);
-  const [showConfig, setShowConfig] = useState(false);
-  const [isScraping, setIsScraping] = useState(false);
+  const [depth, setDepth] = useState(3);
+  const [radius, setRadius] = useState(10000);
+  const [fastMode, setFastMode] = useState(true);
   
-  // Website Status Filter
+  const [customApiUrl, setCustomApiUrl] = useState<string>(() => {
+    return localStorage.getItem('gmaps_cloud_api') || SCRAPER_API_URL;
+  });
+  const [showConfig, setShowConfig] = useState(false);
+  
+  // Scraper Progress State
+  const [isScraping, setIsScraping] = useState(false);
+  const [scrapePhase, setScrapePhase] = useState<'idle' | 'preparing' | 'creating' | 'scraping' | 'processing' | 'completed'>('idle');
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [statusMessage, setStatusMessage] = useState('');
+  
   const [filterMode, setFilterMode] = useState<'all' | 'nowebsite' | 'haswebsite'>('nowebsite');
-  // Category-Wise Result Filter Dropdown State
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
   
-  const [statusMessage, setStatusMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const timerRef = useRef<any>(null);
 
-  // Scraped lead state persisted in browser local storage
   const [leads, setLeads] = useState<ScrapedLead[]>(getStoredScrapedLeads);
 
-  // Sync to LocalStorage so data stays saved across reloads
   useEffect(() => {
     try {
       localStorage.setItem('gmaps_scraped_leads', JSON.stringify(leads));
     } catch {}
   }, [leads]);
 
-  // Compute unique categories dynamically from current leads list
+  // Unique categories list
   const uniqueCategories = Array.from(
     new Set(leads.map((l) => l.category).filter(Boolean))
   ).sort();
 
+  // Summary Metrics
+  const totalBusinesses = leads.length;
+  const businessesWithPhone = leads.filter(l => Boolean(l.phone)).length;
+  const businessesWithWebsite = leads.filter(l => l.hasWebsite).length;
+  const businessesWithoutWebsite = leads.filter(l => !l.hasWebsite).length;
+  const ratingsList = leads.map(l => parseFloat(l.rating || '0')).filter(r => r > 0);
+  const avgRating = ratingsList.length > 0 ? (ratingsList.reduce((a, b) => a + b, 0) / ratingsList.length).toFixed(1) : 'N/A';
+
   const handleSaveCloudApi = (url: string) => {
-    const finalUrl = url.trim().replace(/\/$/, '') || DEFAULT_CLOUD_API_URL;
+    const finalUrl = url.trim().replace(/\/$/, '') || SCRAPER_API_URL;
     setCustomApiUrl(finalUrl);
     try {
       localStorage.setItem('gmaps_cloud_api', finalUrl);
     } catch {}
-    alert(`Saved Cloud API URL: ${finalUrl}`);
+    alert(`Saved Scraper API URL: ${finalUrl}`);
   };
 
   const handleClearLeads = () => {
@@ -502,25 +318,14 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     }
   };
 
-  // When dropdown category changes, update search state
   const handleCategoryDropdownChange = (catId: string) => {
     setSelectedCategory(catId);
     if (catId !== 'custom') {
       const catObj = FEATURED_CATEGORIES.find((c) => c.id === catId);
       if (catObj) {
-        const autoKey = `${catObj.query} in ${city}`.trim();
-        setKeyword(autoKey);
+        setKeyword(`${catObj.query} in ${city}`.trim());
       }
     }
-  };
-
-  // 1-Tap Category Quick Search Chip Trigger
-  const handleCategoryQuickSearch = (catObj: typeof FEATURED_CATEGORIES[0]) => {
-    soundFx.playClick();
-    setSelectedCategory(catObj.id);
-    const newQuery = `${catObj.query} in ${city}`.trim();
-    setKeyword(newQuery);
-    runScraperQuery(newQuery, city);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -531,13 +336,14 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     reader.onload = (event) => {
       const content = event.target?.result as string;
       if (content) {
-        const imported = parseUniversalScraperData(content);
+        const rows = parseRFC4180CSV(content);
+        const imported = normalizeScraperRows(rows, city);
         if (imported.length > 0) {
           setLeads((prev) => [...imported, ...prev]);
-          setStatusMessage(`✅ Successfully imported ${imported.length} commercial business leads from '${file.name}'!`);
+          setStatusMessage(`✅ Successfully imported ${imported.length} leads from '${file.name}'!`);
           soundFx.playClick();
         } else {
-          alert('Could not parse business leads from file. Please check file format.');
+          alert('Could not parse business leads from file. Check CSV format.');
         }
       }
     };
@@ -545,11 +351,33 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     if (e.target) e.target.value = '';
   };
 
+  // Resolve Geolocation Coordinates (Legitimate lookup)
+  const getCityCoordinates = async (cityName: string): Promise<{ lat: string; lon: string }> => {
+    const clean = cityName.trim().toLowerCase();
+    if (CITY_COORDINATES[clean]) {
+      return CITY_COORDINATES[clean];
+    }
+    try {
+      const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(cityName)}&limit=1`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.features?.[0]?.geometry?.coordinates) {
+          const coords = data.features[0].geometry.coordinates;
+          return { lon: String(coords[0]), lat: String(coords[1]) };
+        }
+      }
+    } catch {}
+    return { lat: '21.1458', lon: '79.0882' }; // Default Nagpur
+  };
+
+  // Centralized Scrape Orchestrator (Render Cold Start check + Job Polling up to 10 mins)
   const runScraperQuery = async (searchKeyword: string, searchCity: string) => {
     soundFx.playModalReveal();
     setIsScraping(true);
+    setScrapePhase('preparing');
+    setElapsedSeconds(0);
+    setActiveJobId(null);
 
-    // Determine final effective query based on selected Category Dropdown + City
     let finalQuery = searchKeyword.trim();
     if (selectedCategory !== 'custom') {
       const catObj = FEATURED_CATEGORIES.find((c) => c.id === selectedCategory);
@@ -557,100 +385,143 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         finalQuery = `${catObj.query} in ${searchCity}`.trim();
       }
     }
-    if (!finalQuery) {
-      finalQuery = `businesses in ${searchCity}`;
+    if (!finalQuery) finalQuery = `businesses in ${searchCity}`;
+
+    const apiBase = (customApiUrl.trim() || SCRAPER_API_URL).replace(/\/$/, '');
+
+    // Phase 15: Render Cold Start Ping
+    setStatusMessage('Waking up scraper service...');
+    try {
+      const healthRes = await fetch(`${apiBase}/health`, { method: 'GET' });
+      if (!healthRes.ok) {
+        setStatusMessage('Waking up scraper service (Cold start in progress)...');
+      }
+    } catch {
+      setStatusMessage('Waking up scraper service (Cold start in progress)...');
     }
 
-    setStatusMessage(`⚡ Querying Real-Time Maps Scraping Engine for '${finalQuery}'...`);
+    // Phase 8: Geocoding + Job Payload Construction
+    setScrapePhase('creating');
+    setStatusMessage(`Creating scrape job for '${finalQuery}'...`);
+    const coords = await getCityCoordinates(searchCity);
 
-    const apiBase = (customApiUrl.trim() || DEFAULT_CLOUD_API_URL).replace(/\/$/, '');
+    const payload = {
+      name: `sales-lead-scrape-${Date.now()}`,
+      keywords: [finalQuery],
+      lang: 'en',
+      zoom: 15,
+      lat: coords.lat,
+      lon: coords.lon,
+      fast_mode: fastMode,
+      radius: radius,
+      depth: depth,
+      email: false,
+      max_time: 300
+    };
 
-    // 1. Resolve Geolocation Coordinates
-    const geoQuery = encodeURIComponent(searchCity || finalQuery);
-    let lat = '21.1498134';
-    let lon = '79.0820556';
+    let jobId = '';
 
+    // POST /api/scrape (or /api/v1/jobs) with application/json
     try {
-      const geoRes = await fetch(`https://photon.komoot.io/api/?q=${geoQuery}&limit=1`);
-      const geoData = await geoRes.json();
-      if (geoData && geoData.features && geoData.features[0]) {
-        const coords = geoData.features[0].geometry.coordinates;
-        lon = String(coords[0]);
-        lat = String(coords[1]);
-      }
-    } catch {}
-
-    // 2. Attempt Render 24/7 Cloud API Scraping
-    try {
-      const endpoint = `${apiBase}/api/v1/jobs`;
-      const jobRes = await fetch(endpoint, {
+      const jobRes = await fetch(`${apiBase}/api/scrape`, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          name: 'gmaps-prospector',
-          keywords: [finalQuery],
-          lang: 'en',
-          zoom: 15,
-          lat: lat,
-          lon: lon,
-          fast_mode: true,
-          radius: 10000,
-          depth: Math.min(depth, 10),
-          email: false,
-          max_time: 60
-        })
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
       });
 
-      if (jobRes.ok) {
-        const jobData = await jobRes.json();
-        const jobId = jobData.id;
-
-        if (jobId) {
-          const statusEndpoint = `${apiBase}/api/v1/jobs/${jobId}`;
-          const dlEndpoint = `${apiBase}/api/v1/jobs/${jobId}/download`;
-
-          for (let attempt = 1; attempt <= 25; attempt++) {
-            await new Promise(r => setTimeout(r, 1000));
-            const statusRes = await fetch(statusEndpoint);
-            if (!statusRes.ok) continue;
-
-            const statusData = await statusRes.json();
-            if (statusData.Status === 'ok') {
-              const dlRes = await fetch(dlEndpoint);
-              const csvText = await dlRes.text();
-              const extracted = parseUniversalScraperData(csvText);
-              if (extracted.length > 0) {
-                setLeads(extracted);
-                setStatusMessage(`✅ Render Cloud Engine: Scraped ${extracted.length} commercial business leads for '${finalQuery}'!`);
-                setIsScraping(false);
-                return;
-              }
-              break;
-            } else if (statusData.Status === 'failed') {
-              break;
-            }
-          }
-        }
+      if (!jobRes.ok) {
+        let errText = `HTTP ${jobRes.status} ${jobRes.statusText}`;
+        try {
+          const errJson = await jobRes.json();
+          if (errJson.error) errText = errJson.error;
+        } catch {}
+        throw new Error(errText);
       }
-    } catch (e) {
-      console.warn('Cloud API fetch exception:', e);
-    }
 
-    // 3. High-Speed Multi-Engine Real-Time Geo Search Engine (Photon + OpenStreetMap)
-    setStatusMessage(`🔍 Extracting commercial business listings from live web map directory...`);
-    const realLiveLeads = await fetchLiveWebLeads(finalQuery, searchCity);
+      const jobData = await jobRes.json();
+      jobId = jobData.id || jobData.jobId || jobData.ID;
+      if (!jobId) throw new Error('No Job ID returned by scraper service.');
 
-    if (realLiveLeads.length > 0) {
-      setLeads(realLiveLeads);
-      setStatusMessage(`✅ Extracted ${realLiveLeads.length} commercial business listings for '${finalQuery}' in ${searchCity}!`);
+      setActiveJobId(jobId);
+      setScrapePhase('scraping');
+    } catch (err: any) {
+      console.error('Job creation error:', err);
       setIsScraping(false);
+      setScrapePhase('idle');
+      setStatusMessage(`❌ Google Maps scraper unavailable: ${err.message || 'Network error'}. Please retry.`);
       return;
     }
 
-    // 4. Fallback Empty State
-    setLeads([]);
-    setStatusMessage(`⚠️ No commercial business listings found for '${finalQuery}' in ${searchCity}. Please check spelling or try a different category/city.`);
+    // Phase 9: Polling up to 10 Minutes (600s)
+    const startTime = Date.now();
+    timerRef.current = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
+    const maxPollTimeSeconds = 600;
+    const pollIntervalMs = 4000;
+
+    while (Date.now() - startTime < maxPollTimeSeconds * 1000) {
+      await new Promise(r => setTimeout(r, pollIntervalMs));
+      const currentElapsed = Math.floor((Date.now() - startTime) / 1000);
+
+      try {
+        const pollRes = await fetch(`${apiBase}/api/scrape/${jobId}`, {
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (!pollRes.ok) continue;
+
+        const pollData = await pollRes.json();
+        const status = (pollData.Status || pollData.status || '').toLowerCase();
+
+        setStatusMessage(`Scraping Google Maps... Job ID: ${jobId} | Status: ${status || 'working'} | Elapsed: ${currentElapsed}s`);
+
+        if (status === 'ok' || status === 'completed' || status === 'done') {
+          clearInterval(timerRef.current);
+          setScrapePhase('processing');
+          setStatusMessage(`Processing scraper results for Job ID: ${jobId}...`);
+
+          // Phase 10: Download CSV results
+          const dlRes = await fetch(`${apiBase}/api/scrape/${jobId}/download`);
+          if (!dlRes.ok) throw new Error(`CSV download failed with status ${dlRes.status}`);
+
+          const csvText = await dlRes.text();
+          const csvRows = parseRFC4180CSV(csvText);
+          const normalizedLeads = normalizeScraperRows(csvRows, searchCity);
+
+          if (normalizedLeads.length > 0) {
+            setLeads(normalizedLeads);
+            setScrapePhase('completed');
+            setStatusMessage(`✅ Scrape Completed! Scraped ${normalizedLeads.length} real Google Maps leads for '${finalQuery}'!`);
+          } else {
+            setLeads([]);
+            setScrapePhase('completed');
+            setStatusMessage(`⚠️ Scrape completed, but 0 commercial business leads were found for '${finalQuery}'.`);
+          }
+
+          setIsScraping(false);
+          return;
+        } else if (status === 'failed' || status === 'error') {
+          clearInterval(timerRef.current);
+          setIsScraping(false);
+          setScrapePhase('idle');
+          setStatusMessage(`❌ Scraper job ${jobId} failed on server. Please retry.`);
+          return;
+        }
+      } catch (pollErr: any) {
+        console.warn('Polling error attempt:', pollErr);
+      }
+    }
+
+    // Timeout
+    clearInterval(timerRef.current);
     setIsScraping(false);
+    setScrapePhase('idle');
+    setStatusMessage(`⏱️ Scrape request timed out after 10 minutes. Job ID: ${jobId}.`);
   };
 
   const handleRunScraper = (e: React.FormEvent) => {
@@ -658,18 +529,12 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     runScraperQuery(keyword, city);
   };
 
-  // Filter leads by Commercial status, Website Status AND Category selection
+  // Filter leads
   const filteredLeads = leads.filter((item) => {
-    // 0. Ensure strictly commercial business
-    if (!isCommercialBusiness(item.name, item.category, item.address)) return false;
-
-    // 1. Website Filter (strictly uses isValidWebsite logic)
-    const hasRealWebsite = isValidWebsite(item.website);
     let passWebsite = true;
-    if (filterMode === 'nowebsite') passWebsite = !hasRealWebsite;
-    if (filterMode === 'haswebsite') passWebsite = hasRealWebsite;
+    if (filterMode === 'nowebsite') passWebsite = !item.hasWebsite;
+    if (filterMode === 'haswebsite') passWebsite = item.hasWebsite;
 
-    // 2. Category Filter Dropdown
     let passCategory = true;
     if (selectedCategoryFilter !== 'all') {
       passCategory = item.category.toLowerCase().includes(selectedCategoryFilter.toLowerCase());
@@ -678,27 +543,14 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     return passWebsite && passCategory;
   });
 
-  const generateGoogleMapsLink = (lead: ScrapedLead) => {
-    if (lead.mapsUrl && lead.mapsUrl.startsWith('http')) return lead.mapsUrl;
-    const q = encodeURIComponent(`${lead.name} ${lead.address || city}`);
-    return `https://www.google.com/maps/search/?api=1&query=${q}`;
-  };
-
   const generateWhatsAppLink = (lead: ScrapedLead) => {
+    if (!lead.phone) return '#';
     const rawPhone = lead.phone.replace(/[^0-9]/g, '');
     const targetPhone = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
     const msg = encodeURIComponent(
       `Hi ${lead.name},\n\nI came across your business listing on Google Maps in ${lead.address || city}! I noticed you don't have a modern interactive website listed yet.\n\nWe build high-converting websites & SaaS web apps for business owners. Check out our interactive portfolio here:\nhttps://v0786.github.io/WebDev/\n\nWould you be open to a quick 5-min demo?`
     );
     return `https://wa.me/${targetPhone}?text=${msg}`;
-  };
-
-  const generateMailtoLink = (lead: ScrapedLead) => {
-    const subject = encodeURIComponent(`Website Proposal for ${lead.name}`);
-    const body = encodeURIComponent(
-      `Hi ${lead.name} Team,\n\nI was reviewing Google Maps listings in ${city} and noticed your business doesn't have an interactive website linked.\n\nWe help businesses launch premium websites to get more client bookings and sales. View our interactive portfolio:\nhttps://v0786.github.io/WebDev/\n\nLet me know if you'd like to see a custom concept mockup for ${lead.name}.\n\nBest regards,\nVaibhav Sonkusare Studio`
-    );
-    return `mailto:${lead.email}?subject=${subject}&body=${body}`;
   };
 
   const handleImportToDashboard = async (lead: ScrapedLead) => {
@@ -709,20 +561,20 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
       requestNumber: reqNum,
       clientName: lead.name,
       clientEmail: lead.email || `prospect@${lead.name.toLowerCase().replace(/[^a-z]/g, '')}.com`,
-      clientPhone: lead.phone,
+      clientPhone: lead.phone || '',
       businessName: lead.name,
       requestType: 'Custom Web App',
       budget: '$2,500 – $5,000',
       status: 'New',
       dateSubmitted: new Date().toISOString().split('T')[0],
       deadline: '2026-11-30',
-      requirementsSummary: `Prospect extracted from Google Maps (${city}). Status: NO WEBSITE. Category: ${lead.category}`,
+      requirementsSummary: `Prospect extracted from Google Maps (${city}). Status: ${lead.hasWebsite ? 'HAS WEBSITE' : 'NO WEBSITE'}. Category: ${lead.category}`,
       detailedRequirements: [
         `Google Maps Listing: ${lead.name}`,
         `Category: ${lead.category}`,
         `Address: ${lead.address}`,
-        `Phone: ${lead.phone}`,
-        `Rating: ${lead.rating} (${lead.reviewCount} reviews)`
+        `Phone: ${lead.phone || 'N/A'}`,
+        `Rating: ${lead.rating || 'N/A'} (${lead.reviewCount || '0'} reviews)`
       ],
       techStackPreference: ['React', 'TypeScript', 'Tailwind CSS'],
       attachedFilesCount: 0,
@@ -732,9 +584,9 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     try {
       await salesService.createRequest(newReq);
       if (onImportLeadToDashboard) {
-        onImportLeadToDashboard(lead.name, lead.phone, lead.email, lead.category);
+        onImportLeadToDashboard(lead.name, lead.phone || '', lead.email || '', lead.category);
       }
-      alert(`✅ Lead '${lead.name}' (${lead.category}) successfully imported to your Sales Dashboard!`);
+      alert(`✅ Lead '${lead.name}' (${lead.category}) imported to Sales Dashboard!`);
     } catch (err) {
       console.error(err);
     }
@@ -742,7 +594,6 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
 
   return (
     <div className="min-h-screen bg-[#07080B] text-white p-4 sm:p-8 font-sans">
-      {/* Hidden File Input for Custom CSV/JSON Scraper Upload */}
       <input
         type="file"
         ref={fileInputRef}
@@ -751,7 +602,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         className="hidden"
       />
 
-      {/* Top Header Navigation */}
+      {/* Top Navigation */}
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
         <div>
           <button
@@ -765,7 +616,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
             <span>Google Maps Lead Generation Scraper</span>
           </h1>
           <p className="text-xs text-gray-400 font-mono mt-1">
-            Commercial business-only scraper for sales outreach to targets with <strong className="text-red-400 font-semibold">NO WEBSITE</strong>.
+            Official Google Maps Lead Scraper Engine integrated with Render API.
           </p>
         </div>
 
@@ -773,10 +624,9 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
           <button
             onClick={() => fileInputRef.current?.click()}
             className="px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-all"
-            title="Import CSV or JSON file output from any scraper tool"
           >
             <Upload className="w-3.5 h-3.5 text-purple-400" />
-            <span>Import Scraper File</span>
+            <span>Import CSV File</span>
           </button>
 
           <button
@@ -784,7 +634,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
             className="px-3 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/15 border border-white/15 text-xs font-mono text-gray-300 flex items-center gap-1.5 cursor-pointer"
           >
             <Server className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>Cloud API Config</span>
+            <span>API Config</span>
           </button>
 
           {leads.length > 0 && (
@@ -799,68 +649,24 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
 
           <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center gap-2">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">Commercial &amp; Custom Web Filter Active</span>
-            <span className="sm:hidden">Strict Filter</span>
+            <span>Render API Verified</span>
           </div>
         </div>
       </div>
 
-      {/* Commercial Business Guard Banner */}
-      <div className="max-w-7xl mx-auto mt-4 p-3 rounded-xl bg-gradient-to-r from-emerald-950/30 via-white/[0.02] to-white/[0.02] border border-emerald-500/40 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-gray-300">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span className="text-emerald-300 font-bold">STRICT WEBSITE DETECTOR ACTIVE:</span>
-          <span>Google Maps links, Facebook/Instagram pages, JustDial &amp; directory links are correctly marked as <strong className="text-red-400">NO WEBSITE</strong>.</span>
-        </div>
-        <span className="text-emerald-400 text-[11px] font-bold">🎯 Precise Lead Verification</span>
-      </div>
-
-      {/* Category-Wise Quick Scrape Chips Grid */}
-      <div className="max-w-7xl mx-auto my-5 space-y-2">
-        <div className="flex items-center justify-between text-xs font-mono text-gray-400">
-          <span className="flex items-center gap-1.5 font-bold text-[#D4AF37]">
-            <Layers className="w-3.5 h-3.5" />
-            <span>QUICK CATEGORY SELECTION CHIPS:</span>
-          </span>
-          <span>Click any industry chip to select category and trigger 1-tap scrape</span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-10 gap-2">
-          {FEATURED_CATEGORIES.slice(0, 10).map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => handleCategoryQuickSearch(cat)}
-              disabled={isScraping}
-              className={`px-2.5 py-2 rounded-xl border text-xs font-mono transition-all text-center flex flex-col items-center justify-center gap-1 cursor-pointer disabled:opacity-50 group ${
-                selectedCategory === cat.id
-                  ? 'bg-[#D4AF37] border-[#D4AF37] text-black font-bold shadow-[0_0_15px_rgba(212,175,55,0.3)]'
-                  : 'bg-white/[0.04] hover:bg-[#D4AF37]/20 border-white/10 hover:border-[#D4AF37]/50 text-gray-200'
-              }`}
-            >
-              <span className="text-base group-hover:scale-110 transition-transform">{cat.icon}</span>
-              <span className="text-[10px] font-semibold truncate max-w-full">{cat.label.split('&')[0]}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Cloud API Configuration Accordion */}
+      {/* Render Config Drawer */}
       {showConfig && (
         <div className="max-w-7xl mx-auto my-4 p-5 rounded-2xl bg-[#15171F] border border-[#D4AF37]/40 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-mono text-[#D4AF37] font-bold">
               <Server className="w-4 h-4" />
-              <span>ONLINE CLOUD SCRAPER API CONFIGURATION</span>
+              <span>SCRAPER API SERVICE ENDPOINT</span>
             </div>
             <button onClick={() => setShowConfig(false)} className="text-xs text-gray-400 hover:text-white">✕ Close</button>
           </div>
-          <p className="text-xs text-gray-300 font-mono">
-            Default 24/7 Cloud Engine URL:
-          </p>
           <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="url"
-              placeholder="e.g. https://google-maps-scraper-latest-ro7w.onrender.com"
               value={customApiUrl}
               onChange={(e) => setCustomApiUrl(e.target.value)}
               className="flex-1 px-3.5 py-2 rounded-xl bg-black/40 border border-white/20 text-xs font-mono text-white placeholder-gray-500 focus:outline-none focus:border-[#D4AF37]"
@@ -869,30 +675,54 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
               onClick={() => handleSaveCloudApi(customApiUrl)}
               className="px-4 py-2 rounded-xl bg-[#D4AF37] text-black font-mono text-xs font-bold shrink-0 cursor-pointer"
             >
-              Save Cloud API
+              Save API Endpoint
             </button>
           </div>
         </div>
       )}
 
-      {/* Main Container */}
+      {/* Summary Metrics Cards Bar */}
+      {leads.length > 0 && (
+        <div className="max-w-7xl mx-auto my-5 grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 font-mono">
+            <div className="text-[10px] text-gray-400">TOTAL BUSINESSES</div>
+            <div className="text-xl font-bold text-white mt-0.5">{totalBusinesses}</div>
+          </div>
+          <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 font-mono">
+            <div className="text-[10px] text-gray-400">WITH PHONE NUMBER</div>
+            <div className="text-xl font-bold text-sky-400 mt-0.5">{businessesWithPhone}</div>
+          </div>
+          <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 font-mono">
+            <div className="text-[10px] text-gray-400">NO WEBSITE (TARGETS)</div>
+            <div className="text-xl font-bold text-red-400 mt-0.5">{businessesWithoutWebsite}</div>
+          </div>
+          <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 font-mono">
+            <div className="text-[10px] text-gray-400">HAS CUSTOM WEBSITE</div>
+            <div className="text-xl font-bold text-emerald-400 mt-0.5">{businessesWithWebsite}</div>
+          </div>
+          <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 font-mono">
+            <div className="text-[10px] text-gray-400">AVERAGE RATING</div>
+            <div className="text-xl font-bold text-amber-400 mt-0.5">⭐ {avgRating}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Grid Layout */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 pt-2">
         
-        {/* Left Column: Search & Settings Form (4 cols) */}
+        {/* Left Column: Form Controls (4 cols) */}
         <div className="lg:col-span-4 space-y-6">
           <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 space-y-5">
             <h2 className="text-sm font-mono uppercase tracking-widest text-[#D4AF37] font-bold flex items-center gap-2">
               <Search className="w-4 h-4 text-[#D4AF37]" />
-              <span>SEARCH PROSPECT TARGETS</span>
+              <span>CONFIGURE GOOGLE MAPS SCRAPE</span>
             </h2>
 
             <form onSubmit={handleRunScraper} className="space-y-4">
               
-              {/* Category Dropdown Selection */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest flex items-center justify-between">
-                  <span>SELECT TARGET CATEGORY *</span>
-                  <span className="text-[#D4AF37] font-bold">Commercial Only</span>
+                <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
+                  SELECT TARGET CATEGORY *
                 </label>
                 <div className="relative">
                   <select
@@ -911,7 +741,6 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                 </div>
               </div>
 
-              {/* Keyword / Industry Input */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
                   SEARCH KEYWORD / QUERY *
@@ -919,7 +748,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="e.g. salons in Nagpur, dentists in Mumbai"
+                  placeholder="e.g. dentists in Mumbai"
                   value={keyword}
                   onChange={(e) => {
                     setKeyword(e.target.value);
@@ -929,7 +758,6 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                 />
               </div>
 
-              {/* City / Region Name */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
                   TARGET CITY / REGION *
@@ -937,39 +765,66 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Nagpur, Mumbai, Austin"
+                  placeholder="e.g. Mumbai, Nagpur, Austin"
                   value={city}
                   onChange={(e) => {
                     const newCity = e.target.value;
                     setCity(newCity);
                     if (selectedCategory !== 'custom') {
                       const catObj = FEATURED_CATEGORIES.find(c => c.id === selectedCategory);
-                      if (catObj) {
-                        setKeyword(`${catObj.query} in ${newCity}`.trim());
-                      }
+                      if (catObj) setKeyword(`${catObj.query} in ${newCity}`.trim());
                     }
                   }}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.05] border border-white/15 focus:border-[#D4AF37] text-white placeholder-gray-500 text-xs focus:outline-none font-mono"
                 />
               </div>
 
-              {/* Scrape Depth Range */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest flex items-center justify-between">
-                  <span>SCRAPE DEPTH (SCROLL RANGE)</span>
-                  <span className="text-[#D4AF37] font-bold">{depth}</span>
-                </label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest flex items-center justify-between">
+                    <span>DEPTH</span>
+                    <span className="text-[#D4AF37] font-bold">{depth}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min={1}
+                    max={10}
+                    value={depth}
+                    onChange={(e) => setDepth(Number(e.target.value))}
+                    className="w-full accent-[#D4AF37] cursor-pointer"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest flex items-center justify-between">
+                    <span>RADIUS (M)</span>
+                    <span className="text-[#D4AF37] font-bold">{radius / 1000}km</span>
+                  </label>
+                  <input
+                    type="range"
+                    min={1000}
+                    max={30000}
+                    step={1000}
+                    value={radius}
+                    onChange={(e) => setRadius(Number(e.target.value))}
+                    className="w-full accent-[#D4AF37] cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/10 font-mono text-xs text-gray-300">
+                <span className="flex items-center gap-1.5 text-[11px]">
+                  <Zap className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>Fast Mode Scraping</span>
+                </span>
                 <input
-                  type="range"
-                  min={1}
-                  max={20}
-                  value={depth}
-                  onChange={(e) => setDepth(Number(e.target.value))}
-                  className="w-full accent-[#D4AF37] cursor-pointer"
+                  type="checkbox"
+                  checked={fastMode}
+                  onChange={(e) => setFastMode(e.target.checked)}
+                  className="accent-[#D4AF37] cursor-pointer w-4 h-4"
                 />
               </div>
 
-              {/* Submit Scrape Button */}
               <button
                 type="submit"
                 disabled={isScraping}
@@ -978,7 +833,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                 {isScraping ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>SCRAPING COMMERCIAL LEADS...</span>
+                    <span>SCRAPING GOOGLE MAPS ({elapsedSeconds}s)...</span>
                   </>
                 ) : (
                   <>
@@ -990,50 +845,33 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
             </form>
 
             {statusMessage && (
-              <div className="p-3 rounded-xl bg-white/[0.04] border border-[#D4AF37]/30 text-xs font-mono text-gray-300">
-                {statusMessage}
+              <div className="p-3.5 rounded-xl bg-white/[0.04] border border-[#D4AF37]/30 text-xs font-mono space-y-1.5">
+                <div className="flex items-center gap-2 text-[#D4AF37] font-bold">
+                  {scrapePhase === 'scraping' ? (
+                    <Clock className="w-3.5 h-3.5 animate-pulse text-amber-400" />
+                  ) : scrapePhase === 'completed' ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  ) : (
+                    <AlertCircle className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  )}
+                  <span className="uppercase text-[11px]">{scrapePhase.toUpperCase()} PHASE</span>
+                </div>
+                <div className="text-gray-300 leading-relaxed">{statusMessage}</div>
+                {activeJobId && (
+                  <div className="text-[10px] text-gray-400 pt-1 border-t border-white/10">
+                    Active Job ID: <span className="text-white font-bold">{activeJobId}</span> | Elapsed: {elapsedSeconds}s
+                  </div>
+                )}
               </div>
             )}
           </div>
-
-          {/* Data Importer Banner */}
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-purple-950/20 via-white/[0.02] to-white/[0.02] border border-purple-500/30 space-y-3">
-            <div className="text-xs font-mono text-purple-300 font-bold flex items-center gap-1.5">
-              <Upload className="w-4 h-4 text-purple-400" />
-              <span>UNIVERSAL SCRAPER DATA IMPORTER</span>
-            </div>
-            <p className="text-xs text-gray-300 leading-relaxed font-sans">
-              Already have exported CSV/JSON data from another scraper tool? Click below to upload and automatically format commercial business leads!
-            </p>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-mono text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-all"
-            >
-              <Upload className="w-4 h-4" />
-              <span>UPLOAD CSV / JSON DATA</span>
-            </button>
-          </div>
-
-          {/* Strategy Tip Box */}
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-[#D4AF37]/10 via-transparent to-purple-900/10 border border-[#D4AF37]/30 space-y-2.5">
-            <div className="text-xs font-mono text-[#D4AF37] font-bold flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-[#D4AF37]" />
-              <span>SALES OUTREACH STRATEGY</span>
-            </div>
-            <p className="text-xs text-gray-300 leading-relaxed font-sans">
-              Businesses without custom websites on Google Maps have active client flow but lack an online presence. 
-              Clicking <strong>WhatsApp Outreach</strong> opens a prefilled proposal message containing your interactive studio portfolio link (`https://v0786.github.io/WebDev/`)!
-            </p>
-          </div>
         </div>
 
-        {/* Right Column: Scraped Results Table & Actions (8 cols) */}
+        {/* Right Column: Scraped Results Table (8 cols) */}
         <div className="lg:col-span-8 space-y-4">
           
-          {/* Dual Filter Controls Bar (Website Status + Category Filter Dropdown) */}
+          {/* Filter Bar */}
           <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10 space-y-3">
-            
-            {/* Top Bar: Website Status Filter Buttons */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-[#D4AF37]" />
@@ -1049,7 +887,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                       : 'bg-white/[0.03] border-white/10 text-gray-400 hover:text-white'
                   }`}
                 >
-                  🔴 NO WEBSITE ({leads.filter((l) => !isValidWebsite(l.website)).length})
+                  🔴 NO WEBSITE ({leads.filter((l) => !l.hasWebsite).length})
                 </button>
 
                 <button
@@ -1071,12 +909,11 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                       : 'bg-white/[0.03] border-white/10 text-gray-400 hover:text-white'
                   }`}
                 >
-                  🟢 HAS WEBSITE ({leads.filter((l) => isValidWebsite(l.website)).length})
+                  🟢 HAS WEBSITE ({leads.filter((l) => l.hasWebsite).length})
                 </button>
               </div>
             </div>
 
-            {/* Bottom Bar: Category Filter Dropdown */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-1">
               <span className="text-xs font-mono text-gray-400 font-bold flex items-center gap-1.5 shrink-0">
                 <Building2 className="w-3.5 h-3.5 text-[#D4AF37]" />
@@ -1104,156 +941,132 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
             </div>
           </div>
 
-          {/* Lead Cards List */}
+          {/* Lead Cards */}
           <div className="space-y-3">
             {filteredLeads.length === 0 ? (
               <div className="p-12 text-center bg-white/[0.02] border border-white/10 rounded-2xl space-y-3">
                 <AlertCircle className="w-8 h-8 text-[#D4AF37] mx-auto opacity-70" />
-                <div className="text-sm font-mono text-white font-bold">No business lead results to display</div>
+                <div className="text-sm font-mono text-white font-bold">No real business lead results to display</div>
                 <p className="text-xs text-gray-400 font-mono max-w-sm mx-auto">
-                  Select a category from the <strong>Category Dropdown</strong> above or type your target keyword (e.g. <em>"salons in Nagpur"</em>) to extract real business listings!
+                  Select a category from the dropdown above and click <strong>START GOOGLE MAPS SCRAPE</strong> to extract verified business listings!
                 </p>
               </div>
             ) : (
-              filteredLeads.map((lead) => {
-                const leadHasWebsite = isValidWebsite(lead.website);
-                return (
-                  <div
-                    key={lead.id}
-                    className={`p-5 rounded-2xl border transition-all space-y-4 ${
-                      !leadHasWebsite
-                        ? 'bg-gradient-to-r from-red-950/20 via-white/[0.03] to-white/[0.02] border-red-500/40 shadow-[0_0_20px_rgba(239,68,68,0.1)]'
-                        : 'bg-white/[0.02] border-white/10'
-                    }`}
-                  >
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-base font-bold text-white font-sans">{lead.name}</h3>
-                          {!leadHasWebsite ? (
-                            <span className="px-2.5 py-0.5 rounded-md bg-red-500/20 border border-red-500/50 text-red-400 font-mono text-[10px] font-bold uppercase tracking-wider">
-                              NO WEBSITE ❌
-                            </span>
-                          ) : (
-                            <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 font-mono text-[10px] font-bold uppercase tracking-wider">
-                              HAS WEBSITE 🟢
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-3 text-xs font-mono text-gray-400 mt-1">
-                          <span className="flex items-center gap-1 text-[#D4AF37]">
-                            <Building2 className="w-3.5 h-3.5" />
-                            <span>{lead.category}</span>
+              filteredLeads.map((lead) => (
+                <div
+                  key={lead.id}
+                  className={`p-5 rounded-2xl border transition-all space-y-4 ${
+                    !lead.hasWebsite
+                      ? 'bg-gradient-to-r from-red-950/20 via-white/[0.03] to-white/[0.02] border-red-500/40 shadow-[0_0_20px_rgba(239,68,68,0.1)]'
+                      : 'bg-white/[0.02] border-white/10'
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-bold text-white font-sans">{lead.name}</h3>
+                        {!lead.hasWebsite ? (
+                          <span className="px-2.5 py-0.5 rounded-md bg-red-500/20 border border-red-500/50 text-red-400 font-mono text-[10px] font-bold uppercase tracking-wider">
+                            NO WEBSITE ❌
                           </span>
-                          <span>&bull;</span>
-                          <span className="flex items-center gap-1 text-[#D4AF37]">
-                            <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
-                            <span>{lead.rating} ({lead.reviewCount} reviews)</span>
-                          </span>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleImportToDashboard(lead)}
-                        className="px-3.5 py-2 rounded-xl bg-white/[0.08] hover:bg-[#D4AF37] hover:text-black border border-white/15 text-xs font-mono font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>IMPORT TO DASHBOARD</span>
-                      </button>
-                    </div>
-
-                    {/* Business Details Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono text-gray-300">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-gray-500 shrink-0" />
-                        <span className="truncate">{lead.address || 'Address listed on Maps'}</span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-[#D4AF37] shrink-0" />
-                        <span>{lead.phone || 'No Phone Listed'}</span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Globe className="w-4 h-4 text-sky-400 shrink-0" />
-                        {leadHasWebsite ? (
-                          <a 
-                            href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-emerald-400 font-semibold underline truncate hover:text-white"
-                          >
-                            {lead.website}
-                          </a>
                         ) : (
-                          <span className="text-red-400 font-semibold">
-                            No custom website found on Google Maps
+                          <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 font-mono text-[10px] font-bold uppercase tracking-wider">
+                            HAS WEBSITE 🟢
                           </span>
                         )}
+                        <span className="px-2 py-0.5 rounded-md bg-purple-500/20 border border-purple-500/40 text-purple-300 font-mono text-[9px]">
+                          {lead.source}
+                        </span>
                       </div>
 
-                      {lead.email && (
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-purple-400 shrink-0" />
-                          <span className="truncate">{lead.email}</span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-3 text-xs font-mono text-gray-400 mt-1">
+                        <span className="flex items-center gap-1 text-[#D4AF37]">
+                          <Building2 className="w-3.5 h-3.5" />
+                          <span>{lead.category}</span>
+                        </span>
+                        {lead.rating && (
+                          <>
+                            <span>&bull;</span>
+                            <span className="flex items-center gap-1 text-[#D4AF37]">
+                              <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
+                              <span>{lead.rating} {lead.reviewCount ? `(${lead.reviewCount} reviews)` : ''}</span>
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Outreach Action Buttons Bar */}
-                    <div className="pt-2 flex flex-wrap items-center gap-2.5">
-                      {/* View on Google Maps Button */}
+                    <button
+                      onClick={() => handleImportToDashboard(lead)}
+                      className="px-3.5 py-2 rounded-xl bg-white/[0.08] hover:bg-[#D4AF37] hover:text-black border border-white/15 text-xs font-mono font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>ADD TO CRM</span>
+                    </button>
+                  </div>
+
+                  {/* Business Details */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono text-gray-300">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-gray-500 shrink-0" />
+                      <span className="truncate">{lead.address}</span>
+                    </div>
+
+                    {lead.phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                        <span>{lead.phone}</span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-sky-400 shrink-0" />
+                      {lead.hasWebsite && lead.website ? (
+                        <a 
+                          href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-emerald-400 font-semibold underline truncate hover:text-white flex items-center gap-1"
+                        >
+                          <span>{lead.website}</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      ) : (
+                        <span className="text-red-400 font-semibold">
+                          No custom website listed
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Outreach Action Bar */}
+                  <div className="pt-2 flex flex-wrap items-center gap-2.5">
+                    {lead.googleMapsUrl && (
                       <a
-                        href={generateGoogleMapsLink(lead)}
+                        href={lead.googleMapsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-[#D4AF37] hover:text-black border border-white/15 text-white font-mono text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
                       >
                         <MapPin className="w-4 h-4 text-red-400" />
-                        <span>VIEW ON GOOGLE MAPS →</span>
+                        <span>OPEN GOOGLE MAPS →</span>
                       </a>
+                    )}
 
-                      {/* WhatsApp Outreach */}
-                      {lead.phone && (
-                        <a
-                          href={generateWhatsAppLink(lead)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] cursor-pointer"
-                        >
-                          <MessageSquare className="w-4 h-4 fill-current" />
-                          <span>WHATSAPP OUTREACH →</span>
-                        </a>
-                      )}
-
-                      {/* Mailto Link */}
-                      {lead.email && (
-                        <a
-                          href={generateMailtoLink(lead)}
-                          className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-white/15 text-white font-mono text-xs flex items-center gap-2 transition-all cursor-pointer"
-                        >
-                          <Mail className="w-4 h-4 text-purple-400" />
-                          <span>SEND EMAIL PROPOSAL</span>
-                        </a>
-                      )}
-
-                      {/* Instagram DM Link */}
-                      {lead.instagram && (
-                        <a
-                          href={lead.instagram}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-mono text-xs flex items-center gap-2 transition-all cursor-pointer"
-                        >
-                          <Instagram className="w-4 h-4" />
-                          <span>INSTAGRAM DM</span>
-                        </a>
-                      )}
-                    </div>
+                    {lead.phone && (
+                      <a
+                        href={generateWhatsAppLink(lead)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] cursor-pointer"
+                      >
+                        <MessageSquare className="w-4 h-4 fill-current" />
+                        <span>WHATSAPP OUTREACH →</span>
+                      </a>
+                    )}
                   </div>
-                );
-              })
+                </div>
+              ))
             )}
           </div>
         </div>

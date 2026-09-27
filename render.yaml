@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: google-maps-scraper-latest
+    env: docker
+    dockerfilePath: Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: ALLOWED_ORIGIN
+        value: https://v0786.github.io
