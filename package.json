@@ -16,6 +16,7 @@
     "deploy": "gh-pages -d dist --dotfiles --nojekyll"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
     "clsx": "^2.1.1",
     "framer-motion": "^13.4.0",
