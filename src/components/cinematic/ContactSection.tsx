@@ -185,7 +185,7 @@ ${name}
             className="flex items-center space-x-3 text-xs font-mono uppercase tracking-[0.3em] text-[#D4AF37] mb-4"
           >
             <span className="w-2 h-2 rounded-full bg-[#D4AF37] shadow-[0_0_8px_rgba(212,175,55,0.6)]" />
-            <span>[ 11 / START A CONVERSATION ]</span>
+            <span>[ 05 / START A CONVERSATION ]</span>
           </motion.div>
 
           <motion.h2

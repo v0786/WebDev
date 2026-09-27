@@ -157,7 +157,7 @@ ${name}
         <div className="border-b border-white/[0.08] pb-12 sm:pb-16 mb-16 sm:mb-20">
           <div className="text-xs font-mono uppercase tracking-widest text-[#B8FF00] mb-4 flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-[#B8FF00]" />
-            <span>[ 11 / START A CONVERSATION ]</span>
+            <span>[ 05 / START A CONVERSATION ]</span>
           </div>
 
           <h2 className="text-4xl sm:text-7xl md:text-8xl lg:text-9xl font-sans font-black text-bone-100 tracking-tight leading-[0.92] uppercase">
