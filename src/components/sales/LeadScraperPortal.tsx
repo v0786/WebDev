@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   MapPin, 
@@ -14,7 +14,8 @@ import {
   RefreshCw,
   Zap,
   Building2,
-  Star
+  Star,
+  Trash2
 } from 'lucide-react';
 import { soundFx } from '../audio/SoundEffects';
 import { salesService } from '../../services/salesService';
@@ -39,6 +40,78 @@ interface LeadScraperPortalProps {
   onImportLeadToDashboard?: (leadName: string, phone: string, email: string, category: string) => void;
 }
 
+const getStoredScrapedLeads = (): ScrapedLead[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem('gmaps_scraped_leads');
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return [];
+};
+
+function parseCsvLeads(csvText: string): ScrapedLead[] {
+  const lines = csvText.split(/\r?\n/).filter(line => line.trim().length > 0);
+  if (lines.length < 2) return [];
+
+  const splitCsvRow = (text: string) => {
+    const result: string[] = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(cur.trim());
+        cur = '';
+      } else {
+        cur += char;
+      }
+    }
+    result.push(cur.trim());
+    return result;
+  };
+
+  const headers = splitCsvRow(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9_]/g, ''));
+  const getIdx = (name: string) => headers.indexOf(name);
+
+  const titleIdx = getIdx('title');
+  const phoneIdx = getIdx('phone');
+  const emailIdx = getIdx('emails');
+  const webIdx = getIdx('website');
+  const catIdx = getIdx('category');
+  const addrIdx = getIdx('address');
+  const ratingIdx = getIdx('review_rating');
+  const reviewsIdx = getIdx('review_count');
+
+  const leads: ScrapedLead[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = splitCsvRow(lines[i]);
+    const rawName = cols[titleIdx] || '';
+    if (!rawName) continue;
+
+    const name = rawName.replace(/^"(.*)"$/, '$1').trim();
+    const site = (cols[webIdx] || '').replace(/^"(.*)"$/, '$1').trim();
+    const hasWebsite = site.length > 0 && site !== 'http://' && site !== 'https://' && site.toLowerCase() !== 'none';
+
+    leads.push({
+      id: `lead-${Date.now()}-${i}`,
+      name: name || 'Local Business',
+      category: (cols[catIdx] || 'Local Business').replace(/^"(.*)"$/, '$1'),
+      address: (cols[addrIdx] || '').replace(/^"(.*)"$/, '$1'),
+      phone: (cols[phoneIdx] || '').replace(/^"(.*)"$/, '$1'),
+      email: (cols[emailIdx] || '').replace(/^"(.*)"$/, '$1'),
+      website: hasWebsite ? site : '',
+      rating: (cols[ratingIdx] || '4.5').replace(/^"(.*)"$/, '$1'),
+      reviewCount: (cols[reviewsIdx] || '0').replace(/^"(.*)"$/, '$1'),
+      hasWebsite,
+    });
+  }
+
+  return leads;
+}
+
 export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
   onBackToPortalChoice,
   onImportLeadToDashboard,
@@ -50,119 +123,119 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
   const [filterMode, setFilterMode] = useState<'all' | 'nowebsite' | 'haswebsite'>('nowebsite');
   const [statusMessage, setStatusMessage] = useState('');
 
-  // Sample initial leads so user can see immediate data even before running container
-  const [leads, setLeads] = useState<ScrapedLead[]>([
-    {
-      id: 'lead-1',
-      name: 'Radhika Beauty Salon & Spa',
-      category: 'Beauty Salon',
-      address: 'Dharampeth, Nagpur, Maharashtra',
-      phone: '+91 98230 11223',
-      email: 'contact@radhikabeauty.in',
-      website: '',
-      rating: '4.8',
-      reviewCount: '142',
-      hasWebsite: false,
-      instagram: 'https://instagram.com/radhikabeautynagpur'
-    },
-    {
-      id: 'lead-2',
-      name: 'Orange City Auto Garage',
-      category: 'Car Repair Shop',
-      address: 'MIDC Hingna Road, Nagpur',
-      phone: '+91 94221 88990',
-      email: '',
-      website: '',
-      rating: '4.6',
-      reviewCount: '89',
-      hasWebsite: false
-    },
-    {
-      id: 'lead-3',
-      name: 'Royal Heritage Restaurant',
-      category: 'Fine Dining Restaurant',
-      address: 'Sadar, Nagpur',
-      phone: '+91 712 2554321',
-      email: 'info@royalheritage.com',
-      website: 'https://royalheritage.com',
-      rating: '4.9',
-      reviewCount: '520',
-      hasWebsite: true
-    },
-    {
-      id: 'lead-4',
-      name: 'Apex Fitness Gym',
-      category: 'Fitness Center',
-      address: 'Ramdaspeth, Nagpur',
-      phone: '+91 98900 55443',
-      email: '',
-      website: '',
-      rating: '4.7',
-      reviewCount: '110',
-      hasWebsite: false
+  // Loads solely from user searches or saved state — NO FAKE PLACEHOLDERS!
+  const [leads, setLeads] = useState<ScrapedLead[]>(getStoredScrapedLeads);
+
+  // Sync to LocalStorage so data persists across reloads
+  useEffect(() => {
+    try {
+      localStorage.setItem('gmaps_scraped_leads', JSON.stringify(leads));
+    } catch {}
+  }, [leads]);
+
+  const handleClearLeads = () => {
+    if (confirm('Clear all saved scraped leads?')) {
+      setLeads([]);
+      localStorage.removeItem('gmaps_scraped_leads');
+      setStatusMessage('Cleared saved lead list.');
     }
-  ]);
+  };
 
   const handleRunScraper = async (e: React.FormEvent) => {
     e.preventDefault();
     soundFx.playModalReveal();
     setIsScraping(true);
-    setStatusMessage('Initiating Google Maps Lead Scraper engine via local Docker container...');
+    setStatusMessage(`🔍 Geocoding location '${city}'...`);
 
     try {
-      const response = await fetch('/tools/extract_leads', {
+      // 1. Geocode City using OpenStreetMap Nominatim
+      const geoQuery = encodeURIComponent(city || keyword);
+      const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${geoQuery}`);
+      const geoHits = await geoRes.json();
+
+      let lat = '21.1498134';
+      let lon = '79.0820556';
+      if (geoHits && geoHits[0]) {
+        lat = String(geoHits[0].lat);
+        lon = String(geoHits[0].lon);
+      }
+
+      setStatusMessage(`📍 Location resolved (Lat: ${lat}, Lon: ${lon}). Starting Docker scrape job...`);
+
+      // 2. Create Scraper Job via /api/v1/jobs
+      const jobRes = await fetch('/api/v1/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyword, city, depth })
+        body: JSON.stringify({
+          name: 'gmaps-prospector',
+          keywords: [keyword],
+          lang: 'en',
+          zoom: 15,
+          lat: lat,
+          lon: lon,
+          fast_mode: false,
+          radius: 10000,
+          depth: depth,
+          email: false,
+          max_time: 600
+        })
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.leads && Array.isArray(data.leads)) {
-          setLeads(data.leads);
-          setStatusMessage(`✅ Extracted ${data.leads.length} leads for '${keyword}'!`);
-        }
-      } else {
-        // Fallback simulation if direct fetch API isn't backed by node proxy
-        setTimeout(() => {
-          const generatedLeads: ScrapedLead[] = [
-            {
-              id: `scraped-${Date.now()}-1`,
-              name: `${keyword.split(' ')[0]} Hub & Studio`,
-              category: keyword,
-              address: `${city}, Maharashtra`,
-              phone: '+91 98765 12340',
-              email: `info@${keyword.replace(/\s+/g, '')}.in`,
-              website: '',
-              rating: '4.7',
-              reviewCount: '64',
-              hasWebsite: false
-            },
-            {
-              id: `scraped-${Date.now()}-2`,
-              name: `Elite ${keyword.split(' ')[0]} Services`,
-              category: keyword,
-              address: `Central Ave, ${city}`,
-              phone: '+91 91234 56789',
-              email: '',
-              website: '',
-              rating: '4.9',
-              reviewCount: '188',
-              hasWebsite: false
-            },
-            ...leads
-          ];
-          setLeads(generatedLeads);
-          setStatusMessage(`✅ Done! Found ${generatedLeads.length} listings in ${city} (No Website targets highlighted below).`);
-          setIsScraping(false);
-        }, 3000);
-        return;
+      if (!jobRes.ok) {
+        throw new Error(`Docker API returned status ${jobRes.status}`);
       }
-    } catch {
-      setTimeout(() => {
-        setStatusMessage(`✅ Scraper initialized for '${keyword}' in ${city}. Review results below.`);
-        setIsScraping(false);
-      }, 2500);
+
+      const jobData = await jobRes.json();
+      const jobId = jobData.id;
+
+      if (!jobId) {
+        throw new Error('No job ID returned from scraper API');
+      }
+
+      setStatusMessage(`⏳ Scrape job #${jobId.substring(0, 8)} in progress. Polling Google Maps data...`);
+
+      // 3. Poll for Completion
+      let isDone = false;
+      for (let attempt = 1; attempt <= 40; attempt++) {
+        await new Promise(r => setTimeout(r, 4000));
+        const statusRes = await fetch(`/api/v1/jobs/${jobId}`);
+        if (!statusRes.ok) continue;
+
+        const statusData = await statusRes.json();
+        const currentStatus = statusData.Status;
+        setStatusMessage(`⏳ Extracting listings... Status: ${currentStatus} (polling ${attempt}/40)`);
+
+        if (currentStatus === 'ok') {
+          isDone = true;
+          break;
+        } else if (currentStatus === 'failed') {
+          throw new Error('Scraper job reported status: failed');
+        }
+      }
+
+      if (!isDone) {
+        throw new Error('Scraper job polling timed out.');
+      }
+
+      // 4. Download CSV Data
+      setStatusMessage('📥 Downloading scraped lead CSV dataset...');
+      const dlRes = await fetch(`/api/v1/jobs/${jobId}/download`);
+      const csvText = await dlRes.text();
+
+      const newLeads = parseCsvLeads(csvText);
+
+      if (newLeads.length > 0) {
+        setLeads(newLeads);
+        setStatusMessage(`✅ Done! Successfully extracted ${newLeads.length} listings for '${keyword}'. Saved to browser local storage.`);
+      } else {
+        setStatusMessage(`⚠️ Job completed, but no business rows were returned for query '${keyword}'. Try increasing depth.`);
+      }
+
+    } catch (err: any) {
+      console.warn('Live API scrape warning:', err);
+      setStatusMessage(`⚠️ Scraper engine status: ${err.message || 'Connecting to Docker'}. Run 'docker compose up -d' if container is offline.`);
+    } finally {
+      setIsScraping(false);
     }
   };
 
@@ -248,6 +321,16 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
+          {leads.length > 0 && (
+            <button
+              onClick={handleClearLeads}
+              className="px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-mono flex items-center gap-1.5 cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Clear Leads</span>
+            </button>
+          )}
+
           <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
             <span>Docker Scraper Engine Active</span>
@@ -398,9 +481,12 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
           {/* Lead Cards List */}
           <div className="space-y-3">
             {filteredLeads.length === 0 ? (
-              <div className="p-12 text-center bg-white/[0.02] border border-white/10 rounded-2xl space-y-2">
-                <AlertCircle className="w-8 h-8 text-gray-500 mx-auto" />
-                <div className="text-sm font-mono text-gray-400">No leads matching selected filter.</div>
+              <div className="p-12 text-center bg-white/[0.02] border border-white/10 rounded-2xl space-y-3">
+                <AlertCircle className="w-8 h-8 text-[#D4AF37] mx-auto opacity-70" />
+                <div className="text-sm font-mono text-white font-bold">No leads found yet</div>
+                <p className="text-xs text-gray-400 font-mono max-w-sm mx-auto">
+                  Type a search query (e.g. <em>"salons in Nagpur"</em> or <em>"restaurants in Mumbai"</em>) on the left and click <strong>START GOOGLE MAPS SCRAPE</strong> to extract real business leads!
+                </p>
               </div>
             ) : (
               filteredLeads.map((lead) => (

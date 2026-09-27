@@ -8,6 +8,12 @@ export default defineConfig(({ command }) => ({
     port: Number(process.env.PORT) || 3000,
     strictPort: false,
     open: false,
+    proxy: {
+      '/api/v1': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     port: 4173,
