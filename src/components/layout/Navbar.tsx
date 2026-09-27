@@ -47,6 +47,7 @@ export const Navbar: React.FC = () => {
   };
 
   const navLinks = [
+    { name: 'SALES PORTAL', href: '#/sales', label: 'Sales & Client Hub' },
     { name: 'WORK', href: '#work', label: 'Selected Showcase' },
     { name: 'SERVICES', href: '#services', label: 'Capabilities' },
     { name: 'PROCESS', href: '#process', label: 'The Method' },
@@ -57,6 +58,10 @@ export const Navbar: React.FC = () => {
   const handleNavClick = (href: string) => {
     soundFx.playClick();
     setMobileMenuOpen(false);
+    if (href.startsWith('#/')) {
+      window.location.hash = href;
+      return;
+    }
     const elem = document.querySelector(href);
     if (elem) {
       elem.scrollIntoView({ behavior: 'smooth' });

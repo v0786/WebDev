@@ -29,6 +29,9 @@ const KanvaaDemo = lazy(() =>
 const FarmFreshDemo = lazy(() =>
   import('./demos/farm-fresh/FarmFreshDemo').then((m) => ({ default: m.FarmFreshDemo }))
 );
+const SalesDemo = lazy(() =>
+  import('./demos/sales/SalesDemo').then((m) => ({ default: m.SalesDemo }))
+);
 
 const DemoLoadingFallback: React.FC = () => (
   <div className="min-h-screen bg-[#07080B] flex flex-col items-center justify-center text-bone-300 font-mono text-xs space-y-4">
@@ -91,6 +94,7 @@ export const App: React.FC = () => {
   }, []);
 
   // Determine active concept demo based on hash route (supporting #/demo/... and #/work/...)
+  const isSales = currentHash.startsWith('#/demo/sales') || currentHash.startsWith('#/work/sales') || currentHash === '#/sales' || currentHash === '#sales' || currentHash === '#/dashboard' || currentHash === '#dashboard';
   const isForma = currentHash.startsWith('#/demo/forma') || currentHash.startsWith('#/work/forma') || currentHash === '#/forma';
   const isMaison = currentHash.startsWith('#/demo/maison') || currentHash.startsWith('#/work/maison') || currentHash === '#/maison' || currentHash.startsWith('#/restaurant') || currentHash === '#restaurant';
   const isOrbit = currentHash.startsWith('#/demo/orbit') || currentHash.startsWith('#/work/orbit') || currentHash === '#/orbit' || currentHash.startsWith('#/saas') || currentHash === '#saas';
@@ -100,6 +104,14 @@ export const App: React.FC = () => {
   const isNoir = currentHash.startsWith('#/demo/noir') || currentHash.startsWith('#/work/noir') || currentHash === '#/noir' || currentHash.startsWith('#/agency') || currentHash === '#agency';
   const isKanvaa = currentHash.startsWith('#/demo/kanvaa') || currentHash.startsWith('#/work/kanvaa') || currentHash === '#/kanvaa';
   const isFarmFresh = currentHash.startsWith('#/demo/farm-fresh') || currentHash.startsWith('#/work/farm-fresh') || currentHash === '#/farm-fresh';
+
+  if (isSales) {
+    return (
+      <Suspense fallback={<DemoLoadingFallback />}>
+        <SalesDemo />
+      </Suspense>
+    );
+  }
 
   if (isForma) {
     return (
