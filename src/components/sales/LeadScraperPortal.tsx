@@ -370,7 +370,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     return { lat: '21.1458', lon: '79.0882' }; // Default Nagpur
   };
 
-  // Centralized Scrape Orchestrator (Render Cold Start check + Job Polling up to 10 mins)
+  // Centralized Scrape Orchestrator (Cloudflare Scraper API Job Polling up to 10 mins)
   const runScraperQuery = async (searchKeyword: string, searchCity: string) => {
     soundFx.playModalReveal();
     setIsScraping(true);
@@ -389,10 +389,10 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
 
     const apiBase = (customApiUrl.trim() || SCRAPER_API_URL).replace(/\/$/, '');
 
-    // Phase 15: Render Cold Start Ping with Retry Loop
+    // Phase 15: Cloudflare Scraper API Ping with Retry Loop
     let serviceReady = false;
     for (let attempt = 1; attempt <= 12; attempt++) {
-      setStatusMessage(`⏳ Waking up Render Scraper Service (Attempt ${attempt}/12)...`);
+      setStatusMessage(`⏳ Connecting to Cloudflare Scraper Service (Attempt ${attempt}/12)...`);
       try {
         const healthRes = await fetch(`${apiBase}/health`, { method: 'GET' });
         if (healthRes.ok) {
@@ -452,7 +452,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         } else {
           setIsScraping(false);
           setScrapePhase('idle');
-          setStatusMessage(`❌ Google Maps Scraper API is currently waking up or sleeping on Render. Please wait 15 seconds and try clicking 'START GOOGLE MAPS SCRAPE' again!`);
+          setStatusMessage(`❌ Google Maps Scraper API is currently unreachable via Cloudflare. Please check your connection or endpoint settings and try again!`);
           return;
         }
       }
@@ -645,7 +645,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
             <span>Google Maps Lead Generation Scraper</span>
           </h1>
           <p className="text-xs text-gray-400 font-mono mt-1">
-            Official Google Maps Lead Scraper Engine integrated with Render API.
+            Official Google Maps Lead Scraper Engine via Cloudflare Tunnel / API.
           </p>
         </div>
 
@@ -678,12 +678,12 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
 
           <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center gap-2">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Render API Verified</span>
+            <span>Cloudflare API Verified</span>
           </div>
         </div>
       </div>
 
-      {/* Render Config Drawer */}
+      {/* Cloudflare API Config Drawer */}
       {showConfig && (
         <div className="max-w-7xl mx-auto my-4 p-5 rounded-2xl bg-[#15171F] border border-[#D4AF37]/40 space-y-3">
           <div className="flex items-center justify-between">
