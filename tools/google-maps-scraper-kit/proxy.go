@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -17,6 +18,27 @@ func getEnv(key, fallback string) string {
 		return val
 	}
 	return fallback
+}
+
+func findScraperBinary() string {
+	if path, err := exec.LookPath("google-maps-scraper"); err == nil {
+		return path
+	}
+
+	home, _ := os.UserHomeDir()
+	candidates := []string{
+		filepath.Join(home, "go", "bin", "google-maps-scraper"),
+		"/usr/bin/google-maps-scraper",
+		"/usr/local/bin/google-maps-scraper",
+		"./google-maps-scraper",
+	}
+
+	for _, bin := range candidates {
+		if _, err := os.Stat(bin); err == nil {
+			return bin
+		}
+	}
+	return ""
 }
 
 func checkInternalScraper(targetURL string) bool {
@@ -30,36 +52,39 @@ func checkInternalScraper(targetURL string) bool {
 }
 
 func main() {
-	port := getEnv("PORT", "10000")
+	port := getEnv("PORT", "8080")
 	allowedOrigin := getEnv("ALLOWED_ORIGIN", "https://v0786.github.io")
 	internalPort := "8081"
 	internalURL := fmt.Sprintf("http://127.0.0.1:%s", internalPort)
 
-	log.Printf("[SCRAPER] Starting internal google-maps-scraper on 127.0.0.1:%s...\n", internalPort)
-
-	// 1. Launch google-maps-scraper binary listening internally on 127.0.0.1:8081
-	cmd := exec.Command("/usr/bin/google-maps-scraper", "-web", "-addr", "127.0.0.1:"+internalPort, "-data-folder", "/tmp")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Start(); err != nil {
-		log.Fatalf("[SCRAPER] Failed to start google-maps-scraper process: %v", err)
-	}
-
-	// 2. Wait for internal scraper to initialize
-	log.Printf("[SCRAPER] Waiting for internal scraper on 127.0.0.1:%s...\n", internalPort)
-	ready := false
-	for i := 0; i < 15; i++ {
-		if checkInternalScraper(internalURL) {
-			ready = true
-			break
-		}
-		time.Sleep(1 * time.Second)
-	}
-	if ready {
-		log.Printf("[SCRAPER] Internal scraper ready on 127.0.0.1:%s\n", internalPort)
+	// Check if internal scraper is already running
+	if checkInternalScraper(internalURL) {
+		log.Printf("[SCRAPER] Internal google-maps-scraper already running on 127.0.0.1:%s\n", internalPort)
 	} else {
-		log.Println("[SCRAPER] Warning: Internal scraper taking longer to respond...")
+		scraperBin := findScraperBinary()
+		if scraperBin != "" {
+			log.Printf("[SCRAPER] Found binary at: %s\n", scraperBin)
+			log.Printf("[SCRAPER] Starting internal google-maps-scraper on 127.0.0.1:%s...\n", internalPort)
+			cmd := exec.Command(scraperBin, "-web", "-addr", "127.0.0.1:"+internalPort, "-data-folder", "/tmp")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+
+			if err := cmd.Start(); err != nil {
+				log.Printf("[SCRAPER] Warning starting process: %v\n", err)
+			} else {
+				// Wait for internal scraper to initialize
+				log.Printf("[SCRAPER] Waiting for internal scraper on 127.0.0.1:%s...\n", internalPort)
+				for i := 0; i < 15; i++ {
+					if checkInternalScraper(internalURL) {
+						log.Printf("[SCRAPER] Internal scraper ready on 127.0.0.1:%s\n", internalPort)
+						break
+					}
+					time.Sleep(1 * time.Second)
+				}
+			}
+		} else {
+			log.Println("[SCRAPER] Notice: google-maps-scraper binary not found locally. Reverse proxy will forward to port 8081.")
+		}
 	}
 
 	target, err := url.Parse(internalURL)

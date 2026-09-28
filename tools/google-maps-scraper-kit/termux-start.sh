@@ -1,56 +1,78 @@
 #!/usr/bin/env bash
-# Termux Android Local Scraper Launcher
+# Termux Android Local Scraper Launcher with Cloudflare HTTPS Tunnel
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-echo "========================================"
-echo " 📱 Android Termux Local Scraper Setup"
-echo "========================================"
+echo "=================================================="
+echo " 📱 Android Termux Scraper + Cloudflare Tunnel"
+echo "=================================================="
 
-# 1. Verify Go & Git Installation
-if ! command -v go >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1; then
-    echo "⚡ Installing Go runtime & Git for Android Termux..."
+# 1. Verify Go, Git, Curl & Network Tools
+if ! command -v go >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1; then
+    echo "⚡ Installing Go, Git & Curl for Android Termux..."
     pkg update -y
-    pkg install golang git -y
+    pkg install golang git curl -y
 fi
 
-echo " [✓] Go compiler & Git detected."
+export PATH="$HOME/go/bin:$GOPATH/bin:$PREFIX/bin:$PATH"
 
-# 2. Check if submodule files exist in current directory
-if [ ! -f "proxy.go" ] && [ ! -f "main.go" ]; then
-    echo "⚠️ Submodule directory is empty! Initializing git submodules..."
-    if [ -d "../../.git" ]; then
-        (cd ../.. && git submodule update --init --recursive)
+# 2. Check / Install cloudflared on Termux
+if ! command -v cloudflared >/dev/null 2>&1 && [ ! -f "$PREFIX/bin/cloudflared" ]; then
+    echo "⚡ Installing Cloudflare Tunnel (cloudflared)..."
+    if pkg install cloudflared -y >/dev/null 2>&1; then
+        echo " [✓] cloudflared installed via pkg."
     else
-        echo "Downloading scraper kit repository..."
-        git clone https://github.com/Mahanaicoach/google-maps-scraper-kit.git .
+        echo " 📦 Fetching cloudflared ARM64 binary..."
+        curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64 -o "$PREFIX/bin/cloudflared" 2>/dev/null || \
+        curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64 -o "$HOME/go/bin/cloudflared" 2>/dev/null || true
+        chmod +x "$PREFIX/bin/cloudflared" 2>/dev/null || chmod +x "$HOME/go/bin/cloudflared" 2>/dev/null || true
     fi
 fi
 
-# 3. Check Port 8080 or 10000
-PORT=${PORT:-8080}
-if lsof -i :${PORT} >/dev/null 2>&1 || netstat -tuln 2>/dev/null | grep -q ":${PORT} "; then
-    echo "⚠️ Port ${PORT} is occupied. Trying port 8081..."
-    PORT=8081
+# 3. Check / Install google-maps-scraper binary
+if ! command -v google-maps-scraper >/dev/null 2>&1 && [ ! -f "$HOME/go/bin/google-maps-scraper" ]; then
+    echo "📦 Compiling native Android ARM64 scraper binary (go install)..."
+    go install github.com/gosom/google-maps-scraper@latest || true
 fi
 
+PORT=8080
 export PORT="${PORT}"
 
 echo ""
-echo "🚀 Starting Google Maps REST Scraper Service on Android..."
-echo "Local Server URL: http://127.0.0.1:${PORT}"
+echo "🚀 Starting Google Maps REST Scraper Service on Android Termux..."
+
+# Start internal scraper in background if binary exists
+SCRAPER_BIN="$(command -v google-maps-scraper || echo "$HOME/go/bin/google-maps-scraper")"
+if [ -f "$SCRAPER_BIN" ]; then
+    echo " [✓] Starting internal engine on 127.0.0.1:8081..."
+    "$SCRAPER_BIN" -web -addr 127.0.0.1:8081 -data-folder /tmp >/dev/null 2>&1 &
+fi
+
+# Start proxy in background
+echo " [✓] Starting API proxy on 127.0.0.1:${PORT}..."
+go run proxy.go >/dev/null 2>&1 &
+PROXY_PID=$!
+
+sleep 2
+
 echo ""
-echo "1. Open Chrome on Android"
-echo "2. Go to: https://v0786.github.io/WebDev/#/sales"
-echo "3. In Connection Settings, enter: http://127.0.0.1:${PORT}"
+echo "🟢 Local API Server Active: http://127.0.0.1:${PORT}"
 echo ""
 
-if [ -f "proxy.go" ]; then
-    exec go run proxy.go
-elif [ -f "main.go" ]; then
-    exec go run main.go -rest -port "${PORT}"
+CLOUDFLARED_BIN="$(command -v cloudflared || echo "$PREFIX/bin/cloudflared")"
+
+if [ -f "$CLOUDFLARED_BIN" ] || command -v cloudflared >/dev/null 2>&1; then
+    echo "=================================================="
+    echo " 🌐 Launching Cloudflare HTTPS Tunnel for Mobile Portal"
+    echo "=================================================="
+    echo " 📌 Copy your https://xxx.trycloudflare.com URL below"
+    echo "    and paste it into the Web Portal Settings!"
+    echo "=================================================="
+    exec cloudflared tunnel --url "http://127.0.0.1:${PORT}"
 else
-    exec go run .
+    echo "Open Chrome -> Go to: https://v0786.github.io/WebDev/#/sales"
+    echo "Connect to: http://127.0.0.1:${PORT}"
+    wait $PROXY_PID
 fi
