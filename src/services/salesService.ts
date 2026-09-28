@@ -23,6 +23,7 @@ const setLocalData = <T>(key: string, data: T[]) => {
   try {
     localStorage.setItem(key, JSON.stringify(data));
     window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new CustomEvent('sales_portal_updated'));
   } catch {}
 };
 
@@ -228,10 +229,12 @@ export const salesService = {
     };
 
     window.addEventListener('storage', handleStorage);
+    window.addEventListener('sales_portal_updated', handleStorage);
     window.addEventListener('focus', handleStorage);
 
     return () => {
       window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('sales_portal_updated', handleStorage);
       window.removeEventListener('focus', handleStorage);
     };
   },
@@ -264,10 +267,12 @@ export const salesService = {
     };
 
     window.addEventListener('storage', handleStorage);
+    window.addEventListener('sales_portal_updated', handleStorage);
     window.addEventListener('focus', handleStorage);
 
     return () => {
       window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('sales_portal_updated', handleStorage);
       window.removeEventListener('focus', handleStorage);
     };
   }

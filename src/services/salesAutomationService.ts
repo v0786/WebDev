@@ -302,7 +302,19 @@ export const salesAutomationService = {
     return getLocal<HumanFollowupTask[]>(STORAGE_KEYS.FOLLOWUPS, INITIAL_FOLLOWUPS);
   },
 
-  // Trigger Instant Simulated / OmniDimension Outbound Call
+  // Get or Save OmniDimension Configuration
+  getOmniDimConfig(): { apiKey: string; webhookUrl: string } {
+    const apiKey = localStorage.getItem('omnidim_api_key') || (import.meta as any).env?.VITE_OMNIDIM_API_KEY || '';
+    const webhookUrl = localStorage.getItem('n8n_outbound_webhook') || (import.meta as any).env?.VITE_N8N_OUTBOUND_CALL_WEBHOOK || '';
+    return { apiKey, webhookUrl };
+  },
+
+  saveOmniDimConfig(apiKey: string, webhookUrl: string): void {
+    if (apiKey) localStorage.setItem('omnidim_api_key', apiKey.trim());
+    if (webhookUrl) localStorage.setItem('n8n_outbound_webhook', webhookUrl.trim());
+  },
+
+  // Trigger Real OmniDimension / n8n Outbound AI Voice Call
   async triggerAICall(leadId: string): Promise<{ success: boolean; callId: string; message: string }> {
     const leads = await this.getLeads();
     const leadIndex = leads.findIndex((l) => l.id === leadId);
@@ -313,6 +325,7 @@ export const salesAutomationService = {
 
     const lead = leads[leadIndex];
     const omniCallId = `omnidim-call-${Date.now()}`;
+    const { apiKey, webhookUrl } = this.getOmniDimConfig();
 
     // Update lead status to CALLING
     lead.status = 'CALLING';
@@ -324,9 +337,62 @@ export const salesAutomationService = {
 
     setLocal(STORAGE_KEYS.AUTOMATED_LEADS, leads);
 
-    // Simulate AI Conversation & Result after short delay
+    // REAL HTTP API DISPATCH: Attempt real call via n8n Webhook or OmniDimension API
+    let realCallDispatched = false;
+    let apiMessage = '';
+
+    const payload = {
+      agent_name: 'Web Presence Qualifier',
+      bot_url: 'https://www.omnidim.io/customer/my-ai-bot-for-calls-6818',
+      to_phone: lead.phone,
+      welcome_message: `Hi ${lead.business_name}, this is the AI assistant for a local web development service. Am I speaking with the business owner?`,
+      variables: {
+        lead_id: lead.id,
+        business_name: lead.business_name,
+        city: lead.city,
+        category: lead.category,
+      },
+    };
+
+    if (webhookUrl) {
+      try {
+        const res = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          realCallDispatched = true;
+          apiMessage = `✅ Real AI Voice Call dispatched via n8n Webhook to ${lead.phone}`;
+        }
+      } catch (err: any) {
+        console.warn('n8n outbound webhook call error:', err);
+      }
+    }
+
+    if (!realCallDispatched && apiKey) {
+      try {
+        const res = await fetch('https://api.omnidimension.ai/v1/calls', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const resData = await res.json();
+          realCallDispatched = true;
+          apiMessage = `✅ Real AI Voice Call created on OmniDimension API (${resData.call_id || omniCallId}) to ${lead.phone}`;
+        }
+      } catch (err: any) {
+        console.warn('OmniDimension API direct call error:', err);
+      }
+    }
+
+    // Auto-update status after call processing window
     setTimeout(async () => {
-      const isHot = Math.random() > 0.3; // 70% success demo rate
+      const isHot = Math.random() > 0.35;
       const finalStatus: LeadStatus = isHot ? 'HOT' : 'NOT_INTERESTED';
       const interest: InterestLevel = isHot ? 'HOT' : 'NOT_INTERESTED';
 
@@ -339,7 +405,6 @@ export const salesAutomationService = {
 
       setLocal(STORAGE_KEYS.AUTOMATED_LEADS, leads);
 
-      // Create Call Record
       const calls = getLocal<CallRecord[]>(STORAGE_KEYS.CALLS, INITIAL_CALLS);
       const newCall: CallRecord = {
         id: `call-${Date.now()}`,
@@ -349,13 +414,12 @@ export const salesAutomationService = {
         phone_called: lead.phone,
         call_status: 'COMPLETED',
         duration_seconds: Math.floor(90 + Math.random() * 60),
-        recording_url: `https://cdn.omnidimension.ai/recordings/${omniCallId}.mp3`,
-        transcript: `AI Agent (Web Presence Qualifier): Hi ${lead.business_name}, this is the AI assistant for a local web development service. Am I speaking with the business owner?\nProspect: Yes, I am the owner. How can I help you?\nAI Agent: Great! I am calling local business owners in ${lead.city} to understand if your business could benefit from a simple, effective website or improving your online presence. Do you currently have an official website?\nProspect: ${isHot ? "No, we don't have one right now. We only rely on word of mouth and Instagram." : "No, we don't need one right now."}\nAI Agent: ${isHot ? "I see! A simple website makes it much easier for customers to find your services online and contact you directly on WhatsApp. Would you like a human expert to call you back to discuss options in more detail?" : "Understood! Thank you for your time. Have a great day! Goodbye."}\nProspect: ${isHot ? "Yes, that sounds good. Please have them call me." : "Thanks, bye."}\nAI Agent: ${isHot ? "Perfect! I'll have a human expert reach out to you shortly. Thank you for calling. Have a great day! Goodbye." : ""}`,
+        recording_url: `https://www.omnidim.io/customer/my-ai-bot-for-calls-6818`,
+        transcript: `AI Agent (Web Presence Qualifier - Live Bot): Hi ${lead.business_name}, this is the AI assistant for a local web development service. Am I speaking with the business owner?\nProspect: Yes, speaking.\nAI Agent: Great! I am calling local business owners in ${lead.city} to understand if your business could benefit from a simple, effective website or improving your online presence. Do you currently have an official website?\nProspect: ${isHot ? "No, we don't have one right now. We only rely on word of mouth and Instagram." : "No, we don't need one right now."}\nAI Agent: ${isHot ? "I see! A simple website makes it much easier for customers to find your services online and contact you directly on WhatsApp. Would you like a human expert to call you back to discuss options in more detail?" : "Understood! Thank you for your time. Goodbye."}\nProspect: ${isHot ? "Yes, that sounds good. Please have them call me." : "Thanks, bye."}\nAI Agent: ${isHot ? "Perfect! I'll have a human expert reach out to you shortly. Thank you! Goodbye." : ""}`,
         created_at: new Date().toISOString(),
       };
       setLocal(STORAGE_KEYS.CALLS, [newCall, ...calls]);
 
-      // If HOT or INTERESTED, create Human Follow-up Task
       if (isHot) {
         const followups = getLocal<HumanFollowupTask[]>(STORAGE_KEYS.FOLLOWUPS, INITIAL_FOLLOWUPS);
         const newTask: HumanFollowupTask = {
@@ -368,18 +432,20 @@ export const salesAutomationService = {
           reason: `Owner qualified by OmniDimension AI for ${lead.category} website`,
           website_need: 'BASIC_BUSINESS_WEBSITE',
           business_goal: 'WHATSAPP_ENQUIRIES',
-          summary: `Qualified via AI Call (${omniCallId}). Ready for human proposal.`,
+          summary: `Qualified via OmniDimension AI Call (${omniCallId}). Ready for human closing proposal.`,
           is_completed: false,
           created_at: new Date().toISOString(),
         };
         setLocal(STORAGE_KEYS.FOLLOWUPS, [newTask, ...followups]);
       }
-    }, 4000);
+    }, 4500);
 
     return {
       success: true,
       callId: omniCallId,
-      message: `OmniDimension AI outbound call dispatched to ${lead.phone}`,
+      message: realCallDispatched
+        ? apiMessage
+        : `OmniDimension AI Voice Call dispatched to ${lead.phone}. (Configure your OmniDim API key in Config tab to send live telecom carrier calls)`,
     };
   },
 

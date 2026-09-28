@@ -595,12 +595,13 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
 
     try {
       await salesService.createRequest(newReq);
+      await salesAutomationService.ingestScrapedLeads([lead]);
       if (onImportLeadToDashboard) {
         onImportLeadToDashboard(lead.name, lead.phone || '', lead.email || '', lead.category);
       }
-      alert(`✅ Lead '${lead.name}' (${lead.category}) imported to Sales Dashboard!`);
+      alert(`✅ Lead '${lead.name}' (${lead.category}) successfully added to CRM & AI Cold Call Pipeline!`);
     } catch (err) {
-      console.error(err);
+      console.error('Error importing lead to CRM:', err);
     }
   };
 

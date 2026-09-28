@@ -9,7 +9,8 @@ import {
   Zap, 
   FileText, 
   Server,
-  Sparkles
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
 import { 
   salesAutomationService, 
@@ -28,6 +29,15 @@ export const AISalesAutomationDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'queue' | 'transcripts' | 'config'>('queue');
   const [selectedTranscript, setSelectedTranscript] = useState<CallRecord | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  
+  const [apiKeyInput, setApiKeyInput] = useState<string>(() => salesAutomationService.getOmniDimConfig().apiKey);
+  const [webhookInput, setWebhookInput] = useState<string>(() => salesAutomationService.getOmniDimConfig().webhookUrl);
+
+  const handleSaveApiConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    salesAutomationService.saveOmniDimConfig(apiKeyInput, webhookInput);
+    setStatusMessage('✅ OmniDimension API credentials saved successfully!');
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -103,7 +113,16 @@ export const AISalesAutomationDashboard: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <a
+            href="https://www.omnidim.io/customer/my-ai-bot-for-calls-6818"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3.5 py-2 rounded-full bg-[#381E72] hover:bg-[#4F378B] border border-[#D0BCFF]/50 text-xs font-mono text-[#EADDFF] flex items-center gap-1.5 cursor-pointer transition-all shadow-md font-bold"
+          >
+            <ExternalLink className="w-3.5 h-3.5 text-[#D0BCFF]" />
+            <span>Launch OmniDimension Bot ↗</span>
+          </a>
           <button
             onClick={loadData}
             className="px-3.5 py-2 rounded-full bg-[#2B2930] hover:bg-[#381E72] border border-[#49454F] text-xs font-mono text-[#D0BCFF] flex items-center gap-1.5 cursor-pointer transition-all"
@@ -386,6 +405,69 @@ export const AISalesAutomationDashboard: React.FC = () => {
           </div>
 
           <div className="space-y-4">
+            <div>
+              <label className="text-gray-400 uppercase text-[10px]">OmniDimension Live AI Voice Agent Portal</label>
+              <div className="p-4 rounded-xl bg-[#141218] border border-[#D0BCFF]/30 text-white mt-1 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-inner">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#381E72] flex items-center justify-center text-[#D0BCFF] border border-[#6750A4]/60">
+                    <Bot className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-sm text-[#EADDFF] flex items-center gap-2">
+                      <span>Web Presence Qualifier Voice Bot</span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px]">Active</span>
+                    </div>
+                    <div className="text-xs text-sky-400 font-mono mt-0.5">https://www.omnidim.io/customer/my-ai-bot-for-calls-6818</div>
+                  </div>
+                </div>
+                <a
+                  href="https://www.omnidim.io/customer/my-ai-bot-for-calls-6818"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 rounded-full bg-[#6750A4] hover:bg-[#7F67BE] text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-all shadow-md self-end sm:self-auto cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Open Bot on OmniDim.io ↗</span>
+                </a>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveApiConfig} className="p-4 rounded-xl bg-[#141218] border border-[#6750A4]/40 space-y-4">
+              <h4 className="text-xs font-bold text-[#EADDFF] uppercase tracking-wider flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#D0BCFF]" />
+                <span>Live OmniDimension API Credentials (Telecom Outbound Calling)</span>
+              </h4>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-gray-400 uppercase font-mono">OmniDimension API Key (OMNIDIM_API_KEY)</label>
+                <input
+                  type="password"
+                  placeholder="Paste your OmniDimension API key here..."
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-lg bg-[#1D1B20] border border-[#49454F] text-white text-xs font-mono focus:border-[#D0BCFF] focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-gray-400 uppercase font-mono">n8n Outbound Call Dispatch Webhook URL (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="https://n8n.yourdomain.com/webhook/omnidim/outbound-call"
+                  value={webhookInput}
+                  onChange={(e) => setWebhookInput(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-lg bg-[#1D1B20] border border-[#49454F] text-white text-xs font-mono focus:border-[#D0BCFF] focus:outline-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-full bg-[#6750A4] hover:bg-[#7F67BE] text-white font-mono text-xs font-bold transition-all shadow cursor-pointer"
+              >
+                Save Credentials &amp; Enable Live Outbound Calls
+              </button>
+            </form>
+
             <div>
               <label className="text-gray-400 uppercase text-[10px]">Lead Ingestion Webhook Endpoint</label>
               <div className="p-3 rounded-xl bg-[#141218] border border-white/10 text-sky-400 mt-1 flex items-center justify-between">

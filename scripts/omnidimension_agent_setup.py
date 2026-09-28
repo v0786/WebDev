@@ -15,8 +15,10 @@ except ImportError:
     from omnidimension import Client
 
 API_KEY = os.environ.get("OMNIDIM_API_KEY", "YOUR_OMNIDIM_API_KEY_HERE")
+BOT_PORTAL_URL = "https://www.omnidim.io/customer/my-ai-bot-for-calls-6818"
 
 def setup_agent():
+    print(f"[*] Live Bot Portal URL: {BOT_PORTAL_URL}")
     print("[*] Initializing OmniDimension Client...")
     client = Client(api_key=API_KEY)
 
