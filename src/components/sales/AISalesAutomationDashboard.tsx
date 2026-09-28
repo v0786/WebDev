@@ -402,10 +402,25 @@ export const AISalesAutomationDashboard: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <label className="text-gray-400 uppercase text-[10px]">OmniDimension Agent Prompt Persona</label>
-              <div className="p-3 rounded-xl bg-[#141218] border border-white/10 text-gray-300 mt-1">
-                Alex — Non-technical local business voice advisor (Gyms, Salons, Clinics, Contractors).
+            <div className="space-y-2">
+              <label className="text-gray-400 uppercase text-[10px]">OmniDimension Voice Agent Specs & Python Setup</label>
+              <div className="p-4 rounded-xl bg-[#141218] border border-white/10 text-gray-300 space-y-3 font-mono text-[11px]">
+                <div className="flex flex-wrap items-center justify-between text-xs font-bold text-[#D0BCFF]">
+                  <span>Agent Name: Web Presence Qualifier</span>
+                  <span>Model: gpt-4.1-mini • Voice: Cartesia (4cd9f881-58f7-4969-876a-00983214c362)</span>
+                </div>
+                <div className="p-3 rounded-lg bg-black/40 text-gray-300 border border-white/5">
+                  <span className="text-purple-400 font-bold">Welcome Message: </span>
+                  "Hi [user_name], this is the AI assistant for a local web development service. Am I speaking with the business owner?"
+                </div>
+                <div className="text-[10px] text-gray-400">
+                  <span className="text-emerald-400 font-bold">Supported Languages: </span>
+                  English (India), Hindi, Marathi • Transcriber: Soniox (400ms silence timeout)
+                </div>
+                <div className="text-[10px] text-gray-400">
+                  <span className="text-sky-400 font-bold">Context Breakdown Rules: </span>
+                  Identity & Purpose, Facts, Actions & Limits, Identity Flow, Purpose & Need Flow, Needs & Callback Flow, Scope & Redirects, Guardrails, FAQ.
+                </div>
               </div>
             </div>
           </div>

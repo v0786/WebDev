@@ -44,7 +44,7 @@
           ]
         },
         "jsonParameters": true,
-        "bodyParametersJson": "={\n  \"agent_id\": \"{{$env.OMNIDIM_AGENT_ID}}\",\n  \"to_phone\": \"{{$json.phone}}\",\n  \"webhook_url\": \"https://n8n.yourdomain.com/webhook/omnidim/call-result\",\n  \"variables\": {\n    \"lead_id\": \"{{$json.id}}\",\n    \"business_name\": \"{{$json.business_name}}\",\n    \"category\": \"{{$json.category}}\",\n    \"city\": \"{{$json.city}}\"\n  }\n}"
+        "bodyParametersJson": "={\n  \"agent_name\": \"Web Presence Qualifier\",\n  \"welcome_message\": \"Hi {{$json.business_name}}, this is the AI assistant for a local web development service. Am I speaking with the business owner?\",\n  \"to_phone\": \"{{$json.phone}}\",\n  \"webhook_url\": \"https://n8n.yourdomain.com/webhook/omnidim/call-result\",\n  \"call_type\": \"Outgoing\",\n  \"transcriber\": {\n    \"provider\": \"Soniox\",\n    \"silence_timeout_ms\": 400\n  },\n  \"model\": {\n    \"model\": \"gpt-4.1-mini\",\n    \"temperature\": 0.7\n  },\n  \"voice\": {\n    \"provider\": \"cartesia\",\n    \"voice_id\": \"4cd9f881-58f7-4969-876a-00983214c362\"\n  },\n  \"languages\": [\"English (India)\", \"Hindi\", \"Marathi\"],\n  \"variables\": {\n    \"lead_id\": \"{{$json.id}}\",\n    \"user_name\": \"{{$json.business_name}}\",\n    \"category\": \"{{$json.category}}\",\n    \"city\": \"{{$json.city}}\"\n  }\n}"
       },
       "name": "OmniDimension — Dispatch Voice Call",
       "type": "n8n-nodes-base.httpRequest",

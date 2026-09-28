@@ -9,7 +9,6 @@ import {
   Edit3, 
   Eye, 
   ChevronLeft,
-  QrCode,
   ArrowRight,
   RefreshCw,
   Sliders,
@@ -81,10 +80,10 @@ export const InvoiceStudio: React.FC<InvoiceStudioProps> = ({
     const invoiceNum = `INV-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const newInv: Partial<Invoice> = {
       invoice_number: invoiceNum,
-      client_name: 'Client Name',
-      client_email: 'client@example.com',
-      client_company: 'Client Business Ltd',
-      client_address: '123 Tech Park, Suite 400',
+      client_name: '',
+      client_email: '',
+      client_company: '',
+      client_address: '',
       sender_name: 'Vaibhav Sonkusare',
       sender_email: 'vaibhavsonkusare12@gmail.com',
       sender_address: 'Nagpur, Maharashtra, India',
@@ -92,23 +91,23 @@ export const InvoiceStudio: React.FC<InvoiceStudioProps> = ({
       items: [
         {
           id: 'item-1',
-          description: 'Custom Web Development & Design',
+          description: 'Full Stack Web Development & System Integration',
           quantity: 1,
-          unit_price: 1500,
-          amount: 1500,
+          unit_price: 1200,
+          amount: 1200,
         },
       ],
-      subtotal: 1500,
+      subtotal: 1200,
       tax_rate: 0,
       tax_amount: 0,
       discount: 0,
-      total_amount: 1500,
+      total_amount: 1200,
       status: 'draft',
       issue_date: now.toISOString().split('T')[0],
-      due_date: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      notes: 'Thank you for your business. Please make payments via bank transfer or online gateway.',
-      payment_link: 'https://stripe.com/pay/sample',
-      upi_id: 'vaibhav@upi',
+      due_date: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      notes: 'Thank you for choosing our web development services. Payment is due within 14 days of invoice issue.',
+      payment_link: '',
+      upi_id: 'sonkusarevaibhavs@upi',
     };
     setEditingInvoice(newInv);
     setActiveTab('editor');
@@ -821,14 +820,21 @@ export const InvoiceStudio: React.FC<InvoiceStudioProps> = ({
                     </div>
                   </div>
 
-                  {/* Payment Details */}
+                  {/* Payment Details with Live Generated UPI QR Code */}
                   {editingInvoice.upi_id && (
-                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-between">
-                      <div className="space-y-0.5 text-xs">
-                        <div className="font-mono text-gray-400 uppercase text-[10px]">Instant UPI Direct Payment</div>
-                        <div className="font-mono font-bold text-gray-900">{editingInvoice.upi_id}</div>
+                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-between gap-4">
+                      <div className="space-y-1 text-xs">
+                        <div className="font-mono text-gray-500 uppercase text-[10px] tracking-wider font-bold">Instant UPI Direct Payment</div>
+                        <div className="font-mono font-bold text-sm text-gray-900">{editingInvoice.upi_id}</div>
+                        <div className="text-[10px] text-gray-500">Scan with GPay, PhonePe, Paytm, or BHIM to pay instantly.</div>
                       </div>
-                      <QrCode className="w-8 h-8 text-gray-700" />
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
+                          `upi://pay?pa=${editingInvoice.upi_id}&pn=${editingInvoice.sender_name}&am=${editingInvoice.total_amount}&cu=${editingInvoice.currency === 'INR' ? 'INR' : 'USD'}`
+                        )}`}
+                        alt="UPI Payment QR Code"
+                        className="w-20 h-20 rounded border border-gray-300 shadow-sm shrink-0"
+                      />
                     </div>
                   )}
 
