@@ -5,6 +5,19 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
+# Auto-detect GOROOT in Debian PRoot environment
+if [ -d "/usr/lib/go" ]; then
+    export GOROOT=/usr/lib/go
+else
+    DETECTED_GOROOT="$(ls -d /usr/lib/go* 2>/dev/null | head -n1)"
+    if [ -n "$DETECTED_GOROOT" ]; then
+        export GOROOT="$DETECTED_GOROOT"
+    fi
+fi
+
+export GOPATH="$HOME/go"
+export PATH="$GOROOT/bin:$GOPATH/bin:$PATH"
+
 # Load config if present
 if [ -f "android/config/scraper.env" ]; then
     set -a
@@ -28,10 +41,21 @@ echo "[1/4] Checking environment & dependencies..."
 SCRAPER_BIN=""
 if command -v google-maps-scraper >/dev/null 2>&1; then
     SCRAPER_BIN="$(command -v google-maps-scraper)"
+elif [ -f "$GOPATH/bin/google-maps-scraper" ]; then
+    SCRAPER_BIN="$GOPATH/bin/google-maps-scraper"
 elif [ -f "$HOME/go/bin/google-maps-scraper" ]; then
     SCRAPER_BIN="$HOME/go/bin/google-maps-scraper"
 elif [ -f "/usr/bin/google-maps-scraper" ]; then
     SCRAPER_BIN="/usr/bin/google-maps-scraper"
+fi
+
+# If binary still missing, try running go install
+if [ -z "$SCRAPER_BIN" ]; then
+    echo "[+] Compiling google-maps-scraper binary..."
+    go install github.com/gosom/google-maps-scraper@latest || true
+    if [ -f "$GOPATH/bin/google-maps-scraper" ]; then
+        SCRAPER_BIN="$GOPATH/bin/google-maps-scraper"
+    fi
 fi
 
 # 2. Launch Internal Scraper
