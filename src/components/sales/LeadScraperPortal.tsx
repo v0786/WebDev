@@ -16,14 +16,17 @@ import {
   Server,
   Upload,
   ChevronDown,
-  ShieldCheck,
   CheckCircle2,
   ExternalLink,
   Clock
 } from 'lucide-react';
 import { soundFx } from '../audio/SoundEffects';
 import { salesService } from '../../services/salesService';
-import { SCRAPER_API_URL } from '../../config/scraper';
+import { getScraperApiUrl, SCRAPER_API_URL } from '../../config/scraper';
+import { ScraperConnection } from './ScraperConnection';
+import { ScraperLogs, LogEntry } from './ScraperLogs';
+import { scraperClient } from '../../services/scraper/client';
+
 
 // Normalized Scraped Lead Interface
 export interface ScrapedLead {
@@ -150,7 +153,7 @@ function isValidWebsite(site: string | null | undefined): boolean {
 }
 
 // RFC 4180 Compliant CSV Parser (Handles quotes and commas correctly)
-function parseRFC4180CSV(csvText: string): Record<string, string>[] {
+export function parseRFC4180CSV(csvText: string): Record<string, string>[] {
   const lines = csvText.trim().split(/\r?\n/);
   if (lines.length < 2) return [];
 
@@ -194,7 +197,7 @@ function parseRFC4180CSV(csvText: string): Record<string, string>[] {
 }
 
 // Normalize Scraper CSV Rows into ScrapedLead Interface
-function normalizeScraperRows(rows: Record<string, string>[], targetCity: string): ScrapedLead[] {
+export function normalizeScraperRows(rows: Record<string, string>[], targetCity: string): ScrapedLead[] {
   const leads: ScrapedLead[] = [];
 
   rows.forEach((row, idx) => {
@@ -265,6 +268,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     return localStorage.getItem('gmaps_cloud_api') || SCRAPER_API_URL;
   });
   const [showConfig, setShowConfig] = useState(false);
+  const [isScraperConnected, setIsScraperConnected] = useState<boolean>(true);
   
   // Scraper Progress State
   const [isScraping, setIsScraping] = useState(false);
@@ -300,14 +304,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
   const ratingsList = leads.map(l => parseFloat(l.rating || '0')).filter(r => r > 0);
   const avgRating = ratingsList.length > 0 ? (ratingsList.reduce((a, b) => a + b, 0) / ratingsList.length).toFixed(1) : 'N/A';
 
-  const handleSaveCloudApi = (url: string) => {
-    const finalUrl = url.trim().replace(/\/$/, '') || SCRAPER_API_URL;
-    setCustomApiUrl(finalUrl);
-    try {
-      localStorage.setItem('gmaps_cloud_api', finalUrl);
-    } catch {}
-    alert(`Saved Scraper API URL: ${finalUrl}`);
-  };
+
 
   const handleClearLeads = () => {
     if (confirm('Clear all saved scraped leads?')) {
@@ -370,7 +367,21 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     return { lat: '21.1458', lon: '79.0882' }; // Default Nagpur
   };
 
-  // Centralized Scrape Orchestrator (Cloudflare Scraper API Job Polling up to 10 mins)
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+
+  const addLog = (level: LogEntry['level'], message: string) => {
+    const timeStr = new Date().toLocaleTimeString('en-US', { hour12: false });
+    setLogs((prev) => [
+      ...prev.slice(-999),
+      { id: `${Date.now()}-${Math.random()}`, timestamp: timeStr, level, message },
+    ]);
+  };
+
+  const handleClearLogs = () => {
+    setLogs([]);
+  };
+
+  // Centralized Scrape Orchestrator (Local-First Scraper Client)
   const runScraperQuery = async (searchKeyword: string, searchCity: string) => {
     soundFx.playModalReveal();
     setIsScraping(true);
@@ -387,170 +398,136 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     }
     if (!finalQuery) finalQuery = `businesses in ${searchCity}`;
 
-    const apiBase = (customApiUrl.trim() || SCRAPER_API_URL).replace(/\/$/, '');
+    const currentUrl = customApiUrl.trim() || getScraperApiUrl();
 
-    // Phase 15: Cloudflare Scraper API Ping with Retry Loop
-    let serviceReady = false;
-    for (let attempt = 1; attempt <= 12; attempt++) {
-      setStatusMessage(`⏳ Connecting to Cloudflare Scraper Service (Attempt ${attempt}/12)...`);
-      try {
-        const healthRes = await fetch(`${apiBase}/health`, { method: 'GET' });
-        if (healthRes.ok) {
-          serviceReady = true;
-          break;
-        }
-      } catch (healthErr) {
-        console.warn(`Health check attempt ${attempt} failed:`, healthErr);
-      }
-      await new Promise(r => setTimeout(r, 4000));
-    }
+    addLog('info', `Connecting to scraper at ${currentUrl || 'configured URL'}...`);
+    setStatusMessage('🟡 Connecting to scraper...');
 
-    if (!serviceReady) {
-      setStatusMessage('⚡ Scraper API responding. Initiating scrape job...');
-    }
-
-    // Phase 8: Geocoding + Job Payload Construction
-    setScrapePhase('creating');
-    setStatusMessage(`Creating scrape job for '${finalQuery}'...`);
-    const coords = await getCityCoordinates(searchCity);
-
-    const payload = {
-      name: `sales-lead-scrape-${Date.now()}`,
-      keywords: [finalQuery],
-      lang: 'en',
-      zoom: 15,
-      lat: coords.lat,
-      lon: coords.lon,
-      fast_mode: fastMode,
-      radius: radius,
-      depth: depth,
-      email: false,
-      max_time: 300
-    };
-
-    let jobId = '';
-
-    // POST /api/scrape (or /api/v1/jobs) with application/json & auto-retry on connection cold start
-    let jobRes: Response | null = null;
-    let createAttempts = 0;
-    while (createAttempts < 4 && !jobRes) {
-      createAttempts++;
-      try {
-        jobRes = await fetch(`${apiBase}/api/scrape`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
-      } catch (fetchErr: any) {
-        console.warn(`Job creation attempt ${createAttempts} failed:`, fetchErr);
-        if (createAttempts < 4) {
-          setStatusMessage(`⏳ Connecting to Scraper API... (Attempt ${createAttempts}/4)`);
-          await new Promise(r => setTimeout(r, 4000));
-        } else {
-          setIsScraping(false);
-          setScrapePhase('idle');
-          setStatusMessage(`❌ Google Maps Scraper API is currently unreachable via Cloudflare. Please check your connection or endpoint settings and try again!`);
-          return;
-        }
-      }
-    }
-
-    try {
-      if (!jobRes || !jobRes.ok) {
-        let errText = jobRes ? `HTTP ${jobRes.status} ${jobRes.statusText}` : 'Service unavailable';
-        try {
-          if (jobRes) {
-            const errJson = await jobRes.json();
-            if (errJson.error) errText = errJson.error;
-          }
-        } catch {}
-        throw new Error(errText);
-      }
-
-      const jobData = await jobRes.json();
-      jobId = jobData.id || jobData.jobId || jobData.ID;
-      if (!jobId) throw new Error('No Job ID returned by scraper service.');
-
-      setActiveJobId(jobId);
-      setScrapePhase('scraping');
-    } catch (err: any) {
-      console.error('Job creation parsing error:', err);
+    // Health check
+    const health = await scraperClient.health(currentUrl);
+    if (!health.ok) {
       setIsScraping(false);
       setScrapePhase('idle');
-      setStatusMessage(`❌ Google Maps scraper unavailable: ${err.message || 'Network error'}. Please retry.`);
+      addLog('error', health.message);
+      setStatusMessage(health.message);
       return;
     }
 
-    // Phase 9: Polling up to 10 Minutes (600s)
+    addLog('success', '✓ API connected');
+    setStatusMessage('🟡 Creating job...');
+
+    // Geocoding + Job Creation
+    setScrapePhase('creating');
+    const coords = await getCityCoordinates(searchCity);
+
+    addLog('info', `Target coords for ${searchCity}: ${coords.lat}, ${coords.lon}`);
+    addLog('info', `Creating job payload for '${finalQuery}'...`);
+
+    let job;
+    try {
+      job = await scraperClient.createJob(
+        {
+          name: `sales-lead-scrape-${Date.now()}`,
+          keywords: [finalQuery],
+          lat: coords.lat,
+          lon: coords.lon,
+          radius: radius,
+          depth: depth,
+          fastMode: fastMode,
+        },
+        currentUrl
+      );
+    } catch (createErr: any) {
+      setIsScraping(false);
+      setScrapePhase('idle');
+      addLog('error', createErr.message || 'Job creation failed');
+      setStatusMessage(`🔴 Scraping Failed: ${createErr.message || 'Could not create job.'}`);
+      return;
+    }
+
+    const jobId = job.id;
+    setActiveJobId(jobId);
+    addLog('info', `Job ID: ${jobId}`);
+    addLog('info', 'Status: QUEUED');
+    setStatusMessage('🟡 Job queued');
+    setScrapePhase('scraping');
+
+    // Timer
     const startTime = Date.now();
+    if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
     }, 1000);
 
-    const maxPollTimeSeconds = 600;
-    const pollIntervalMs = 4000;
+    // Polling loop
+    const maxPollTimeMs = 10 * 60 * 1000;
+    const pollIntervalMs = 3000;
+    let completedSuccess = false;
 
-    while (Date.now() - startTime < maxPollTimeSeconds * 1000) {
-      await new Promise(r => setTimeout(r, pollIntervalMs));
-      const currentElapsed = Math.floor((Date.now() - startTime) / 1000);
+    while (Date.now() - startTime < maxPollTimeMs) {
+      await new Promise((r) => setTimeout(r, pollIntervalMs));
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
 
       try {
-        const pollRes = await fetch(`${apiBase}/api/scrape/${jobId}`, {
-          headers: { 'Accept': 'application/json' }
-        });
+        const pollJob = await scraperClient.getJob(jobId, currentUrl);
+        const status = pollJob.status;
 
-        if (!pollRes.ok) continue;
-
-        const pollData = await pollRes.json();
-        const status = (pollData.Status || pollData.status || '').toLowerCase();
-
-        setStatusMessage(`Scraping Google Maps... Job ID: ${jobId} | Status: ${status || 'working'} | Elapsed: ${currentElapsed}s`);
-
-        if (status === 'ok' || status === 'completed' || status === 'done') {
-          clearInterval(timerRef.current);
-          setScrapePhase('processing');
-          setStatusMessage(`Processing scraper results for Job ID: ${jobId}...`);
-
-          // Phase 10: Download CSV results
-          const dlRes = await fetch(`${apiBase}/api/scrape/${jobId}/download`);
-          if (!dlRes.ok) throw new Error(`CSV download failed with status ${dlRes.status}`);
-
-          const csvText = await dlRes.text();
-          const csvRows = parseRFC4180CSV(csvText);
-          const normalizedLeads = normalizeScraperRows(csvRows, searchCity);
-
-          if (normalizedLeads.length > 0) {
-            setLeads(normalizedLeads);
-            setScrapePhase('completed');
-            setStatusMessage(`✅ Scrape Completed! Scraped ${normalizedLeads.length} real Google Maps leads for '${finalQuery}'!`);
-          } else {
-            setLeads([]);
-            setScrapePhase('completed');
-            setStatusMessage(`⚠️ Scrape completed, but 0 commercial business leads were found for '${finalQuery}'.`);
-          }
-
-          setIsScraping(false);
-          return;
-        } else if (status === 'failed' || status === 'error') {
-          clearInterval(timerRef.current);
-          setIsScraping(false);
-          setScrapePhase('idle');
-          setStatusMessage(`❌ Scraper job ${jobId} failed on server. Please retry.`);
-          return;
+        if (status === 'queued') {
+          setStatusMessage(`🟡 Job queued... (Elapsed: ${elapsed}s)`);
+        } else if (status === 'starting' || status === 'working') {
+          setStatusMessage(`🟡 Scraper working... Searching Google Maps & collecting businesses (${elapsed}s)`);
+          addLog('info', `Status: WORKING (${elapsed}s) - Searching Google Maps for ${finalQuery}`);
+        } else if (status === 'completed') {
+          completedSuccess = true;
+          addLog('success', `Status: COMPLETED (${elapsed}s)`);
+          addLog('info', 'Extracting contact information & business listings...');
+          setStatusMessage('🟢 Scraping completed! Fetching results...');
+          break;
+        } else if (status === 'failed' || status === 'cancelled') {
+          addLog('error', `Status: ${status.toUpperCase()}`);
+          throw new Error(`Scraper reported job status: ${status}`);
         }
       } catch (pollErr: any) {
-        console.warn('Polling error attempt:', pollErr);
+        addLog('warn', pollErr.message || 'Polling attempt warning');
       }
     }
 
-    // Timeout
     clearInterval(timerRef.current);
-    setIsScraping(false);
-    setScrapePhase('idle');
-    setStatusMessage(`⏱️ Scrape request timed out after 10 minutes. Job ID: ${jobId}.`);
+
+    if (!completedSuccess) {
+      setIsScraping(false);
+      setScrapePhase('idle');
+      addLog('error', '⏱️ Connection Timeout or Job Failed');
+      setStatusMessage('🔴 Scraping Failed or Timed Out');
+      return;
+    }
+
+    // Results Fetching
+    setScrapePhase('processing');
+    try {
+      const rawRows = await scraperClient.getResults(jobId, currentUrl);
+      addLog('info', `Downloaded ${rawRows.length} raw business rows`);
+
+      const normalizedLeads = normalizeScraperRows(rawRows, searchCity);
+      addLog('success', `✓ Processed ${normalizedLeads.length} valid business leads`);
+
+      if (normalizedLeads.length > 0) {
+        setLeads(normalizedLeads);
+        setScrapePhase('completed');
+        setStatusMessage(`🟢 Scraping completed! Found ${normalizedLeads.length} leads.`);
+        addLog('success', '🟢 Lead generation completed successfully!');
+      } else {
+        setLeads([]);
+        setScrapePhase('completed');
+        setStatusMessage('⚠️ Scraping completed, but 0 commercial business leads were returned.');
+        addLog('warn', '0 business leads returned.');
+      }
+    } catch (resErr: any) {
+      addLog('error', resErr.message || 'Failed to retrieve results');
+      setStatusMessage(`🔴 Scraping Failed: ${resErr.message}`);
+    } finally {
+      setIsScraping(false);
+    }
   };
 
   const handleRunScraper = (e: React.FormEvent) => {
@@ -645,7 +622,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
             <span>Google Maps Lead Generation Scraper</span>
           </h1>
           <p className="text-xs text-gray-400 font-mono mt-1">
-            Official Google Maps Lead Scraper Engine via Cloudflare Tunnel / API.
+            Local-First Portable Google Maps Scraper Engine for PC, LAN & Cloudflare Tunnels.
           </p>
         </div>
 
@@ -660,10 +637,14 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
 
           <button
             onClick={() => setShowConfig(!showConfig)}
-            className="px-3 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/15 border border-white/15 text-xs font-mono text-gray-300 flex items-center gap-1.5 cursor-pointer"
+            className={`px-3 py-1.5 rounded-xl border text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-all ${
+              isScraperConnected
+                ? 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30 text-emerald-400'
+                : 'bg-red-500/10 hover:bg-red-500/20 border-red-500/30 text-red-400'
+            }`}
           >
-            <Server className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>API Config</span>
+            <Server className="w-3.5 h-3.5" />
+            <span>{isScraperConnected ? '🟢 Connected' : '🔴 Connection Offline'}</span>
           </button>
 
           {leads.length > 0 && (
@@ -675,38 +656,18 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
               <span>Clear Leads</span>
             </button>
           )}
-
-          <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center gap-2">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Cloudflare API Verified</span>
-          </div>
         </div>
       </div>
 
-      {/* Cloudflare API Config Drawer */}
+      {/* Scraper Connection Drawer */}
       {showConfig && (
-        <div className="max-w-7xl mx-auto my-4 p-5 rounded-2xl bg-[#15171F] border border-[#D4AF37]/40 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-mono text-[#D4AF37] font-bold">
-              <Server className="w-4 h-4" />
-              <span>SCRAPER API SERVICE ENDPOINT</span>
-            </div>
-            <button onClick={() => setShowConfig(false)} className="text-xs text-gray-400 hover:text-white">✕ Close</button>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              type="url"
-              value={customApiUrl}
-              onChange={(e) => setCustomApiUrl(e.target.value)}
-              className="flex-1 px-3.5 py-2 rounded-xl bg-black/40 border border-white/20 text-xs font-mono text-white placeholder-gray-500 focus:outline-none focus:border-[#D4AF37]"
-            />
-            <button
-              onClick={() => handleSaveCloudApi(customApiUrl)}
-              className="px-4 py-2 rounded-xl bg-[#D4AF37] text-black font-mono text-xs font-bold shrink-0 cursor-pointer"
-            >
-              Save API Endpoint
-            </button>
-          </div>
+        <div className="max-w-7xl mx-auto my-4">
+          <ScraperConnection
+            onConnectionStatusChange={(ok, url) => {
+              setCustomApiUrl(url);
+              setIsScraperConnected(ok);
+            }}
+          />
         </div>
       )}
 
@@ -893,6 +854,11 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
                 )}
               </div>
             )}
+
+            {/* Live Terminal Log Panel */}
+            <div className="pt-2">
+              <ScraperLogs logs={logs} onClearLogs={handleClearLogs} />
+            </div>
           </div>
         </div>
 
