@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  google-maps-scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gmaps-scraper
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - ALLOWED_ORIGIN=*
+    volumes:
+      - gmaps_data:/gmapsdata
+      - gmaps_cache:/opt
+
+volumes:
+  gmaps_data:
+  gmaps_cache:

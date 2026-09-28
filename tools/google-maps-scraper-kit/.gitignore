@@ -1,0 +1,19 @@
+# Secrets
+.env
+
+# Scrape outputs (may contain personal data — never commit)
+*.csv
+results-*.json
+out/
+output/
+gmaps-output/
+data/
+
+# Python build cruft
+__pycache__/
+*.pyc
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+bin/
