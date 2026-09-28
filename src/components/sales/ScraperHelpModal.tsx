@@ -151,17 +151,17 @@ export const ScraperHelpModal: React.FC<ScraperHelpModalProps> = ({
                     2
                   </span>
                   <h3 className="text-sm font-bold text-white font-mono tracking-wide">
-                    Clone Repository & Navigate
+                    Install PRoot Debian Environment
                   </h3>
                 </div>
                 <div className="pl-9 space-y-2 text-xs text-gray-300 leading-relaxed">
-                  <p>Clone the project and navigate to the scraper kit directory in Termux:</p>
+                  <p>Clone the project and run the native PRoot Debian installer in Termux:</p>
                   <div className="relative group">
                     <pre className="p-3 rounded-xl bg-black/60 border border-white/10 font-mono text-emerald-400 text-xs overflow-x-auto">
-                      git clone https://github.com/v0786/WebDev.git && cd WebDev/tools/google-maps-scraper-kit
+                      git clone https://github.com/v0786/WebDev.git && cd WebDev && chmod +x android/*.sh && ./android/install-termux.sh
                     </pre>
                     <button
-                      onClick={() => handleCopy('git clone https://github.com/v0786/WebDev.git && cd WebDev/tools/google-maps-scraper-kit', 102)}
+                      onClick={() => handleCopy('git clone https://github.com/v0786/WebDev.git && cd WebDev && chmod +x android/*.sh && ./android/install-termux.sh', 102)}
                       className="absolute right-2 top-2 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-all cursor-pointer"
                     >
                       {copiedIndex === 102 ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
@@ -177,24 +177,24 @@ export const ScraperHelpModal: React.FC<ScraperHelpModalProps> = ({
                     3
                   </span>
                   <h3 className="text-sm font-bold text-white font-mono tracking-wide">
-                    Run Scraper Engine in Termux
+                    Launch Scraper Engine
                   </h3>
                 </div>
                 <div className="pl-9 space-y-2 text-xs text-gray-300 leading-relaxed">
-                  <p>Execute the Android Termux launcher script (or start Go server directly):</p>
+                  <p>Run the one-command launcher to start native scraping inside PRoot Debian:</p>
                   <div className="relative group">
                     <pre className="p-3 rounded-xl bg-black/60 border border-white/10 font-mono text-emerald-400 text-xs overflow-x-auto">
-                      ./termux-start.sh || go run proxy.go
+                      ~/run-scraper.sh
                     </pre>
                     <button
-                      onClick={() => handleCopy('./termux-start.sh', 103)}
+                      onClick={() => handleCopy('~/run-scraper.sh', 103)}
                       className="absolute right-2 top-2 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-all cursor-pointer"
                     >
                       {copiedIndex === 103 ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                     </button>
                   </div>
                   <p className="text-[11px] text-gray-400">
-                    🚀 Service starts on <code className="text-white font-mono">http://127.0.0.1:8080</code> inside your Android phone!
+                    🚀 Service starts natively on <code className="text-white font-mono">http://127.0.0.1:8080</code> inside your Android phone!
                   </p>
                 </div>
               </div>
