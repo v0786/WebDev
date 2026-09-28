@@ -1,0 +1,63 @@
+{
+  "name": "SALES — Lead Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "leads/new",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "Webhook — New Lead",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Normalize Lead & Generate Deterministic Fingerprint\nconst item = $json.body || $json;\n\nconst businessName = (item.business_name || '').trim();\nconst phone = (item.phone || '').replace(/[^0-9+]/g, '');\nconst city = (item.city || '').trim().toLowerCase();\n\nif (!businessName || !phone) {\n  throw new Error('Missing required lead fields: business_name or phone');\n}\n\nconst normName = businessName.toLowerCase().replace(/[^a-z0-9]/g, '');\nconst normPhone = phone.replace(/[^0-9]/g, '');\nconst fingerprint = `${normName}_${normPhone}_${city}`;\n\nreturn [{\n  json: {\n    fingerprint,\n    business_name: businessName,\n    category: item.category || 'Local Business',\n    phone: phone,\n    address: item.address || '',\n    city: item.city || 'Nagpur',\n    country: item.country || 'India',\n    google_maps_url: item.google_maps_url || null,\n    google_rating: item.google_rating ? parseFloat(item.google_rating) : null,\n    google_reviews: item.google_reviews ? parseInt(item.google_reviews, 10) : 0,\n    website: item.website || null,\n    source: item.source || 'google_maps',\n    status: 'READY_TO_CALL',\n    call_status: 'NOT_CALLED',\n    call_attempts: 0,\n    max_attempts: 3,\n    created_at: new Date().toISOString()\n  }\n}];"
+      },
+      "name": "Normalize & Fingerprint Lead",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [320, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.leads (fingerprint, business_name, category, phone, address, city, country, google_maps_url, google_rating, google_reviews, website, source, status, call_status, call_attempts, max_attempts) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT (fingerprint) DO UPDATE SET updated_at = NOW() RETURNING *;",
+        "additionalFields": {
+          "queryParams": "={{ [$json.fingerprint, $json.business_name, $json.category, $json.phone, $json.address, $json.city, $json.country, $json.google_maps_url, $json.google_rating, $json.google_reviews, $json.website, $json.source, $json.status, $json.call_status, $json.call_attempts, $json.max_attempts] }}"
+        }
+      },
+      "name": "Supabase — Upsert Lead",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [540, 300]
+    }
+  ],
+  "connections": {
+    "Webhook — New Lead": {
+      "main": [
+        [
+          {
+            "node": "Normalize & Fingerprint Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize & Fingerprint Lead": {
+      "main": [
+        [
+          {
+            "node": "Supabase — Upsert Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

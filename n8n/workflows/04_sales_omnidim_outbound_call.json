@@ -1,0 +1,79 @@
+{
+  "name": "SALES — OmniDimension Outbound Call",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "name": "Cron — Every 5 Mins",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM public.leads WHERE status = 'READY_TO_CALL' AND call_attempts < max_attempts AND phone NOT IN (SELECT phone FROM public.do_not_call) ORDER BY created_at ASC LIMIT 5;"
+      },
+      "name": "Supabase — Fetch Callable Leads",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.omnidimension.ai/v1/calls",
+        "options": {},
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.OMNIDIM_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "jsonParameters": true,
+        "bodyParametersJson": "={\n  \"agent_id\": \"{{$env.OMNIDIM_AGENT_ID}}\",\n  \"to_phone\": \"{{$json.phone}}\",\n  \"webhook_url\": \"https://n8n.yourdomain.com/webhook/omnidim/call-result\",\n  \"variables\": {\n    \"lead_id\": \"{{$json.id}}\",\n    \"business_name\": \"{{$json.business_name}}\",\n    \"category\": \"{{$json.category}}\",\n    \"city\": \"{{$json.city}}\"\n  }\n}"
+      },
+      "name": "OmniDimension — Dispatch Voice Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [520, 300]
+    }
+  ],
+  "connections": {
+    "Cron — Every 5 Mins": {
+      "main": [
+        [
+          {
+            "node": "Supabase — Fetch Callable Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase — Fetch Callable Leads": {
+      "main": [
+        [
+          {
+            "node": "OmniDimension — Dispatch Voice Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

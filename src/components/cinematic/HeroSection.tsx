@@ -33,6 +33,7 @@ const navItems = [
   { name: 'ABOUT', href: '#about' },
   { name: 'WORK', href: '#work' },
   { name: 'SKILLS', href: '#skills' },
+  { name: 'GET QUOTED', href: '#/quote' },
   { name: 'EXPERIENCE', href: '#experience' },
   { name: 'CONTACT', href: '#contact' },
 ];

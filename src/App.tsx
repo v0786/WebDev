@@ -32,6 +32,9 @@ const FarmFreshDemo = lazy(() =>
 const SalesDemo = lazy(() =>
   import('./demos/sales/SalesDemo').then((m) => ({ default: m.SalesDemo }))
 );
+const InvoicePage = lazy(() =>
+  import('./components/invoice/InvoicePage').then((m) => ({ default: m.InvoicePage }))
+);
 
 const DemoLoadingFallback: React.FC = () => (
   <div className="min-h-screen bg-[#07080B] flex flex-col items-center justify-center text-bone-300 font-mono text-xs space-y-4">
@@ -96,7 +99,27 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Determine active concept demo based on hash route (supporting #/demo/..., #/sales, #/login, #login)
+  const isInvoice =
+    currentHash.includes('invoice') ||
+    currentHash.includes('quote') ||
+    currentHash.includes('billing') ||
+    currentHash === '#/invoice' ||
+    currentHash === '#/quote';
+
+  if (isInvoice) {
+    const isStudio = currentHash.includes('studio') || currentHash.includes('invoice');
+    return (
+      <Suspense fallback={<DemoLoadingFallback />}>
+        <InvoicePage
+          onBackToHome={() => {
+            window.location.hash = '';
+          }}
+          defaultView={isStudio ? 'studio' : 'calculator'}
+        />
+      </Suspense>
+    );
+  }
+
   const isSales =
     currentHash.includes('sales') ||
     currentHash.includes('login') ||

@@ -28,6 +28,7 @@ import { ScraperConnection } from './ScraperConnection';
 import { ScraperLogs, LogEntry } from './ScraperLogs';
 import { scraperClient } from '../../services/scraper/client';
 import { ScraperHelpModal } from './ScraperHelpModal';
+import { salesAutomationService } from '../../services/salesAutomationService';
 
 
 // Normalized Scraped Lead Interface
@@ -340,7 +341,8 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         const imported = normalizeScraperRows(rows, city);
         if (imported.length > 0) {
           setLeads((prev) => [...imported, ...prev]);
-          setStatusMessage(`✅ Successfully imported ${imported.length} leads from '${file.name}'!`);
+          salesAutomationService.ingestScrapedLeads(imported);
+          setStatusMessage(`✅ Successfully imported ${imported.length} leads & pushed to AI Cold Call pipeline!`);
           soundFx.playClick();
         } else {
           alert('Could not parse business leads from file. Check CSV format.');
@@ -516,9 +518,10 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
 
       if (normalizedLeads.length > 0) {
         setLeads(normalizedLeads);
+        salesAutomationService.ingestScrapedLeads(normalizedLeads);
         setScrapePhase('completed');
-        setStatusMessage(`🟢 Scraping completed! Found ${normalizedLeads.length} leads.`);
-        addLog('success', '🟢 Lead generation completed successfully!');
+        setStatusMessage(`🟢 Scraping completed! Found ${normalizedLeads.length} leads & pushed to AI Cold Call pipeline.`);
+        addLog('success', '🟢 Lead generation & AI pipeline ingestion completed successfully!');
       } else {
         setLeads([]);
         setScrapePhase('completed');
