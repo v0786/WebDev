@@ -13,8 +13,11 @@ pkg install proot-distro curl wget git net-tools lsof -y
 
 # 2. Install Debian inside PRoot if not present
 echo "[2/5] Setting up Debian PRoot container..."
-if ! proot-distro list | grep -q "debian (installed)"; then
-    proot-distro install debian
+if ! proot-distro list | grep -i -q "debian"; then
+    echo "Installing new Debian container..."
+    proot-distro install debian || true
+else
+    echo " [✓] Debian container already exists."
 fi
 
 # 3. Copy Project Files into Debian PRoot rootfs
