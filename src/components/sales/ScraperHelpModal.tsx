@@ -155,13 +155,13 @@ export const ScraperHelpModal: React.FC<ScraperHelpModalProps> = ({
                   </h3>
                 </div>
                 <div className="pl-9 space-y-2 text-xs text-gray-300 leading-relaxed">
-                  <p>Clone the project and navigate to the scraper kit directory in Termux:</p>
+                  <p>Clone the project with submodules and navigate to the scraper kit directory in Termux:</p>
                   <div className="relative group">
                     <pre className="p-3 rounded-xl bg-black/60 border border-white/10 font-mono text-emerald-400 text-xs overflow-x-auto">
-                      git clone https://github.com/v0786/WebDev.git && cd WebDev/tools/google-maps-scraper-kit
+                      git clone https://github.com/v0786/WebDev.git && cd WebDev && git submodule update --init --recursive && cd tools/google-maps-scraper-kit
                     </pre>
                     <button
-                      onClick={() => handleCopy('git clone https://github.com/v0786/WebDev.git && cd WebDev/tools/google-maps-scraper-kit', 102)}
+                      onClick={() => handleCopy('git clone https://github.com/v0786/WebDev.git && cd WebDev && git submodule update --init --recursive && cd tools/google-maps-scraper-kit', 102)}
                       className="absolute right-2 top-2 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-all cursor-pointer"
                     >
                       {copiedIndex === 102 ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
@@ -184,10 +184,10 @@ export const ScraperHelpModal: React.FC<ScraperHelpModalProps> = ({
                   <p>Execute the Android Termux launcher script (or start Go server directly):</p>
                   <div className="relative group">
                     <pre className="p-3 rounded-xl bg-black/60 border border-white/10 font-mono text-emerald-400 text-xs overflow-x-auto">
-                      ./termux-start.sh || go run main.go -rest
+                      ./termux-start.sh || go run proxy.go
                     </pre>
                     <button
-                      onClick={() => handleCopy('go run main.go -rest', 103)}
+                      onClick={() => handleCopy('./termux-start.sh', 103)}
                       className="absolute right-2 top-2 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-all cursor-pointer"
                     >
                       {copiedIndex === 103 ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
