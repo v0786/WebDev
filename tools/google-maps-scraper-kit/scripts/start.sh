@@ -11,10 +11,14 @@ echo " Starting Local Google Maps Scraper"
 echo "========================================"
 echo ""
 
-# 1. Check Docker
+# 1. Check Docker / Native Fallback
 if ! docker info >/dev/null 2>&1; then
-    echo "ERROR: Docker daemon is not running! Please start Docker."
-    exit 1
+    echo "ℹ️ Docker daemon is not running. Launching in Native PRoot/Go mode..."
+    if [ -f "../../android/start-scraper.sh" ]; then
+        exec "../../android/start-scraper.sh"
+    else
+        exec go run proxy.go
+    fi
 fi
 
 # 2. Dynamic Port Selection

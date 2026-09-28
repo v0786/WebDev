@@ -19,10 +19,16 @@ echo ""
 OS_NAME="$(uname -s)"
 echo "[1/7] Detecting OS .................... ✓ ($OS_NAME)"
 
-# 2. Check Docker Daemon
+# 2. Check Docker Daemon / Native Fallback
 if ! docker info >/dev/null 2>&1; then
-    echo "ERROR: Docker daemon is not running! Please start Docker Desktop or systemd docker service."
-    exit 1
+    echo "ℹ️ Docker daemon is not running. Falling back to Native PRoot/Go mode..."
+    if [ -f "../../android/start-scraper.sh" ]; then
+        exec "../../android/start-scraper.sh"
+    elif [ -f "./termux-start.sh" ]; then
+        exec "./termux-start.sh"
+    else
+        exec go run proxy.go
+    fi
 fi
 echo "[2/7] Docker Daemon .................. ✓"
 
