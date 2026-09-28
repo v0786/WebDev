@@ -18,7 +18,8 @@ import {
   ChevronDown,
   CheckCircle2,
   ExternalLink,
-  Clock
+  Clock,
+  HelpCircle
 } from 'lucide-react';
 import { soundFx } from '../audio/SoundEffects';
 import { salesService } from '../../services/salesService';
@@ -26,6 +27,7 @@ import { getScraperApiUrl, SCRAPER_API_URL } from '../../config/scraper';
 import { ScraperConnection } from './ScraperConnection';
 import { ScraperLogs, LogEntry } from './ScraperLogs';
 import { scraperClient } from '../../services/scraper/client';
+import { ScraperHelpModal } from './ScraperHelpModal';
 
 
 // Normalized Scraped Lead Interface
@@ -268,6 +270,7 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
     return localStorage.getItem('gmaps_cloud_api') || SCRAPER_API_URL;
   });
   const [showConfig, setShowConfig] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
   const [isScraperConnected, setIsScraperConnected] = useState<boolean>(true);
   
   // Scraper Progress State
@@ -627,6 +630,15 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => setShowHelpModal(true)}
+            title="How to install local scraper kit (Step-by-step guide)"
+            className="px-3 py-1.5 rounded-xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 border border-[#D4AF37]/40 text-[#D4AF37] text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-all shadow-md font-bold"
+          >
+            <HelpCircle className="w-4 h-4 text-[#D4AF37]" />
+            <span>Setup Guide (?)</span>
+          </button>
+
           <button
             onClick={() => fileInputRef.current?.click()}
             className="px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-all"
@@ -1066,6 +1078,14 @@ export const LeadScraperPortal: React.FC<LeadScraperPortalProps> = ({
           </div>
         </div>
       </div>
+
+      <ScraperHelpModal
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
+        onOpenConnectionDrawer={() => {
+          setShowConfig(true);
+        }}
+      />
     </div>
   );
 };
