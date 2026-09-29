@@ -19,6 +19,7 @@ import {
   HumanFollowupTask 
 } from '../../services/salesAutomationService';
 import { isSupabaseConfigured } from '../../lib/supabase';
+import { OmniVoiceAssistant } from '../voice/OmniVoiceAssistant';
 
 export const AISalesAutomationDashboard: React.FC = () => {
   const [leads, setLeads] = useState<AutomatedLead[]>([]);
@@ -30,6 +31,9 @@ export const AISalesAutomationDashboard: React.FC = () => {
   const [selectedTranscript, setSelectedTranscript] = useState<CallRecord | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   
+  const [showVoiceAssistant, setShowVoiceAssistant] = useState<boolean>(false);
+  const [activeVoiceLead, setActiveVoiceLead] = useState<AutomatedLead | null>(null);
+
   const [apiKeyInput, setApiKeyInput] = useState<string>(() => salesAutomationService.getOmniDimConfig().apiKey);
   const [webhookInput, setWebhookInput] = useState<string>(() => salesAutomationService.getOmniDimConfig().webhookUrl);
 
@@ -88,6 +92,17 @@ export const AISalesAutomationDashboard: React.FC = () => {
     setStatusMessage('Follow-up task marked as completed!');
   };
 
+  const handleMarkDnc = async (leadId: string, phone: string) => {
+    await salesAutomationService.markDoNotCall(leadId, phone);
+    await loadData();
+    setStatusMessage(`🚫 Lead ${phone} added to DO_NOT_CALL blacklist. Outbound calls blocked.`);
+  };
+
+  const handleOpenVoiceSession = (lead?: AutomatedLead) => {
+    setActiveVoiceLead(lead || null);
+    setShowVoiceAssistant(true);
+  };
+
   // Metrics
   const totalLeads = leads.length;
   const readyToCall = leads.filter((l) => l.status === 'READY_TO_CALL' || l.status === 'NEW').length;
@@ -114,6 +129,13 @@ export const AISalesAutomationDashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <button
+            onClick={() => handleOpenVoiceSession()}
+            className="px-4 py-2 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-mono font-bold flex items-center gap-2 cursor-pointer transition-all shadow-lg shadow-purple-600/30"
+          >
+            <Bot className="w-4 h-4 text-emerald-300" />
+            <span>🎙 Talk to AI (Mode A)</span>
+          </button>
           <a
             href="https://www.omnidim.io/customer/my-ai-bot-for-calls-6818"
             target="_blank"
@@ -121,14 +143,14 @@ export const AISalesAutomationDashboard: React.FC = () => {
             className="px-3.5 py-2 rounded-full bg-[#381E72] hover:bg-[#4F378B] border border-[#D0BCFF]/50 text-xs font-mono text-[#EADDFF] flex items-center gap-1.5 cursor-pointer transition-all shadow-md font-bold"
           >
             <ExternalLink className="w-3.5 h-3.5 text-[#D0BCFF]" />
-            <span>Launch OmniDimension Bot ↗</span>
+            <span>OmniDim Bot ↗</span>
           </a>
           <button
             onClick={loadData}
             className="px-3.5 py-2 rounded-full bg-[#2B2930] hover:bg-[#381E72] border border-[#49454F] text-xs font-mono text-[#D0BCFF] flex items-center gap-1.5 cursor-pointer transition-all"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Sync Pipeline</span>
+            <span>Sync</span>
           </button>
         </div>
       </div>
@@ -310,15 +332,35 @@ export const AISalesAutomationDashboard: React.FC = () => {
                         </span>
                       </td>
                       <td className="p-3.5 text-center">{l.call_attempts} / {l.max_attempts}</td>
-                      <td className="p-3.5 text-right">
+                      <td className="p-3.5 text-right flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleOpenVoiceSession(l)}
+                          className="px-2.5 py-1 rounded-full bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 text-[11px] font-mono flex items-center gap-1 cursor-pointer"
+                          title="Start Live Web Voice Conversation with AI Agent"
+                        >
+                          <Bot className="w-3 h-3" />
+                          <span>Talk</span>
+                        </button>
+
                         <button
                           disabled={callingLeadId === l.id || l.status === 'DO_NOT_CALL'}
                           onClick={() => handleTriggerAICall(l.id)}
-                          className="px-3 py-1.5 rounded-full bg-[#6750A4] hover:bg-[#7F67BE] text-white text-xs font-mono flex items-center gap-1.5 ml-auto cursor-pointer disabled:opacity-50"
+                          className="px-3 py-1 rounded-full bg-[#6750A4] hover:bg-[#7F67BE] text-white text-[11px] font-mono flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                          title="Dispatch Telecom Outbound Call"
                         >
-                          <PhoneCall className="w-3.5 h-3.5" />
-                          <span>{callingLeadId === l.id ? 'Calling...' : 'Trigger AI Call'}</span>
+                          <PhoneCall className="w-3 h-3" />
+                          <span>{callingLeadId === l.id ? 'Calling...' : 'Call Lead'}</span>
                         </button>
+
+                        {l.status !== 'DO_NOT_CALL' && (
+                          <button
+                            onClick={() => handleMarkDnc(l.id, l.phone)}
+                            className="px-2 py-1 rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-300 text-[10px] font-mono cursor-pointer"
+                            title="Mark Do Not Call (DNC)"
+                          >
+                            DNC
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -507,6 +549,20 @@ export const AISalesAutomationDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Mode A — Web Voice Assistant Modal */}
+      {showVoiceAssistant && (
+        <OmniVoiceAssistant
+          leadId={activeVoiceLead?.id}
+          businessName={activeVoiceLead?.business_name || 'Web Dev Prospect'}
+          category={activeVoiceLead?.category || 'Local Business'}
+          city={activeVoiceLead?.city || 'Nagpur'}
+          onClose={() => {
+            setShowVoiceAssistant(false);
+            setActiveVoiceLead(null);
+          }}
+        />
       )}
 
     </div>

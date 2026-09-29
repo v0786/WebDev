@@ -99,7 +99,12 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+  const pathname = typeof window !== 'undefined' ? window.location.pathname.toLowerCase() : '';
+
   const isInvoice =
+    pathname === '/invoice' ||
+    pathname.startsWith('/invoice/') ||
+    pathname === '/quote' ||
     currentHash.includes('invoice') ||
     currentHash.includes('quote') ||
     currentHash.includes('billing') ||
@@ -107,12 +112,13 @@ export const App: React.FC = () => {
     currentHash === '#/quote';
 
   if (isInvoice) {
-    const isStudio = currentHash.includes('studio') || currentHash.includes('invoice');
+    const isStudio = currentHash.includes('studio') || pathname.includes('studio') || currentHash.includes('invoice');
     return (
       <Suspense fallback={<DemoLoadingFallback />}>
         <InvoicePage
           onBackToHome={() => {
             window.location.hash = '';
+            window.history.pushState(null, '', '/');
           }}
           defaultView={isStudio ? 'studio' : 'calculator'}
         />
@@ -121,6 +127,9 @@ export const App: React.FC = () => {
   }
 
   const isSales =
+    pathname === '/sales' ||
+    pathname.startsWith('/sales') ||
+    pathname === '/login' ||
     currentHash.includes('sales') ||
     currentHash.includes('login') ||
     currentHash.includes('dashboard') ||
@@ -128,15 +137,16 @@ export const App: React.FC = () => {
     currentHash === '#sales' ||
     currentHash === '#/login' ||
     currentHash === '#login';
-  const isForma = currentHash.startsWith('#/demo/forma') || currentHash.startsWith('#/work/forma') || currentHash === '#/forma';
-  const isMaison = currentHash.startsWith('#/demo/maison') || currentHash.startsWith('#/work/maison') || currentHash === '#/maison' || currentHash.startsWith('#/restaurant') || currentHash === '#restaurant';
-  const isOrbit = currentHash.startsWith('#/demo/orbit') || currentHash.startsWith('#/work/orbit') || currentHash === '#/orbit' || currentHash.startsWith('#/saas') || currentHash === '#saas';
-  const isAtelier = currentHash.startsWith('#/demo/atelier27') || currentHash.startsWith('#/work/atelier-27') || currentHash.startsWith('#/work/atelier27') || currentHash === '#/atelier27';
-  const isArc = currentHash.startsWith('#/demo/arc') || currentHash.startsWith('#/work/arc') || currentHash === '#/arc';
-  const isVanta = currentHash.startsWith('#/demo/vanta') || currentHash.startsWith('#/work/vanta') || currentHash === '#/vanta';
-  const isNoir = currentHash.startsWith('#/demo/noir') || currentHash.startsWith('#/work/noir') || currentHash === '#/noir' || currentHash.startsWith('#/agency') || currentHash === '#agency';
-  const isKanvaa = currentHash.startsWith('#/demo/kanvaa') || currentHash.startsWith('#/work/kanvaa') || currentHash === '#/kanvaa';
-  const isFarmFresh = currentHash.startsWith('#/demo/farm-fresh') || currentHash.startsWith('#/work/farm-fresh') || currentHash === '#/farm-fresh';
+
+  const isForma = pathname.includes('/forma') || currentHash.startsWith('#/demo/forma') || currentHash.startsWith('#/work/forma') || currentHash === '#/forma';
+  const isMaison = pathname.includes('/maison') || pathname.includes('/restaurant') || currentHash.startsWith('#/demo/maison') || currentHash.startsWith('#/work/maison') || currentHash === '#/maison' || currentHash.startsWith('#/restaurant') || currentHash === '#restaurant';
+  const isOrbit = pathname.includes('/orbit') || pathname.includes('/saas') || currentHash.startsWith('#/demo/orbit') || currentHash.startsWith('#/work/orbit') || currentHash === '#/orbit' || currentHash.startsWith('#/saas') || currentHash === '#saas';
+  const isAtelier = pathname.includes('/atelier') || currentHash.startsWith('#/demo/atelier27') || currentHash.startsWith('#/work/atelier-27') || currentHash.startsWith('#/work/atelier27') || currentHash === '#/atelier27';
+  const isArc = pathname.includes('/arc') || currentHash.startsWith('#/demo/arc') || currentHash.startsWith('#/work/arc') || currentHash === '#/arc';
+  const isVanta = pathname.includes('/vanta') || currentHash.startsWith('#/demo/vanta') || currentHash.startsWith('#/work/vanta') || currentHash === '#/vanta';
+  const isNoir = pathname.includes('/noir') || pathname.includes('/agency') || currentHash.startsWith('#/demo/noir') || currentHash.startsWith('#/work/noir') || currentHash === '#/noir' || currentHash.startsWith('#/agency') || currentHash === '#agency';
+  const isKanvaa = pathname.includes('/kanvaa') || currentHash.startsWith('#/demo/kanvaa') || currentHash.startsWith('#/work/kanvaa') || currentHash === '#/kanvaa';
+  const isFarmFresh = pathname.includes('/farm-fresh') || currentHash.startsWith('#/demo/farm-fresh') || currentHash.startsWith('#/work/farm-fresh') || currentHash === '#/farm-fresh';
 
   if (isSales) {
     return (

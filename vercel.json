@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/api/health",
+      "destination": "/api/health.js"
+    },
+    {
+      "source": "/api/voice/session",
+      "destination": "/api/voice/session.js"
+    },
+    {
+      "source": "/api/calls/dispatch",
+      "destination": "/api/calls/dispatch.js"
+    },
+    {
+      "source": "/api/leads",
+      "destination": "/api/leads/index.js"
+    },
+    {
+      "source": "/api/leads/:id",
+      "destination": "/api/leads/[id].js"
+    },
+    {
+      "source": "/api/webhooks/omnidimension",
+      "destination": "/api/webhooks/omnidimension.js"
+    },
+    {
+      "source": "/((?!api/|assets/|favicon.ico|.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

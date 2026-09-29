@@ -1,5 +1,5 @@
 {
-  "name": "SALES — OmniDimension Call Result Webhook",
+  "name": "SALES — OmniDimension Post-Call Result Webhook",
   "nodes": [
     {
       "parameters": {
@@ -15,9 +15,9 @@
     },
     {
       "parameters": {
-        "functionCode": "const payload = $json.body || $json;\nconst callId = payload.call_id;\nconst leadId = payload.variables ? payload.variables.lead_id : payload.lead_id;\nconst extracted = payload.extracted_data || {};\n\nconst isHot = extracted.interest === 'HOT' || extracted.call_outcome === 'INTERESTED';\nconst doNotCall = extracted.do_not_call || false;\n\nlet finalLeadStatus = 'CALL_COMPLETED';\nif (doNotCall) finalLeadStatus = 'DO_NOT_CALL';\nelse if (isHot) finalLeadStatus = 'HOT';\nelse if (extracted.call_outcome === 'NOT_INTERESTED') finalLeadStatus = 'NOT_INTERESTED';\n\nreturn [{\n  json: {\n    call_id: callId,\n    lead_id: leadId,\n    phone: payload.phone,\n    call_status: payload.call_status || 'COMPLETED',\n    duration_seconds: payload.duration_seconds || 0,\n    recording_url: payload.recording_url || null,\n    transcript: payload.transcript || '',\n    interest: extracted.interest || 'UNKNOWN',\n    website_need: extracted.website_need || 'BASIC_BUSINESS_WEBSITE',\n    business_goal: extracted.business_goal || 'WHATSAPP_ENQUIRIES',\n    timeline: extracted.timeline || 'THIS_MONTH',\n    do_not_call: doNotCall,\n    final_lead_status: finalLeadStatus,\n    is_hot: isHot,\n    summary: extracted.summary || 'AI Voice call completed'\n  }\n}];"
+        "functionCode": "const payload = $json.body || $json;\nconst callId = payload.call_id || payload.omnidim_call_id || `call_${Date.now()}`;\nconst leadId = payload.metadata?.crm_lead_id || payload.variables?.lead_id || payload.lead_id;\nconst extracted = payload.extracted_data || payload.analysis || {};\nconst phone = payload.phone || payload.to_number || payload.phone_called;\n\nconst doNotCall = extracted.do_not_call === true || extracted.call_outcome === 'DO_NOT_CALL';\nconst isCallback = extracted.callback_requested === true || extracted.call_outcome === 'CALLBACK';\nconst isHot = extracted.interest === 'HOT' || extracted.call_outcome === 'INTERESTED';\n\nlet finalLeadStatus = 'CALL_COMPLETED';\nif (doNotCall) finalLeadStatus = 'DO_NOT_CALL';\nelse if (isCallback) finalLeadStatus = 'CALLBACK';\nelse if (isHot) finalLeadStatus = 'HOT';\nelse if (extracted.call_outcome === 'NOT_INTERESTED') finalLeadStatus = 'NOT_INTERESTED';\n\nreturn [{\n  json: {\n    call_id: callId,\n    lead_id: leadId,\n    phone: phone,\n    call_status: payload.call_status || 'COMPLETED',\n    duration_seconds: payload.duration_seconds || 0,\n    recording_url: payload.recording_url || null,\n    transcript: payload.transcript || '',\n    interest: extracted.interest || (isHot ? 'HOT' : 'UNKNOWN'),\n    website_need: extracted.website_need || 'BASIC_BUSINESS_WEBSITE',\n    business_goal: extracted.business_goal || 'WHATSAPP_ENQUIRIES',\n    timeline: extracted.timeline || 'THIS_MONTH',\n    decision_maker: extracted.decision_maker ?? true,\n    do_not_call: doNotCall,\n    is_callback: isCallback,\n    final_lead_status: finalLeadStatus,\n    summary: extracted.summary || 'OmniDimension AI Voice conversation completed'\n  }\n}];"
       },
-      "name": "Extract Call Result & Status",
+      "name": "Extract Classification & Idempotency",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [320, 300]
@@ -30,7 +30,7 @@
           "queryParams": "={{ [$json.lead_id, $json.call_id, $json.phone, $json.call_status, $json.duration_seconds, $json.recording_url, $json.transcript] }}"
         }
       },
-      "name": "Supabase — Save Call Log",
+      "name": "Supabase — Store Call Record (Idempotent)",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [540, 300]
@@ -38,50 +38,74 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE public.leads SET status = $1::lead_status, call_status = 'COMPLETED', interest = $2::interest_level, last_call_id = $3, last_call_at = NOW(), updated_at = NOW() WHERE id = $4;",
+        "query": "INSERT INTO public.call_results (call_id, lead_id, call_outcome, interest, website_need, business_goal, timeline, decision_maker, do_not_call, callback_requested, summary) VALUES ((SELECT id FROM public.calls WHERE omnidim_call_id = $1 LIMIT 1), $2, $3, $4::interest_level, $5::website_need_type, $6, $7, $8, $9, $10, $11) ON CONFLICT DO NOTHING;",
         "additionalFields": {
-          "queryParams": "={{ [$json.final_lead_status, $json.interest, $json.call_id, $json.lead_id] }}"
+          "queryParams": "={{ [$json.call_id, $json.lead_id, $json.final_lead_status, $json.interest, $json.website_need, $json.business_goal, $json.timeline, $json.decision_maker, $json.do_not_call, $json.is_callback, $json.summary] }}"
+        }
+      },
+      "name": "Supabase — Save Structured Call Results",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [760, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE public.leads SET status = $1::lead_status, call_status = 'COMPLETED', interest = $2::interest_level, website_need = $3::website_need_type, business_goal = $4, timeline = $5, last_call_id = $6, last_call_at = NOW(), updated_at = NOW() WHERE id = $7;",
+        "additionalFields": {
+          "queryParams": "={{ [$json.final_lead_status, $json.interest, $json.website_need, $json.business_goal, $json.timeline, $json.call_id, $json.lead_id] }}"
         }
       },
       "name": "Supabase — Update Lead State",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [760, 300]
+      "position": [980, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.do_not_call }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "If DO_NOT_CALL",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [980, 480]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.do_not_call (phone, reason) VALUES ($1, 'Customer requested DO_NOT_CALL during AI Call') ON CONFLICT (phone) DO NOTHING;",
+        "additionalFields": {
+          "queryParams": "={{ [$json.phone] }}"
+        }
+      },
+      "name": "Supabase — Add to DNC Blacklist",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [1200, 480]
     }
   ],
   "connections": {
     "Webhook — OmniDimension Call Result": {
-      "main": [
-        [
-          {
-            "node": "Extract Call Result & Status",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [[{ "node": "Extract Classification & Idempotency", "type": "main", "index": 0 }]]
     },
-    "Extract Call Result & Status": {
-      "main": [
-        [
-          {
-            "node": "Supabase — Save Call Log",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "Extract Classification & Idempotency": {
+      "main": [[{ "node": "Supabase — Store Call Record (Idempotent)", "type": "main", "index": 0 }]]
     },
-    "Supabase — Save Call Log": {
-      "main": [
-        [
-          {
-            "node": "Supabase — Update Lead State",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "Supabase — Store Call Record (Idempotent)": {
+      "main": [[{ "node": "Supabase — Save Structured Call Results", "type": "main", "index": 0 }]]
+    },
+    "Supabase — Save Structured Call Results": {
+      "main": [[{ "node": "Supabase — Update Lead State", "type": "main", "index": 0 }, { "node": "If DO_NOT_CALL", "type": "main", "index": 0 }]]
+    },
+    "If DO_NOT_CALL": {
+      "main": [[{ "node": "Supabase — Add to DNC Blacklist", "type": "main", "index": 0 }]]
     }
   }
 }

@@ -1,6 +1,18 @@
 {
-  "name": "SALES — OmniDimension Outbound Call",
+  "name": "SALES — OmniDimension Outbound Call Dispatcher",
   "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "omnidim/dispatch-call",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "Webhook — Dispatch Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
     {
       "parameters": {
         "rule": {
@@ -12,24 +24,33 @@
           ]
         }
       },
-      "name": "Cron — Every 5 Mins",
+      "name": "Cron — Backup Batch Caller",
       "type": "n8n-nodes-base.cron",
       "typeVersion": 1,
-      "position": [100, 300]
+      "position": [100, 480]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM public.leads WHERE status = 'READY_TO_CALL' AND call_attempts < max_attempts AND phone NOT IN (SELECT phone FROM public.do_not_call) ORDER BY created_at ASC LIMIT 5;"
+        "query": "SELECT * FROM public.leads WHERE status IN ('NEW', 'READY_TO_CALL') AND call_attempts < max_attempts AND phone NOT IN (SELECT phone FROM public.do_not_call) ORDER BY created_at ASC LIMIT 5;"
       },
       "name": "Supabase — Fetch Callable Leads",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [300, 300]
+      "position": [320, 480]
     },
     {
       "parameters": {
-        "url": "https://api.omnidimension.ai/v1/calls",
+        "functionCode": "const input = $json.body || $json;\nconst phone = input.to_number || input.to_phone || input.phone;\nconst leadId = input.lead_id || (input.call_context ? input.call_context.lead_id : `lead_${Date.now()}`);\nconst businessName = input.business_name || (input.call_context ? input.call_context.business_name : 'Valued Business');\nconst category = input.category || (input.call_context ? input.call_context.category : 'Commercial Services');\nconst city = input.city || (input.call_context ? input.call_context.city : 'Local Area');\n\nreturn [{\n  json: {\n    agent_id: process.env.OMNIDIM_AGENT_ID || '4cd9f881-58f7-4969-876a-00983214c362',\n    to_number: phone,\n    welcome_message: `Hi ${businessName}, this is the AI assistant for a local web development service. Am I speaking with the business owner?`,\n    call_context: {\n      lead_id: leadId,\n      business_name: businessName,\n      category: category,\n      city: city\n    },\n    metadata: {\n      crm_lead_id: leadId,\n      source: 'sales_portal'\n    }\n  }\n}];"
+      },
+      "name": "Normalize Payload & Context",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [320, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://omnidim.io/api/v1/calls/dispatch",
         "options": {},
         "headerParametersUi": {
           "parameter": [
@@ -44,36 +65,42 @@
           ]
         },
         "jsonParameters": true,
-        "bodyParametersJson": "={\n  \"agent_name\": \"Web Presence Qualifier\",\n  \"welcome_message\": \"Hi {{$json.business_name}}, this is the AI assistant for a local web development service. Am I speaking with the business owner?\",\n  \"to_phone\": \"{{$json.phone}}\",\n  \"webhook_url\": \"https://n8n.yourdomain.com/webhook/omnidim/call-result\",\n  \"call_type\": \"Outgoing\",\n  \"transcriber\": {\n    \"provider\": \"Soniox\",\n    \"silence_timeout_ms\": 400\n  },\n  \"model\": {\n    \"model\": \"gpt-4.1-mini\",\n    \"temperature\": 0.7\n  },\n  \"voice\": {\n    \"provider\": \"cartesia\",\n    \"voice_id\": \"4cd9f881-58f7-4969-876a-00983214c362\"\n  },\n  \"languages\": [\"English (India)\", \"Hindi\", \"Marathi\"],\n  \"variables\": {\n    \"lead_id\": \"{{$json.id}}\",\n    \"user_name\": \"{{$json.business_name}}\",\n    \"category\": \"{{$json.category}}\",\n    \"city\": \"{{$json.city}}\"\n  }\n}"
+        "bodyParametersJson": "={\n  \"agent_id\": \"{{$json.agent_id}}\",\n  \"to_number\": \"{{$json.to_number}}\",\n  \"welcome_message\": \"{{$json.welcome_message}}\",\n  \"call_context\": {{$json.call_context}},\n  \"metadata\": {{$json.metadata}},\n  \"webhook_url\": \"{{$env.N8N_BASE_URL}}/webhook/omnidim/call-result\"\n}"
       },
-      "name": "OmniDimension — Dispatch Voice Call",
+      "name": "OmniDimension — Dispatch Telecom Call",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
-      "position": [520, 300]
+      "position": [560, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE public.leads SET status = 'CALLING', call_status = 'CALLING', call_attempts = call_attempts + 1, last_call_at = NOW() WHERE id = $1;",
+        "additionalFields": {
+          "queryParams": "={{ [$json.call_context.lead_id] }}"
+        }
+      },
+      "name": "Supabase — Mark Lead Status CALLING",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [780, 300]
     }
   ],
   "connections": {
-    "Cron — Every 5 Mins": {
-      "main": [
-        [
-          {
-            "node": "Supabase — Fetch Callable Leads",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "Webhook — Dispatch Request": {
+      "main": [[{ "node": "Normalize Payload & Context", "type": "main", "index": 0 }]]
+    },
+    "Cron — Backup Batch Caller": {
+      "main": [[{ "node": "Supabase — Fetch Callable Leads", "type": "main", "index": 0 }]]
     },
     "Supabase — Fetch Callable Leads": {
-      "main": [
-        [
-          {
-            "node": "OmniDimension — Dispatch Voice Call",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [[{ "node": "Normalize Payload & Context", "type": "main", "index": 0 }]]
+    },
+    "Normalize Payload & Context": {
+      "main": [[{ "node": "OmniDimension — Dispatch Telecom Call", "type": "main", "index": 0 }]]
+    },
+    "OmniDimension — Dispatch Telecom Call": {
+      "main": [[{ "node": "Supabase — Mark Lead Status CALLING", "type": "main", "index": 0 }]]
     }
   }
 }

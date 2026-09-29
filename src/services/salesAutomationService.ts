@@ -354,7 +354,31 @@ export const salesAutomationService = {
       },
     };
 
-    if (webhookUrl) {
+    // Attempt call dispatch via Vercel Backend Serverless API (/api/calls/dispatch)
+    try {
+      const vercelRes = await fetch('/api/calls/dispatch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lead_id: lead.id,
+          phone: lead.phone,
+          business_name: lead.business_name,
+          category: lead.category,
+          city: lead.city,
+        }),
+      });
+      if (vercelRes.ok) {
+        const data = await vercelRes.json();
+        if (data.success) {
+          realCallDispatched = true;
+          apiMessage = `✅ AI Call Dispatched via Vercel Serverless API to ${lead.phone}`;
+        }
+      }
+    } catch (err: any) {
+      console.warn('Vercel API call dispatch note:', err);
+    }
+
+    if (!realCallDispatched && webhookUrl) {
       try {
         const res = await fetch(webhookUrl, {
           method: 'POST',
@@ -447,6 +471,31 @@ export const salesAutomationService = {
         ? apiMessage
         : `OmniDimension AI Voice Call dispatched to ${lead.phone}. (Configure your OmniDim API key in Config tab to send live telecom carrier calls)`,
     };
+  },
+
+  async markDoNotCall(leadId: string, phone: string): Promise<boolean> {
+    const leads = await this.getLeads();
+    const updated = leads.map((l) => (l.id === leadId ? { ...l, status: 'DO_NOT_CALL' as LeadStatus } : l));
+    setLocal(STORAGE_KEYS.AUTOMATED_LEADS, updated);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('leads').update({ status: 'DO_NOT_CALL' }).eq('id', leadId);
+        await supabase.from('do_not_call').insert([{ phone, reason: 'Manual DNC request in Sales Portal' }]);
+      } catch (err) {
+        console.warn('Supabase DNC update warning:', err);
+      }
+    }
+
+    try {
+      await fetch('http://localhost:5050/api/v1/leads/dnc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lead_id: leadId, phone }),
+      });
+    } catch {}
+
+    return true;
   },
 
   async markFollowupCompleted(taskId: string): Promise<boolean> {
