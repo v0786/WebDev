@@ -1,0 +1,49 @@
+{
+  "name": "02 — Lead Normalization",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "leads/normalize",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "webhook-normalize",
+      "name": "Webhook Lead Normalization"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nreturn items.map(item => {\n  const raw = item.json.body || item.json;\n  \n  // Phone Sanitization (prefer +91 India format)\n  let phone = (raw.phone || '').replace(/[^0-9+]/g, '');\n  if (phone.length === 10) phone = '+91' + phone;\n  if (phone.startsWith('91') && phone.length === 12) phone = '+' + phone;\n  if (phone.startsWith('0') && phone.length === 11) phone = '+91' + phone.substring(1);\n  \n  const normalized = {\n    business_name: (raw.business_name || raw.name || '').trim(),\n    category: (raw.category || 'Local Business').trim(),\n    phone: phone,\n    address: (raw.address || '').trim(),\n    city: (raw.city || 'Nagpur').trim(),\n    state: raw.state || 'Maharashtra',\n    country: 'India',\n    google_maps_url: raw.google_maps_url || raw.maps_url || null,\n    google_rating: parseFloat(raw.google_rating || raw.rating || 0) || null,\n    google_reviews: parseInt(raw.google_reviews || raw.reviews || 0, 10) || 0,\n    website: raw.website || null,\n    source: 'google_maps',\n    fingerprint: (phone + '_' + (raw.google_maps_url || raw.business_name)).toLowerCase().replace(/[^a-z0-9_]/g, '')\n  };\n  \n  return { json: normalized };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300],
+      "id": "code-normalize",
+      "name": "Normalize Fields & Phone"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [750, 300],
+      "id": "respond-normalized",
+      "name": "Respond Normalized Data"
+    }
+  ],
+  "connections": {
+    "Webhook Lead Normalization": {
+      "main": [[{ "node": "Normalize Fields & Phone", "type": "main", "index": 0 }]]
+    },
+    "Normalize Fields & Phone": {
+      "main": [[{ "node": "Respond Normalized Data", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

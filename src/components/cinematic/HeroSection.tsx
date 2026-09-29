@@ -230,11 +230,11 @@ export const HeroSection: React.FC = () => {
               onClick={toggleSound}
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
-              className="flex items-center space-x-1.5 text-[10px] tracking-[0.2em] font-light uppercase py-2 px-3 border border-[#8C6D4F]/40 hover:border-[#D4AF37] text-[#CBB59D] hover:text-white transition-all duration-300 backdrop-blur-sm cursor-pointer"
-              style={{ fontFamily: "'Montserrat', sans-serif" }}
+              className="flex items-center space-x-1.5 text-xs font-mono tracking-wider text-[#CBB59D] hover:text-[#D4AF37] transition-colors py-2 px-1 cursor-pointer"
+              aria-label="Toggle Sound"
             >
               {isMuted ? <VolumeX size={13} className="text-[#D4AF37]" /> : <Volume2 size={13} className="text-[#D4AF37]" />}
-              <span className="hidden sm:inline">{isMuted ? 'SOUND OFF' : 'SOUND ON'}</span>
+              <span className="hidden sm:inline">{isMuted ? 'Sound Off' : 'Sound On'}</span>
             </button>
 
             <a
@@ -289,11 +289,8 @@ export const HeroSection: React.FC = () => {
 
             {/* Subtitle Technologies */}
             <motion.div variants={fadeUpVariants} className="mb-4">
-              <p
-                className="text-[9.5px] sm:text-[11px] md:text-xs font-normal tracking-[0.2em] sm:tracking-[0.28em] uppercase text-[#8C6D4F]"
-                style={{ fontFamily: "'Montserrat', sans-serif" }}
-              >
-                CREATIVE DEVELOPER <span className="text-[#8C6D4F] mx-1">•</span> WEB DESIGNER <span className="text-[#8C6D4F] mx-1">•</span> 3D &amp; MOTION
+              <p className="text-xs sm:text-sm font-normal tracking-wide text-[#8C6D4F]">
+                Creative Developer <span className="text-[#8C6D4F] mx-1">•</span> Web Designer <span className="text-[#8C6D4F] mx-1">•</span> 3D &amp; Motion
               </p>
             </motion.div>
 
@@ -360,12 +357,9 @@ export const HeroSection: React.FC = () => {
             </span>
 
             {/* 2. Compact Two-Line Statement */}
-            <div 
-              className="text-[9.5px] font-medium tracking-[0.24em] uppercase text-[#E0D3C5] space-y-1 mb-3"
-              style={{ fontFamily: "'Montserrat', sans-serif" }}
-            >
-              <p>DESIGN WITH INTENTION.</p>
-              <p>BUILD FOR IMPACT.</p>
+            <div className="text-xs sm:text-sm font-medium tracking-wider text-[#E0D3C5] space-y-1 mb-3">
+              <p>Design With Intention.</p>
+              <p>Build For Impact.</p>
             </div>
 
             {/* 3. Gold Accent Line */}

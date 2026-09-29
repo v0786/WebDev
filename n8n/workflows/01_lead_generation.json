@@ -1,0 +1,90 @@
+{
+  "name": "01 — Lead Generation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "leads/generate",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "webhook-lead-gen",
+      "name": "Webhook Lead Generation"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.headers['x-webhook-secret'] }}",
+              "value2": "sales_portal_n8n_secret_2026"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [480, 300],
+      "id": "if-secret-valid",
+      "name": "Validate Secret"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8080/api/v1/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"{{ $json.body.query || 'restaurants' }} in {{ $json.body.location || 'Nagpur' }}\",\n  \"limit\": {{ $json.body.limit || 50 }},\n  \"require_no_website\": {{ $json.body.require_no_website !== false }}\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [720, 200],
+      "id": "trigger-scraper",
+      "name": "Trigger Scraper Job"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"job_id\": \"{{ $json.job_id || 'scrape_' + Date.now() }}\",\n  \"status\": \"STARTED\",\n  \"message\": \"Lead scraping initiated asynchronously\"\n}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [960, 200],
+      "id": "respond-success",
+      "name": "Respond Success"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 401,
+        "responseBody": "{\"error\": \"Unauthorized - Invalid Webhook Secret\"}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [720, 420],
+      "id": "respond-unauthorized",
+      "name": "Respond Unauthorized"
+    }
+  ],
+  "connections": {
+    "Webhook Lead Generation": {
+      "main": [[{ "node": "Validate Secret", "type": "main", "index": 0 }]]
+    },
+    "Validate Secret": {
+      "main": [
+        [{ "node": "Trigger Scraper Job", "type": "main", "index": 0 }],
+        [{ "node": "Respond Unauthorized", "type": "main", "index": 0 }]
+      ]
+    },
+    "Trigger Scraper Job": {
+      "main": [[{ "node": "Respond Success", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

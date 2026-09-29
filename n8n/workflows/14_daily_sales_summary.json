@@ -1,0 +1,60 @@
+{
+  "name": "14 — Daily Sales Summary",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 20 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "id": "cron-daily-report",
+      "name": "Cron Daily 8 PM IST"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://gxvketvhwjftkfuerfai.supabase.co/rest/v1/leads?select=status,interest,website_need",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_publishable_9NuSOztl4jnE0ZTqPJk-sw_toNrpwz0" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [480, 300],
+      "id": "query-all-leads-summary",
+      "name": "Fetch All Leads for Digest"
+    },
+    {
+      "parameters": {
+        "jsCode": "const leads = $input.all().map(i => i.json);\n\nconst total = leads.length;\nconst noWebsite = leads.filter(l => l.website_need !== 'HAS_WEBSITE').length;\nconst hot = leads.filter(l => l.interest === 'HOT' || l.status === 'HOT').length;\nconst interested = leads.filter(l => l.status === 'INTERESTED' || l.interest === 'INTERESTED').length;\nconst dnc = leads.filter(l => l.status === 'DO_NOT_CALL').length;\n\nconst report = `\n📊 DAILY SALES ACQUISITION REPORT\n--------------------------------\n• Total Leads Discovered: ${total}\n• Prospects without Website: ${noWebsite}\n• Hot Conversion Leads: ${hot}\n• Interested Prospect Leads: ${interested}\n• Suppressed DNC Requests: ${dnc}\n--------------------------------\nStatus: Automation Active & Healthy\n`;\n\nreturn [{ json: { report, metrics: { total, noWebsite, hot, interested, dnc } } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 300],
+      "id": "format-daily-report",
+      "name": "Format Daily Sales Digest"
+    }
+  ],
+  "connections": {
+    "Cron Daily 8 PM IST": {
+      "main": [[{ "node": "Fetch All Leads for Digest", "type": "main", "index": 0 }]]
+    },
+    "Fetch All Leads for Digest": {
+      "main": [[{ "node": "Format Daily Sales Digest", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -29,6 +29,14 @@
       "destination": "/api/webhooks/omnidimension.js"
     },
     {
+      "source": "/api/scraper/health",
+      "destination": "/api/scraper/health.js"
+    },
+    {
+      "source": "/api/scraper/jobs",
+      "destination": "/api/scraper/jobs.js"
+    },
+    {
       "source": "/((?!api/|assets/|favicon.ico|.*\\..*).*)",
       "destination": "/index.html"
     }

@@ -1,0 +1,59 @@
+{
+  "name": "11 — Human Handoff",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "leads/human-handoff",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "webhook-handoff",
+      "name": "Webhook Human Handoff"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gxvketvhwjftkfuerfai.supabase.co/rest/v1/followups",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_publishable_9NuSOztl4jnE0ZTqPJk-sw_toNrpwz0" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"lead_id\": \"{{ $json.body.lead_id }}\",\n  \"priority\": \"URGENT\",\n  \"reason\": \"HOT Lead Handoff: Immediate Human Sales Follow-up Required\",\n  \"summary\": \"Prospect qualified as HOT lead during AI conversation. Needs custom quote.\"\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [500, 300],
+      "id": "create-urgent-task",
+      "name": "Create Urgent Handoff Task"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"status\": \"HUMAN_HANDOFF_ACTIVATED\",\n  \"priority\": \"URGENT\"\n}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [750, 300],
+      "id": "respond-handoff-done",
+      "name": "Respond Handoff Activated"
+    }
+  ],
+  "connections": {
+    "Webhook Human Handoff": {
+      "main": [[{ "node": "Create Urgent Handoff Task", "type": "main", "index": 0 }]]
+    },
+    "Create Urgent Handoff Task": {
+      "main": [[{ "node": "Respond Handoff Activated", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,161 @@
+{
+  "name": "07 — OmniDimension Outbound Call",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "omnidim/dispatch-call",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "webhook-dispatch",
+      "name": "Webhook Call Dispatch"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.headers['x-webhook-secret'] }}",
+              "value2": "sales_portal_n8n_secret_2026"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [480, 300],
+      "id": "if-dispatch-secret-valid",
+      "name": "Validate Secret"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://gxvketvhwjftkfuerfai.supabase.co/rest/v1/do_not_call?phone=eq.{{ $node['Webhook Call Dispatch'].json.body.to_number }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_publishable_9NuSOztl4jnE0ZTqPJk-sw_toNrpwz0" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [720, 200],
+      "id": "pre-check-dnc",
+      "name": "Pre-Check DNC Blacklist"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ Array.isArray($json) && $json.length > 0 }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [950, 200],
+      "id": "if-dnc-blocked",
+      "name": "Is DNC Blocked?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.omnidimension.ai/v1/calls/dispatch",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer yxpAlq8JK1iKH6LaXZRnAZINH0URc_D97f4GNqZ3Eu8" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"agent_id\": \"4cd9f881-58f7-4969-876a-00983214c362\",\n  \"to_number\": \"{{ $node['Webhook Call Dispatch'].json.body.to_number }}\",\n  \"welcome_message\": \"Hi {{ $node['Webhook Call Dispatch'].json.body.business_name }}, this is the AI assistant calling regarding custom website services for {{ $node['Webhook Call Dispatch'].json.body.category }} businesses in {{ $node['Webhook Call Dispatch'].json.body.city }}. Am I speaking with the owner?\",\n  \"metadata\": {\n    \"crm_lead_id\": \"{{ $node['Webhook Call Dispatch'].json.body.lead_id }}\",\n    \"source\": \"n8n_acquisition_pipeline\"\n  },\n  \"context\": {\n    \"business_name\": \"{{ $node['Webhook Call Dispatch'].json.body.business_name }}\",\n    \"category\": \"{{ $node['Webhook Call Dispatch'].json.body.category }}\",\n    \"city\": \"{{ $node['Webhook Call Dispatch'].json.body.city }}\",\n    \"website_status\": \"NO_WEBSITE\"\n  }\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1200, 100],
+      "id": "dispatch-omnidim-api",
+      "name": "Dispatch OmniDimension Call"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://gxvketvhwjftkfuerfai.supabase.co/rest/v1/leads?id=eq.{{ $node['Webhook Call Dispatch'].json.body.lead_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_publishable_9NuSOztl4jnE0ZTqPJk-sw_toNrpwz0" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"CALLING\",\n  \"call_status\": \"CALLING\",\n  \"last_call_id\": \"{{ $json.call_id || $json.id || 'omnidim_' + Date.now() }}\",\n  \"last_call_at\": \"{{ new Date().toISOString() }}\"\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1450, 100],
+      "id": "update-lead-calling",
+      "name": "Update Lead Status -> CALLING"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"status\": \"CALLING\",\n  \"call_id\": \"{{ $node['Dispatch OmniDimension Call'].json.call_id || 'omnidim_' + Date.now() }}\"\n}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1700, 100],
+      "id": "respond-call-dispatched",
+      "name": "Respond Dispatched"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 403,
+        "responseBody": "{\"error\": \"Call blocked - Phone number registered on Do Not Call list\"}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1200, 300],
+      "id": "respond-dnc-blocked",
+      "name": "Respond DNC Blocked"
+    }
+  ],
+  "connections": {
+    "Webhook Call Dispatch": {
+      "main": [[{ "node": "Validate Secret", "type": "main", "index": 0 }]]
+    },
+    "Validate Secret": {
+      "main": [
+        [{ "node": "Pre-Check DNC Blacklist", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Pre-Check DNC Blacklist": {
+      "main": [[{ "node": "Is DNC Blocked?", "type": "main", "index": 0 }]]
+    },
+    "Is DNC Blocked?": {
+      "main": [
+        [{ "node": "Respond DNC Blocked", "type": "main", "index": 0 }],
+        [{ "node": "Dispatch OmniDimension Call", "type": "main", "index": 0 }]
+      ]
+    },
+    "Dispatch OmniDimension Call": {
+      "main": [[{ "node": "Update Lead Status -> CALLING", "type": "main", "index": 0 }]]
+    },
+    "Update Lead Status -> CALLING": {
+      "main": [[{ "node": "Respond Dispatched", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

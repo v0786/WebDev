@@ -1,0 +1,125 @@
+{
+  "name": "08 — OmniDimension Post-Call",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "omnidim/post-call",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "webhook-post-call",
+      "name": "Webhook Post-Call Receiver"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.headers['x-webhook-secret'] }}",
+              "value2": "sales_portal_n8n_secret_2026"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [480, 300],
+      "id": "if-post-call-secret-valid",
+      "name": "Validate Secret"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://gxvketvhwjftkfuerfai.supabase.co/rest/v1/calls?omnidim_call_id=eq.{{ $node['Webhook Post-Call Receiver'].json.body.call_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_publishable_9NuSOztl4jnE0ZTqPJk-sw_toNrpwz0" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [720, 200],
+      "id": "check-idempotency-call",
+      "name": "Check Call Idempotency"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ Array.isArray($json) && $json.length > 0 }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [950, 200],
+      "id": "if-call-exists",
+      "name": "Call Already Logged?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gxvketvhwjftkfuerfai.supabase.co/rest/v1/calls",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_publishable_9NuSOztl4jnE0ZTqPJk-sw_toNrpwz0" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"lead_id\": \"{{ $node['Webhook Post-Call Receiver'].json.body.metadata?.crm_lead_id || $node['Webhook Post-Call Receiver'].json.body.lead_id }}\",\n  \"omnidim_call_id\": \"{{ $node['Webhook Post-Call Receiver'].json.body.call_id }}\",\n  \"agent_id\": \"{{ $node['Webhook Post-Call Receiver'].json.body.agent_id || '4cd9f881-58f7-4969-876a-00983214c362' }}\",\n  \"phone_called\": \"{{ $node['Webhook Post-Call Receiver'].json.body.to_number }}\",\n  \"call_status\": \"{{ $node['Webhook Post-Call Receiver'].json.body.status || 'COMPLETED' }}\",\n  \"duration_seconds\": {{ $node['Webhook Post-Call Receiver'].json.body.duration_seconds || 0 }},\n  \"recording_url\": \"{{ $node['Webhook Post-Call Receiver'].json.body.recording_url || '' }}\",\n  \"transcript\": \"{{ ($node['Webhook Post-Call Receiver'].json.body.transcript || '').replace(/\"/g, '\\\\\"') }}\"\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1200, 300],
+      "id": "insert-call-log",
+      "name": "Insert Call Record"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"idempotency\": \"RECORD_PROCESSED\",\n  \"call_id\": \"{{ $node['Webhook Post-Call Receiver'].json.body.call_id }}\"\n}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1450, 300],
+      "id": "respond-post-call-success",
+      "name": "Respond Success"
+    }
+  ],
+  "connections": {
+    "Webhook Post-Call Receiver": {
+      "main": [[{ "node": "Validate Secret", "type": "main", "index": 0 }]]
+    },
+    "Validate Secret": {
+      "main": [
+        [{ "node": "Check Call Idempotency", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Check Call Idempotency": {
+      "main": [[{ "node": "Call Already Logged?", "type": "main", "index": 0 }]]
+    },
+    "Call Already Logged?": {
+      "main": [
+        [{ "node": "Respond Success", "type": "main", "index": 0 }],
+        [{ "node": "Insert Call Record", "type": "main", "index": 0 }]
+      ]
+    },
+    "Insert Call Record": {
+      "main": [[{ "node": "Respond Success", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

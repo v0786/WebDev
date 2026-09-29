@@ -6,23 +6,26 @@ import { SkillsSection } from './SkillsSection';
 import { ExperienceSection } from './ExperienceSection';
 import { ContactSection } from './ContactSection';
 import { LeadCaptureModal } from '../modals/LeadCaptureModal';
+import { SmoothScrollProvider } from '../common/SmoothScrollProvider';
 
 export const CinematicPortfolio: React.FC = () => {
   return (
-    <div
-      id="top"
-      className="w-full min-h-screen bg-black text-[#E8DFD8] selection:bg-[#cbb59d] selection:text-black overflow-x-hidden"
-    >
-      <HeroSection />
-      <AboutSection />
-      <ProjectsSection />
-      <SkillsSection />
-      <ExperienceSection />
-      <ContactSection />
+    <SmoothScrollProvider>
+      <div
+        id="top"
+        className="w-full min-h-screen bg-black text-[#E8DFD8] selection:bg-[#cbb59d] selection:text-black overflow-x-hidden"
+      >
+        <HeroSection />
+        <AboutSection />
+        <ProjectsSection />
+        <SkillsSection />
+        <ExperienceSection />
+        <ContactSection />
 
-      {/* Dynamic Pop-up Lead Capture Form */}
-      <LeadCaptureModal />
-    </div>
+        {/* Dynamic Pop-up Lead Capture Form */}
+        <LeadCaptureModal />
+      </div>
+    </SmoothScrollProvider>
   );
 };
 

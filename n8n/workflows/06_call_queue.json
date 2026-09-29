@@ -1,0 +1,128 @@
+{
+  "name": "06 — Call Queue",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "id": "cron-call-queue",
+      "name": "Run Every 15 Mins"
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\nconst kolkataTimeString = now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: false });\nconst hour = parseInt(kolkataTimeString.split(',')[1].trim().split(':')[0], 10);\n\n// Calling window: 10 AM to 7 PM IST\nconst isWithinCallingWindow = hour >= 10 && hour < 19;\nreturn [{ json: { isWithinCallingWindow, hourIST: hour } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300],
+      "id": "check-time-window",
+      "name": "Check Calling Window (10AM-7PM IST)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.isWithinCallingWindow }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [720, 300],
+      "id": "if-window-open",
+      "name": "Window Open?"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://gxvketvhwjftkfuerfai.supabase.co/rest/v1/leads",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "status", "value": "eq.READY_TO_CALL" },
+            { "name": "limit", "value": "3" },
+            { "name": "order", "value": "created_at.asc" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_publishable_9NuSOztl4jnE0ZTqPJk-sw_toNrpwz0" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [960, 200],
+      "id": "fetch-ready-leads",
+      "name": "Fetch Top 3 Ready Leads"
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1200, 200],
+      "id": "process-batch",
+      "name": "Process One Lead At A Time"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://sonkusare.app.n8n.cloud/webhook/omnidim/dispatch-call",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-webhook-secret", "value": "sales_portal_n8n_secret_2026" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"lead_id\": \"{{ $json.id }}\",\n  \"to_number\": \"{{ $json.phone }}\",\n  \"business_name\": \"{{ $json.business_name }}\",\n  \"category\": \"{{ $json.category }}\",\n  \"city\": \"{{ $json.city }}\"\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1440, 200],
+      "id": "dispatch-to-call-workflow",
+      "name": "Dispatch to Workflow 07"
+    }
+  ],
+  "connections": {
+    "Run Every 15 Mins": {
+      "main": [[{ "node": "Check Calling Window (10AM-7PM IST)", "type": "main", "index": 0 }]]
+    },
+    "Check Calling Window (10AM-7PM IST)": {
+      "main": [[{ "node": "Window Open?", "type": "main", "index": 0 }]]
+    },
+    "Window Open?": {
+      "main": [
+        [{ "node": "Fetch Top 3 Ready Leads", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Fetch Top 3 Ready Leads": {
+      "main": [[{ "node": "Process One Lead At A Time", "type": "main", "index": 0 }]]
+    },
+    "Process One Lead At A Time": {
+      "main": [[{ "node": "Dispatch to Workflow 07", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

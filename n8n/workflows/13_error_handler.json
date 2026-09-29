@@ -1,0 +1,59 @@
+{
+  "name": "13 — Error Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "automation/error",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "webhook-error-handler",
+      "name": "Webhook Error Handler"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gxvketvhwjftkfuerfai.supabase.co/rest/v1/automation_logs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_publishable_9NuSOztl4jnE0ZTqPJk-sw_toNrpwz0" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"workflow_name\": \"{{ $json.body.workflow_name || 'System' }}\",\n  \"execution_id\": \"{{ $json.body.execution_id || 'exec_' + Date.now() }}\",\n  \"event_type\": \"WORKFLOW_ERROR\",\n  \"status\": \"FAILED\",\n  \"error_message\": \"{{ ($json.body.error_message || 'Unknown error occurred').replace(/\"/g, '\\\\\"') }}\",\n  \"details\": {{ JSON.stringify($json.body.details || {}) }}\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [500, 300],
+      "id": "log-error-db",
+      "name": "Log Error to Automation Logs"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"logged\": true,\n  \"status\": \"ERROR_LOGGED\"\n}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [750, 300],
+      "id": "respond-error-logged",
+      "name": "Respond Logged"
+    }
+  ],
+  "connections": {
+    "Webhook Error Handler": {
+      "main": [[{ "node": "Log Error to Automation Logs", "type": "main", "index": 0 }]]
+    },
+    "Log Error to Automation Logs": {
+      "main": [[{ "node": "Respond Logged", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

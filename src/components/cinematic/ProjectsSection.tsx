@@ -197,69 +197,71 @@ export const ProjectsSection: React.FC = () => {
                         <span className="text-xs font-mono font-bold text-[#D4AF37]">
                           {project.number} //
                         </span>
-                        <span className="text-[10.5px] font-mono tracking-[0.25em] uppercase text-[#8C6D4F]">
+                        <span className="text-xs font-mono tracking-wider text-[#8C6D4F]">
                           {project.category}
                         </span>
                       </div>
 
                       <h3
-                        className="text-4xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-white mb-4 group-hover:text-[#F7E7C4] transition-colors uppercase leading-[0.9]"
+                        className="text-3xl sm:text-4xl lg:text-5xl font-normal tracking-tight text-white mb-4 group-hover:text-[#F7E7C4] transition-colors leading-tight"
                         style={{ fontFamily: "'Bebas Neue', sans-serif" }}
                       >
                         {project.title}
                       </h3>
 
                       <p
-                        className="text-xs sm:text-sm md:text-[14px] font-light text-[#A8988B] leading-[1.85] tracking-wide mb-8 max-w-2xl"
+                        className="text-base md:text-lg font-light text-[#CBB59D] leading-relaxed tracking-wide mb-6 max-w-2xl"
                         style={{ fontFamily: "'Montserrat', sans-serif" }}
                       >
                         {project.description}
                       </p>
                     </div>
 
-                    {/* Tech Stack Pills */}
-                    <div className="flex flex-wrap gap-2 pt-6 border-t border-[#8C6D4F]/20">
-                      {project.tech.map((t) => (
-                        <span
-                          key={t}
-                          className="px-3 py-1 text-[10px] font-medium tracking-[0.16em] uppercase rounded-sm border border-[#8C6D4F]/30 bg-[#16120E] text-[#CBB59D] group-hover:border-[#D4AF37]/60 transition-all duration-300"
-                          style={{ fontFamily: "'Montserrat', sans-serif" }}
+                    {/* Tech Stack Pills & Primary Action */}
+                    <div className="space-y-6 pt-6 border-t border-[#8C6D4F]/20">
+                      <div className="flex flex-wrap gap-2">
+                        {project.tech.map((t) => (
+                          <span
+                            key={t}
+                            className="px-3 py-1 text-xs font-mono rounded-sm border border-[#8C6D4F]/30 bg-[#16120E] text-[#CBB59D] group-hover:border-[#D4AF37]/60 transition-all duration-300"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div>
+                        <a
+                          href={project.demoHash}
+                          className="inline-flex items-center justify-center space-x-3 px-6 py-3 border border-[#8C6D4F]/60 bg-[#16120E] hover:border-[#D4AF37] hover:bg-[#D4AF37] text-[#CBB59D] hover:text-black text-xs font-mono tracking-widest uppercase transition-all duration-300 shadow-[0_0_20px_rgba(212,175,55,0.1)] cursor-pointer"
                         >
-                          {t}
-                        </span>
-                      ))}
+                          <span>Launch Prototype Demo</span>
+                          <span className="text-xs">↗</span>
+                        </a>
+                      </div>
                     </div>
                   </div>
 
                   {/* Right Column (5 Cols) */}
-                  <div className="lg:col-span-5 flex flex-col justify-between h-full space-y-6 lg:pl-6 lg:border-l lg:border-[#8C6D4F]/20">
+                  <div className="lg:col-span-5 flex flex-col justify-between h-full space-y-4 lg:pl-6 lg:border-l lg:border-[#8C6D4F]/20">
                     <div className="space-y-3">
-                      <span className="text-[9.5px] font-mono tracking-[0.25em] uppercase text-[#8C6D4F] block mb-2 font-medium">
+                      <span className="text-xs font-mono tracking-wider text-[#8C6D4F] block mb-2 font-medium">
                         // ARCHITECTURE METRICS
                       </span>
                       {project.metrics.map((m) => (
                         <div
                           key={m.label}
-                          className="p-3.5 rounded-sm border border-[#8C6D4F]/20 bg-[#050403] flex items-center justify-between"
+                          className="p-3 rounded-sm border border-[#8C6D4F]/20 bg-[#050403] flex items-center justify-between"
                         >
-                          <span className="text-[10px] font-mono text-[#8C6D4F]">
+                          <span className="text-xs font-mono text-[#8C6D4F]">
                             {m.label}
                           </span>
-                          <span className="text-[11px] font-mono font-medium text-[#F7E7C4]">
+                          <span className="text-xs font-mono font-medium text-[#F7E7C4]">
                             {m.value}
                           </span>
                         </div>
                       ))}
                     </div>
-
-                    <a
-                      href={project.demoHash}
-                      className="inline-flex items-center justify-center space-x-3 px-6 py-3.5 border border-[#8C6D4F]/60 bg-[#16120E] hover:border-[#D4AF37] hover:bg-[#D4AF37] text-[#CBB59D] hover:text-black text-[11px] font-medium tracking-[0.24em] uppercase transition-all duration-300 shadow-[0_0_20px_rgba(212,175,55,0.1)] cursor-pointer"
-                      style={{ fontFamily: "'Montserrat', sans-serif" }}
-                    >
-                      <span>LAUNCH PROTOTYPE DEMO</span>
-                      <span className="text-xs">↗</span>
-                    </a>
                   </div>
 
                 </div>

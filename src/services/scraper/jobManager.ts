@@ -3,7 +3,7 @@ import { ScraperJobPayload, ScraperJob } from './types';
 export class JobManager {
   public async createJob(payload: ScraperJobPayload, baseUrl: string): Promise<ScraperJob> {
     const cleanUrl = baseUrl.replace(/\/$/, '');
-    const endpoints = ['/api/scrape', '/api/v1/jobs', '/jobs'];
+    const endpoints = ['/api/scraper/jobs', '/api/scrape', '/api/v1/jobs', '/jobs'];
     let lastError: Error | null = null;
 
     const requestBody = {
@@ -33,7 +33,7 @@ export class JobManager {
 
         if (response.ok) {
           const data = await response.json();
-          const id = data.id || data.jobId || data.ID;
+          const id = data.job_id || data.id || data.jobId || data.ID;
           if (id) {
             return {
               id: String(id),
@@ -56,7 +56,7 @@ export class JobManager {
       }
     }
 
-    throw lastError || new Error('Failed to create scrape job on local scraper API.');
+    throw lastError || new Error('Failed to create scrape job on scraper service.');
   }
 
   public async pollJobStatus(
@@ -75,7 +75,7 @@ export class JobManager {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
 
       try {
-        const endpoints = [`/api/scrape/${jobId}`, `/api/v1/jobs/${jobId}`, `/jobs/${jobId}`];
+        const endpoints = [`/api/scraper/jobs/${jobId}`, `/api/scrape/${jobId}`, `/api/v1/jobs/${jobId}`, `/jobs/${jobId}`];
         let response: Response | null = null;
 
         for (const ep of endpoints) {
@@ -124,6 +124,7 @@ export class JobManager {
   public async fetchResults(jobId: string, baseUrl: string): Promise<string> {
     const cleanUrl = baseUrl.replace(/\/$/, '');
     const endpoints = [
+      `/api/scraper/jobs/${jobId}/results`,
       `/api/scrape/${jobId}/download`,
       `/api/v1/jobs/${jobId}/download`,
       `/api/scrape/${jobId}/results`,
@@ -133,6 +134,29 @@ export class JobManager {
       try {
         const response = await fetch(`${cleanUrl}${ep}`);
         if (response.ok) {
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const json = await response.json();
+            if (json.leads && Array.isArray(json.leads)) {
+              // Convert json leads to CSV string format for LeadScraperPortal parsing
+              const headers = ['title', 'phone', 'category', 'address', 'website', 'review_rating', 'review_count', 'emails'];
+              const csvLines = [headers.join(',')];
+              json.leads.forEach((l: any) => {
+                const row = [
+                  `"${(l.business_name || '').replace(/"/g, '""')}"`,
+                  `"${(l.phone || '').replace(/"/g, '""')}"`,
+                  `"${(l.category || '').replace(/"/g, '""')}"`,
+                  `"${(l.address || '').replace(/"/g, '""')}"`,
+                  `"${(l.website || '').replace(/"/g, '""')}"`,
+                  `"${l.google_rating || ''}"`,
+                  `"${l.review_count || ''}"`,
+                  `"${(l.email || '').replace(/"/g, '""')}"`
+                ];
+                csvLines.push(row.join(','));
+              });
+              return csvLines.join('\n');
+            }
+          }
           return await response.text();
         }
       } catch {}

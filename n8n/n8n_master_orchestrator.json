@@ -1,0 +1,128 @@
+{
+  "name": "00 — Master System Orchestrator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "master/pipeline",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "id": "master-webhook",
+      "name": "Master Pipeline Webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://sonkusare.app.n8n.cloud/webhook/leads/normalize",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-webhook-secret", "value": "sales_portal_n8n_secret_2026" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [440, 300],
+      "id": "step-02-normalize",
+      "name": "Call WF 02 — Normalization"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://sonkusare.app.n8n.cloud/webhook/leads/deduplicate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-webhook-secret", "value": "sales_portal_n8n_secret_2026" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [680, 300],
+      "id": "step-03-dedup",
+      "name": "Call WF 03 — Deduplication"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://sonkusare.app.n8n.cloud/webhook/leads/verify-website",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-webhook-secret", "value": "sales_portal_n8n_secret_2026" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [920, 300],
+      "id": "step-04-website",
+      "name": "Call WF 04 — Website Verify"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://sonkusare.app.n8n.cloud/webhook/leads/qualify",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-webhook-secret", "value": "sales_portal_n8n_secret_2026" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1160, 300],
+      "id": "step-05-qualify",
+      "name": "Call WF 05 — Qualification"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"pipeline_status\": \"COMPLETED_AND_QUEUED\",\n  \"lead_qualification\": {{ JSON.stringify($json) }}\n}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1400, 300],
+      "id": "respond-pipeline-done",
+      "name": "Respond Pipeline Completed"
+    }
+  ],
+  "connections": {
+    "Master Pipeline Webhook": {
+      "main": [[{ "node": "Call WF 02 — Normalization", "type": "main", "index": 0 }]]
+    },
+    "Call WF 02 — Normalization": {
+      "main": [[{ "node": "Call WF 03 — Deduplication", "type": "main", "index": 0 }]]
+    },
+    "Call WF 03 — Deduplication": {
+      "main": [[{ "node": "Call WF 04 — Website Verify", "type": "main", "index": 0 }]]
+    },
+    "Call WF 04 — Website Verify": {
+      "main": [[{ "node": "Call WF 05 — Qualification", "type": "main", "index": 0 }]]
+    },
+    "Call WF 05 — Qualification": {
+      "main": [[{ "node": "Respond Pipeline Completed", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

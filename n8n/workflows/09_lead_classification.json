@@ -1,0 +1,72 @@
+{
+  "name": "09 — Lead Classification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "leads/classify",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "webhook-classify",
+      "name": "Webhook Lead Classification"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\nconst text = (body.transcript || body.summary || '').toLowerCase();\n\n// Classify Temperature\nlet temperature = 'UNKNOWN';\nlet status = 'CALLED';\nif (text.includes('urgent') || text.includes('ready to build') || text.includes('send invoice') || text.includes('hot') || (text.includes('website') && text.includes('this week'))) {\n  temperature = 'HOT';\n  status = 'HOT';\n} else if (text.includes('interested') || text.includes('send details') || text.includes('whatsapp') || text.includes('call back')) {\n  temperature = 'WARM';\n  status = 'INTERESTED';\n} else if (text.includes('not interested') || text.includes('no thanks') || text.includes('don\\'t call')) {\n  temperature = 'COLD';\n  status = 'NOT_INTERESTED';\n}\n\n// Check DNC Opt-Out\nconst isDNC = text.includes('don\\'t call') || text.includes('remove my number') || text.includes('stop calling');\nif (isDNC) {\n  status = 'DO_NOT_CALL';\n}\n\n// Classify Website Need\nlet websiteNeed = 'UNKNOWN';\nif (text.includes('menu') || text.includes('restaurant')) websiteNeed = 'RESTAURANT_WEBSITE';\nelse if (text.includes('booking') || text.includes('appointment')) websiteNeed = 'BOOKING_WEBSITE';\nelse if (text.includes('e-commerce') || text.includes('shop') || text.includes('products')) websiteNeed = 'ECOMMERCE';\nelse if (text.includes('website')) websiteNeed = 'BASIC_BUSINESS_WEBSITE';\n\nreturn [{\n  json: {\n    lead_id: body.lead_id,\n    lead_temperature: temperature,\n    status: status,\n    do_not_call: isDNC,\n    website_need: websiteNeed,\n    business_goal: text.includes('whatsapp') ? 'WHATSAPP_LEADS' : 'MORE_ENQUIRIES',\n    timeline: text.includes('this week') ? 'THIS_WEEK' : (text.includes('this month') ? 'THIS_MONTH' : 'NO_TIMELINE'),\n    summary: body.summary || 'Post-call AI classification completed'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300],
+      "id": "classify-transcript",
+      "name": "Classify AI Conversation"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://gxvketvhwjftkfuerfai.supabase.co/rest/v1/leads?id=eq.{{ $json.lead_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_publishable_9NuSOztl4jnE0ZTqPJk-sw_toNrpwz0" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"{{ $json.status }}\",\n  \"interest\": \"{{ $json.lead_temperature }}\",\n  \"website_need\": \"{{ $json.website_need }}\",\n  \"business_goal\": \"{{ $json.business_goal }}\",\n  \"timeline\": \"{{ $json.timeline }}\",\n  \"updated_at\": \"{{ new Date().toISOString() }}\"\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [750, 300],
+      "id": "update-lead-in-db",
+      "name": "Update Lead Classification in DB"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($node['Classify AI Conversation'].json) }}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1000, 300],
+      "id": "respond-classification-done",
+      "name": "Respond Classification Completed"
+    }
+  ],
+  "connections": {
+    "Webhook Lead Classification": {
+      "main": [[{ "node": "Classify AI Conversation", "type": "main", "index": 0 }]]
+    },
+    "Classify AI Conversation": {
+      "main": [[{ "node": "Update Lead Classification in DB", "type": "main", "index": 0 }]]
+    },
+    "Update Lead Classification in DB": {
+      "main": [[{ "node": "Respond Classification Completed", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

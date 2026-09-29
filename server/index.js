@@ -225,6 +225,348 @@ app.post('/api/v1/leads/dnc', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 OmniDimension Voice AI Backend running on http://localhost:${PORT}`);
+/**
+ * 4. GOOGLE MAPS SCRAPER BACKEND INTEGRATION
+ */
+const getScraperBaseUrl = () => {
+  return (process.env.SCRAPER_API_URL || process.env.SCRAPER_BASE_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+};
+
+// CSV parsing helper
+function parseCSV(csvText) {
+  const lines = csvText.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length === 0) return [];
+  const parseRow = (text) => {
+    const row = [];
+    let insideQuote = false;
+    let current = '';
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if (char === '"') {
+        insideQuote = !insideQuote;
+      } else if (char === ',' && !insideQuote) {
+        row.push(current.trim().replace(/^"|"$/g, ''));
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    row.push(current.trim().replace(/^"|"$/g, ''));
+    return row;
+  };
+  const headers = parseRow(lines[0]);
+  const results = [];
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseRow(lines[i]);
+    if (values.length > 1) {
+      const obj = {};
+      headers.forEach((h, idx) => {
+        obj[h] = values[idx] || '';
+      });
+      results.push(obj);
+    }
+  }
+  return results;
+}
+
+// Scraper Health Proxy
+app.get('/api/scraper/health', async (req, res) => {
+  const baseUrl = getScraperBaseUrl();
+  try {
+    const response = await fetch(`${baseUrl}/health`, { method: 'GET' });
+    if (response.ok) {
+      const data = await response.json().catch(() => ({}));
+      return res.json({
+        success: true,
+        status: 'healthy',
+        scraper_url: baseUrl,
+        details: data
+      });
+    }
+    return res.status(502).json({
+      success: false,
+      status: 'unhealthy',
+      scraper_url: baseUrl,
+      message: `Scraper HTTP status: ${response.status}`
+    });
+  } catch (err) {
+    return res.status(503).json({
+      success: false,
+      status: 'offline',
+      scraper_url: baseUrl,
+      message: `Scraper connection failed: ${err.message}`
+    });
+  }
 });
+
+// Launch Scraper Job
+app.post('/api/scraper/jobs', async (req, res) => {
+  const baseUrl = getScraperBaseUrl();
+  try {
+    const { keywords, depth = 3, city, lat, lon, fast_mode = true, radius = 10000 } = req.body || {};
+    let searchKeywords = keywords;
+    if (typeof searchKeywords === 'string') {
+      searchKeywords = [searchKeywords];
+    }
+    if (!searchKeywords || !Array.isArray(searchKeywords) || searchKeywords.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Parameter "keywords" is required (array or string).'
+      });
+    }
+
+    let finalLat = lat || '0';
+    let finalLon = lon || '0';
+
+    // Auto-geocode city if lat/lon missing
+    if (city && (finalLat === '0' || !lat)) {
+      try {
+        const query = new URLSearchParams({ format: 'json', limit: '1', q: city });
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?${query}`, {
+          headers: { 'User-Agent': 'WebDevBackendScraper/1.0' }
+        });
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          if (geoData && geoData[0]) {
+            finalLat = String(geoData[0].lat);
+            finalLon = String(geoData[0].lon);
+          }
+        }
+      } catch (geoErr) {
+        console.warn('Geocoding notice:', geoErr.message);
+      }
+    }
+
+    const payload = {
+      name: `job_${Date.now()}`,
+      keywords: searchKeywords,
+      lang: 'en',
+      zoom: 15,
+      lat: finalLat,
+      lon: finalLon,
+      fast_mode: Boolean(fast_mode),
+      radius: Number(radius) || 10000,
+      depth: Number(depth) || 3,
+      email: false,
+      max_time: 600
+    };
+
+    const endpoints = ['/api/v1/jobs', '/api/scrape'];
+    let jobData = null;
+    let lastErr = null;
+
+    for (const ep of endpoints) {
+      try {
+        const targetRes = await fetch(`${baseUrl}${ep}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (targetRes.ok) {
+          jobData = await targetRes.json();
+          break;
+        } else {
+          lastErr = await targetRes.text();
+        }
+      } catch (e) {
+        lastErr = e.message;
+      }
+    }
+
+    if (!jobData) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create scraper job on local container.',
+        error: lastErr
+      });
+    }
+
+    const jobId = jobData.id || jobData.jobId || jobData.ID;
+    return res.json({
+      success: true,
+      job_id: jobId,
+      status: 'queued',
+      scraper_url: baseUrl,
+      payload
+    });
+  } catch (err) {
+    console.error('Error creating scraper job:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to dispatch scraper job',
+      error: err.message
+    });
+  }
+});
+
+// Poll Scraper Job Status
+app.get('/api/scraper/jobs/:id', async (req, res) => {
+  const baseUrl = getScraperBaseUrl();
+  const { id } = req.params;
+  try {
+    const endpoints = [`/api/v1/jobs/${id}`, `/api/scrape/${id}`];
+    let response = null;
+    for (const ep of endpoints) {
+      try {
+        const r = await fetch(`${baseUrl}${ep}`, { headers: { Accept: 'application/json' } });
+        if (r.ok) {
+          response = r;
+          break;
+        }
+      } catch {}
+    }
+
+    if (!response) {
+      return res.status(404).json({ success: false, message: `Job ${id} not found or scraper unreachable.` });
+    }
+
+    const data = await response.json();
+    const rawStatus = (data.Status || data.status || 'working').toLowerCase();
+    return res.json({
+      success: true,
+      job_id: id,
+      status: rawStatus,
+      data
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to poll job status', error: err.message });
+  }
+});
+
+// Fetch & Parse Scraper Results
+app.get('/api/scraper/jobs/:id/results', async (req, res) => {
+  const baseUrl = getScraperBaseUrl();
+  const { id } = req.params;
+  try {
+    const endpoints = [`/api/v1/jobs/${id}/download`, `/api/scrape/${id}/download`];
+    let csvText = '';
+    for (const ep of endpoints) {
+      try {
+        const r = await fetch(`${baseUrl}${ep}`);
+        if (r.ok) {
+          csvText = await r.text();
+          break;
+        }
+      } catch {}
+    }
+
+    if (!csvText) {
+      return res.status(404).json({ success: false, message: `No downloadable results found for job ${id}` });
+    }
+
+    const rawRows = parseCSV(csvText);
+    const processedLeads = rawRows.map((r, idx) => {
+      const site = (r.website || r.Website || '').trim();
+      const hasWebsite = Boolean(site && site.toLowerCase() !== 'none' && site !== 'http://' && site !== 'https://');
+      return {
+        id: `scraped_${id}_${idx}_${Date.now()}`,
+        business_name: r.title || r.name || r['Business Name'] || 'Local Business',
+        phone: r.phone || r['Phone / Contact'] || '',
+        category: r.category || r.Category || 'General',
+        address: r.address || r.Address || '',
+        website: site,
+        has_website: hasWebsite,
+        google_rating: parseFloat(r.review_rating || r.rating || r.Rating || '0') || null,
+        review_count: parseInt(r.review_count || r.reviews || r['Review Count'] || '0', 10) || 0,
+        email: r.emails || r.email || '',
+        opportunity: hasWebsite ? 'LOW (Already Has Website)' : 'HIGH (No Website - Target for Web Dev Services)',
+        created_at: new Date().toISOString()
+      };
+    });
+
+    const noWebsiteCount = processedLeads.filter(l => !l.has_website).length;
+
+    return res.json({
+      success: true,
+      job_id: id,
+      total: processedLeads.length,
+      no_website_count: noWebsiteCount,
+      leads: processedLeads
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to fetch scraper results', error: err.message });
+  }
+});
+
+// Import Results to Supabase Leads Table
+app.post('/api/scraper/jobs/:id/import', async (req, res) => {
+  const baseUrl = getScraperBaseUrl();
+  const { id } = req.params;
+  try {
+    const endpoints = [`/api/v1/jobs/${id}/download`, `/api/scrape/${id}/download`];
+    let csvText = '';
+    for (const ep of endpoints) {
+      try {
+        const r = await fetch(`${baseUrl}${ep}`);
+        if (r.ok) {
+          csvText = await r.text();
+          break;
+        }
+      } catch {}
+    }
+
+    if (!csvText) {
+      return res.status(404).json({ success: false, message: 'No results found to import' });
+    }
+
+    const rawRows = parseCSV(csvText);
+    const leadsToInsert = rawRows.map(r => {
+      const site = (r.website || r.Website || '').trim();
+      const hasWebsite = Boolean(site && site.toLowerCase() !== 'none' && site !== 'http://' && site !== 'https://');
+      return {
+        business_name: r.title || r.name || 'Local Business',
+        phone: r.phone || '',
+        category: r.category || 'General',
+        address: r.address || '',
+        website: site,
+        has_website: hasWebsite,
+        google_rating: parseFloat(r.review_rating || r.rating || '0') || null,
+        review_count: parseInt(r.review_count || r.reviews || '0', 10) || 0,
+        status: 'NEW',
+        source: 'google_maps_scraper',
+        notes: hasWebsite ? 'Has Website' : 'NO WEBSITE Prospect - High Opportunity'
+      };
+    });
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    let importedCount = leadsToInsert.length;
+    let savedToSupabase = false;
+
+    if (supabaseUrl && supabaseKey) {
+      try {
+        const supaRes = await fetch(`${supabaseUrl}/rest/v1/leads`, {
+          method: 'POST',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(leadsToInsert)
+        });
+        if (supaRes.ok) {
+          savedToSupabase = true;
+        }
+      } catch (supaErr) {
+        console.warn('Supabase bulk insert warning:', supaErr.message);
+      }
+    }
+
+    return res.json({
+      success: true,
+      job_id: id,
+      total_leads: leadsToInsert.length,
+      saved_to_database: savedToSupabase,
+      message: `Successfully imported ${leadsToInsert.length} leads into backend system.`
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to import leads', error: err.message });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 OmniDimension Voice AI Backend & Scraper Proxy running on http://localhost:${PORT}`);
+});
+

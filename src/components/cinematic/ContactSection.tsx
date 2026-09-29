@@ -388,81 +388,72 @@ ${name}
                   </div>
                 </div>
 
-                {/* Project Type Selector */}
-                <div className="space-y-2.5">
-                  <label className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#C49B71] block font-medium">
-                    PROJECT TYPE
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {projectTypes.map((type) => (
-                      <button
-                        type="button"
-                        key={type}
-                        onClick={() => {
-                          soundFx.playChirp(400, 0.04, 'sine', 0.02);
-                          setProjectType(type);
-                        }}
-                        className={`min-h-[44px] p-3 rounded-lg border text-left text-xs font-mono transition-all cursor-pointer ${
-                          projectType === type
-                            ? 'bg-[#D4AF37]/15 border-[#D4AF37] text-[#F7E7C4] font-semibold shadow-[0_0_15px_rgba(212,175,55,0.2)]'
-                            : 'bg-[#120F0C]/80 border-[#8C6D4F]/30 text-[#C4B5A5] hover:border-[#8C6D4F]/70 hover:text-white'
-                        }`}
-                      >
-                        {type}
-                      </button>
-                    ))}
+                {/* Form Selections: Project Type, Budget Range, Timeline */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Project Type Selector */}
+                  <div className="space-y-2">
+                    <label htmlFor="inquiry-project-type" className="text-xs font-mono tracking-wider uppercase text-[#C49B71] block font-medium">
+                      Project Type
+                    </label>
+                    <select
+                      id="inquiry-project-type"
+                      value={projectType}
+                      onChange={(e) => {
+                        soundFx.playChirp(400, 0.04, 'sine', 0.02);
+                        setProjectType(e.target.value);
+                      }}
+                      className="w-full h-11 px-3 rounded-lg bg-[#120F0C] border border-[#8C6D4F]/30 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/50 text-[#F7E7C4] text-xs font-mono focus:outline-none transition-colors cursor-pointer"
+                    >
+                      {projectTypes.map((type) => (
+                        <option key={type} value={type} className="bg-[#120F0C] text-white">
+                          {type}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                </div>
 
-                {/* Budget Range Selector */}
-                <div className="space-y-2.5">
-                  <label className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#C49B71] block font-medium">
-                    BUDGET RANGE
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    {budgetTiers.map((b) => (
-                      <button
-                        type="button"
-                        key={b}
-                        onClick={() => {
-                          soundFx.playChirp(440, 0.04, 'sine', 0.02);
-                          setBudgetRange(b);
-                        }}
-                        className={`min-h-[44px] p-2.5 rounded-lg border text-center text-[11px] font-mono transition-all cursor-pointer ${
-                          budgetRange === b
-                            ? 'bg-[#D4AF37]/15 border-[#D4AF37] text-[#F7E7C4] font-semibold shadow-[0_0_15px_rgba(212,175,55,0.2)]'
-                            : 'bg-[#120F0C]/80 border-[#8C6D4F]/30 text-[#C4B5A5] hover:border-[#8C6D4F]/70 hover:text-white'
-                        }`}
-                      >
-                        {b}
-                      </button>
-                    ))}
+                  {/* Budget Range Selector */}
+                  <div className="space-y-2">
+                    <label htmlFor="inquiry-budget" className="text-xs font-mono tracking-wider uppercase text-[#C49B71] block font-medium">
+                      Budget Range
+                    </label>
+                    <select
+                      id="inquiry-budget"
+                      value={budgetRange}
+                      onChange={(e) => {
+                        soundFx.playChirp(440, 0.04, 'sine', 0.02);
+                        setBudgetRange(e.target.value);
+                      }}
+                      className="w-full h-11 px-3 rounded-lg bg-[#120F0C] border border-[#8C6D4F]/30 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/50 text-[#F7E7C4] text-xs font-mono focus:outline-none transition-colors cursor-pointer"
+                    >
+                      {budgetTiers.map((b) => (
+                        <option key={b} value={b} className="bg-[#120F0C] text-white">
+                          {b}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                </div>
 
-                {/* Timeline Selector */}
-                <div className="space-y-2.5">
-                  <label className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#C49B71] block font-medium">
-                    DESIRED TIMELINE
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    {timelineOptions.map((t) => (
-                      <button
-                        type="button"
-                        key={t}
-                        onClick={() => {
-                          soundFx.playChirp(460, 0.04, 'sine', 0.02);
-                          setTimeline(t);
-                        }}
-                        className={`min-h-[44px] p-2 rounded-lg border text-center text-[10px] font-mono transition-all cursor-pointer ${
-                          timeline === t
-                            ? 'bg-[#D4AF37]/15 border-[#D4AF37] text-[#F7E7C4] font-semibold shadow-[0_0_15px_rgba(212,175,55,0.2)]'
-                            : 'bg-[#120F0C]/80 border-[#8C6D4F]/30 text-[#C4B5A5] hover:border-[#8C6D4F]/70 hover:text-white'
-                        }`}
-                      >
-                        {t}
-                      </button>
-                    ))}
+                  {/* Timeline Selector */}
+                  <div className="space-y-2">
+                    <label htmlFor="inquiry-timeline" className="text-xs font-mono tracking-wider uppercase text-[#C49B71] block font-medium">
+                      Desired Timeline
+                    </label>
+                    <select
+                      id="inquiry-timeline"
+                      value={timeline}
+                      onChange={(e) => {
+                        soundFx.playChirp(460, 0.04, 'sine', 0.02);
+                        setTimeline(e.target.value);
+                      }}
+                      className="w-full h-11 px-3 rounded-lg bg-[#120F0C] border border-[#8C6D4F]/30 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/50 text-[#F7E7C4] text-xs font-mono focus:outline-none transition-colors cursor-pointer"
+                    >
+                      {timelineOptions.map((t) => (
+                        <option key={t} value={t} className="bg-[#120F0C] text-white">
+                          {t}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 

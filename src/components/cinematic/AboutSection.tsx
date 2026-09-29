@@ -94,11 +94,8 @@ export const AboutSection: React.FC = () => {
           transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
           className="flex items-center space-x-4 mb-10"
         >
-          <span 
-            className="text-[11px] font-medium tracking-[0.35em] uppercase text-[#D4AF37]"
-            style={{ fontFamily: "'Montserrat', sans-serif" }}
-          >
-            01 / THE DIRECTOR
+          <span className="text-xs font-mono tracking-widest text-[#D4AF37]">
+            01 / The Director
           </span>
           <div className="w-20 h-[1px] bg-gradient-to-r from-[#D4AF37]/80 via-[#8C6D4F]/40 to-transparent" />
         </motion.div>
@@ -132,7 +129,7 @@ export const AboutSection: React.FC = () => {
             {/* Concise Bio Paragraph */}
             <motion.p
               variants={fadeUpVariants}
-              className="text-xs sm:text-sm md:text-[14.5px] font-light text-[#B3A497] leading-[1.85] tracking-wide mb-6 max-w-xl"
+              className="text-base sm:text-lg font-light text-[#CBB59D] leading-relaxed tracking-wide mb-6 max-w-2xl"
               style={{ fontFamily: "'Montserrat', sans-serif" }}
             >
               I&apos;m <span className="text-[#F3DBB3] font-medium">Vaibhav Sonkusare</span>, a Creative Developer and Web Designer from Mumbai, India. My work sits at the intersection of visual direction, front-end engineering, motion, and interaction — turning bold ideas into digital experiences with a distinct point of view.
@@ -140,7 +137,7 @@ export const AboutSection: React.FC = () => {
 
             <motion.p
               variants={fadeUpVariants}
-              className="text-xs sm:text-sm md:text-[14px] font-light text-[#8E8074] leading-[1.8] tracking-wide mb-10 max-w-xl"
+              className="text-base sm:text-lg font-light text-[#B3A497] leading-relaxed tracking-wide mb-10 max-w-2xl"
               style={{ fontFamily: "'Montserrat', sans-serif" }}
             >
               Instead of passing designs down a disconnected chain, I combine design, development, 3D motion, and AI workflows into one unified execution from first sketch to live launch.

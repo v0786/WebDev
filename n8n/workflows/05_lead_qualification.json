@@ -1,0 +1,78 @@
+{
+  "name": "05 — Lead Qualification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "leads/qualify",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "webhook-qualify",
+      "name": "Webhook Lead Qualification"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://gxvketvhwjftkfuerfai.supabase.co/rest/v1/do_not_call",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "eq.{{ $json.body.phone }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_publishable_9NuSOztl4jnE0ZTqPJk-sw_toNrpwz0" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [480, 300],
+      "id": "check-dnc-db",
+      "name": "Check DNC Blacklist"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $node['Webhook Lead Qualification'].json.body;\nconst dncRecords = $input.all();\nconst isDNC = dncRecords.length > 0 && dncRecords[0].json && dncRecords[0].json.phone;\n\nconst phone = (lead.phone || '').trim();\nconst phoneValid = phone.length >= 10 && (phone.startsWith('+91') || phone.startsWith('91') || phone.length === 10);\nconst callAttempts = parseInt(lead.call_attempts || 0, 10);\nconst maxAttempts = parseInt(lead.max_attempts || 3, 10);\n\nif (isDNC) {\n  return [{ json: { qualified: false, status: 'DO_NOT_CALL', reason: 'Phone listed in DNC suppression database' } }];\n}\nif (!phoneValid) {\n  return [{ json: { qualified: false, status: 'INVALID', reason: 'Phone number format invalid' } }];\n}\nif (callAttempts >= maxAttempts) {\n  return [{ json: { qualified: false, status: 'SKIPPED', reason: `Max call attempts (${maxAttempts}) reached` } }];\n}\n\nreturn [{ json: { qualified: true, status: 'READY_TO_CALL', reason: 'Eligible for AI Voice Outbound Call' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 300],
+      "id": "evaluate-eligibility",
+      "name": "Evaluate Eligibility"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [960, 300],
+      "id": "respond-qualification",
+      "name": "Respond Qualification Result"
+    }
+  ],
+  "connections": {
+    "Webhook Lead Qualification": {
+      "main": [[{ "node": "Check DNC Blacklist", "type": "main", "index": 0 }]]
+    },
+    "Check DNC Blacklist": {
+      "main": [[{ "node": "Evaluate Eligibility", "type": "main", "index": 0 }]]
+    },
+    "Evaluate Eligibility": {
+      "main": [[{ "node": "Respond Qualification Result", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

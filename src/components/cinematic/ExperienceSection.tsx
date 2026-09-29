@@ -111,7 +111,7 @@ export const ExperienceSection: React.FC = () => {
           </div>
 
           {/* Timeline Nodes */}
-          <div className="space-y-12">
+          <div className="space-y-10">
             {journey.map((item, idx) => (
               <motion.div
                 key={item.id}
@@ -119,31 +119,26 @@ export const ExperienceSection: React.FC = () => {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.8, delay: idx * 0.1 }}
-                className="relative group"
+                className="relative group max-w-3xl"
               >
                 {/* Glowing Node Dot */}
                 <div className="absolute -left-[30px] sm:-left-[46px] top-1.5 w-3 h-3 rounded-full border border-[#D4AF37] bg-[#0E0C0A] group-hover:bg-[#D4AF37] group-hover:scale-125 transition-all duration-300 shadow-[0_0_8px_rgba(212,175,55,0.4)]" />
 
-                <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-1.5">
-                  <span className="text-xs font-mono font-bold tracking-[0.2em] text-[#D4AF37]">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                  <span className="text-xs font-mono font-bold tracking-widest text-[#D4AF37]">
                     {item.year}
                   </span>
-                  <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-[#8C6D4F] mt-0.5 sm:mt-0">
+                  <span className="hidden sm:inline text-xs text-[#8C6D4F]">•</span>
+                  <span className="text-xs font-mono tracking-wider text-[#8C6D4F]">
                     {item.organization}
                   </span>
                 </div>
 
-                <h3
-                  className="text-2xl sm:text-3xl font-normal tracking-tight text-white mb-2 group-hover:text-[#F7E7C4] transition-colors uppercase leading-none"
-                  style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-                >
+                <h3 className="text-2xl sm:text-3xl font-normal tracking-tight text-white mb-2 group-hover:text-[#F7E7C4] transition-colors leading-snug">
                   {item.title}
                 </h3>
 
-                <p
-                  className="text-xs sm:text-[13px] font-light text-[#9C8E80] leading-[1.75]"
-                  style={{ fontFamily: "'Montserrat', sans-serif" }}
-                >
+                <p className="text-sm sm:text-base font-light text-[#CBB59D] leading-relaxed">
                   {item.description}
                 </p>
               </motion.div>

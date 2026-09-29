@@ -1,0 +1,83 @@
+{
+  "name": "12 — Do Not Call",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "leads/dnc",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "webhook-dnc",
+      "name": "Webhook DNC Registration"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gxvketvhwjftkfuerfai.supabase.co/rest/v1/do_not_call",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_publishable_9NuSOztl4jnE0ZTqPJk-sw_toNrpwz0" },
+            { "name": "Prefer", "value": "resolution=merge-duplicates" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone\": \"{{ $json.body.phone }}\",\n  \"reason\": \"{{ $json.body.reason || 'Client Opt-Out during AI Call' }}\"\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [500, 300],
+      "id": "insert-dnc-blacklist",
+      "name": "Insert into DNC Table"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://gxvketvhwjftkfuerfai.supabase.co/rest/v1/leads?phone=eq.{{ $node['Webhook DNC Registration'].json.body.phone }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_publishable_9NuSOztl4jnE0ZTqPJk-sw_toNrpwz0" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"DO_NOT_CALL\",\n  \"updated_at\": \"{{ new Date().toISOString() }}\"\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [750, 300],
+      "id": "update-lead-status-dnc",
+      "name": "Update Lead Status -> DO_NOT_CALL"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"status\": \"DO_NOT_CALL_ENFORCED\",\n  \"phone\": \"{{ $node['Webhook DNC Registration'].json.body.phone }}\"\n}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1000, 300],
+      "id": "respond-dnc-completed",
+      "name": "Respond DNC Enforced"
+    }
+  ],
+  "connections": {
+    "Webhook DNC Registration": {
+      "main": [[{ "node": "Insert into DNC Table", "type": "main", "index": 0 }]]
+    },
+    "Insert into DNC Table": {
+      "main": [[{ "node": "Update Lead Status -> DO_NOT_CALL", "type": "main", "index": 0 }]]
+    },
+    "Update Lead Status -> DO_NOT_CALL": {
+      "main": [[{ "node": "Respond DNC Enforced", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

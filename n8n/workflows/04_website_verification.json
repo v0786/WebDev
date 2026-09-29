@@ -1,0 +1,49 @@
+{
+  "name": "04 — Website Verification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "leads/verify-website",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "webhook-website-verify",
+      "name": "Webhook Website Verification"
+    },
+    {
+      "parameters": {
+        "jsCode": "const url = ($input.first().json.body.website || '').toLowerCase().trim();\n\nif (!url) {\n  return [{ json: { website_status: 'NO_WEBSITE', is_call_prospect: true } }];\n}\n\n// Check directory and social domain patterns\nconst socialAndDirectoryDomains = [\n  'facebook.com', 'fb.com', 'instagram.com', 'zomato.com',\n  'swiggy.com', 'justdial.com', 'google.com', 'maps.google.com',\n  'indiamart.com', 'tradeindia.com', 'yellowpages.com'\n];\n\nconst isSocialOrDirectory = socialAndDirectoryDomains.some(domain => url.includes(domain));\n\nif (isSocialOrDirectory) {\n  return [{ json: { website_status: 'NO_WEBSITE', directory_link: url, is_call_prospect: true } }];\n} else {\n  return [{ json: { website_status: 'HAS_WEBSITE', primary_domain: url, is_call_prospect: false } }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300],
+      "id": "classify-website-domain",
+      "name": "Classify Domain Type"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [750, 300],
+      "id": "respond-website-classification",
+      "name": "Respond Classification"
+    }
+  ],
+  "connections": {
+    "Webhook Website Verification": {
+      "main": [[{ "node": "Classify Domain Type", "type": "main", "index": 0 }]]
+    },
+    "Classify Domain Type": {
+      "main": [[{ "node": "Respond Classification", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

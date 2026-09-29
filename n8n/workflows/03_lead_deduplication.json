@@ -1,0 +1,150 @@
+{
+  "name": "03 — Lead Deduplication",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "leads/deduplicate",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "webhook-dedup",
+      "name": "Webhook Lead Deduplication"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://gxvketvhwjftkfuerfai.supabase.co/rest/v1/leads",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fingerprint",
+              "value": "eq.{{ $json.body.fingerprint }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "sb_publishable_9NuSOztl4jnE0ZTqPJk-sw_toNrpwz0"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [480, 300],
+      "id": "query-existing-lead",
+      "name": "Query Supabase DB"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ Array.isArray($json) && $json.length > 0 }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [700, 300],
+      "id": "if-duplicate-found",
+      "name": "Duplicate Exists?"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://gxvketvhwjftkfuerfai.supabase.co/rest/v1/leads?id=eq.{{ $node['Query Supabase DB'].json[0].id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_publishable_9NuSOztl4jnE0ZTqPJk-sw_toNrpwz0" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"updated_at\": \"{{ new Date().toISOString() }}\"\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [950, 180],
+      "id": "update-last-seen",
+      "name": "Update Last Seen At"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gxvketvhwjftkfuerfai.supabase.co/rest/v1/leads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_publishable_9NuSOztl4jnE0ZTqPJk-sw_toNrpwz0" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($node['Webhook Lead Deduplication'].json.body) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [950, 420],
+      "id": "create-new-lead",
+      "name": "Create New Lead in DB"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"DUPLICATE_UPDATED\",\n  \"lead_id\": \"{{ $node['Query Supabase DB'].json[0].id }}\"\n}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1200, 180],
+      "id": "respond-dedup-duplicate",
+      "name": "Respond Duplicate"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"LEAD_CREATED\",\n  \"lead_id\": \"{{ $json[0].id }}\"\n}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1200, 420],
+      "id": "respond-dedup-created",
+      "name": "Respond Created"
+    }
+  ],
+  "connections": {
+    "Webhook Lead Deduplication": {
+      "main": [[{ "node": "Query Supabase DB", "type": "main", "index": 0 }]]
+    },
+    "Query Supabase DB": {
+      "main": [[{ "node": "Duplicate Exists?", "type": "main", "index": 0 }]]
+    },
+    "Duplicate Exists?": {
+      "main": [
+        [{ "node": "Update Last Seen At", "type": "main", "index": 0 }],
+        [{ "node": "Create New Lead in DB", "type": "main", "index": 0 }]
+      ]
+    },
+    "Update Last Seen At": {
+      "main": [[{ "node": "Respond Duplicate", "type": "main", "index": 0 }]]
+    },
+    "Create New Lead in DB": {
+      "main": [[{ "node": "Respond Created", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
